@@ -4,6 +4,15 @@ Blackdesk can support several install channels, but they do not all have the sam
 
 This document defines the recommended rollout order and the GitHub Actions model behind it.
 
+## Current Live Channels
+
+These distribution paths are live today:
+
+1. GitHub Releases
+2. `curl -fsSL https://blackdesk.ai/install | bash`
+
+Other package-manager commands may appear on the website as intended install surface, but they should not be treated as live until their corresponding feed or package publication is actually in place.
+
 ## Recommended Release Model
 
 Use pull requests for release intent, not direct pushes to the default branch.
@@ -21,6 +30,36 @@ Supported release labels:
 - `release`
 
 `release` defaults to a patch release.
+
+## How Production Releases Work
+
+The current release flow is:
+
+1. Open a pull request to `main`.
+2. Add one of these labels:
+   - `release`
+   - `release:patch`
+   - `release:minor`
+   - `release:major`
+3. Merge the pull request.
+4. The `Tag Release From PR` workflow creates the version tag and publishes the GitHub Release.
+5. `blackdesk.ai/install` resolves the latest published GitHub Release and installs the matching asset for the local platform.
+
+Version behavior:
+
+- first release with `release:minor` becomes `v0.1.0`
+- `release` behaves like `release:patch`
+- later releases increment from the latest existing `v*` tag
+
+## Manual Release Recovery
+
+If a tag already exists but the release workflow needs to be rerun:
+
+1. use the `Release` workflow through `workflow_dispatch`
+2. provide an explicit existing tag such as `v0.1.0`
+
+The manual workflow is intentionally restricted to an explicit existing tag.
+It does not create a new version on its own and it does not run against arbitrary branch heads.
 
 ## Distribution Priority
 
