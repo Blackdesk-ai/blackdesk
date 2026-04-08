@@ -5,6 +5,11 @@ on:
     tags:
       - v*
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing tag to publish, for example v0.1.0
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -64,7 +69,27 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --force
-          tag="${GITHUB_REF_NAME}"
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.release_tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          case "${tag}" in
+            v[0-9]*)
+              ;;
+            *)
+              echo "release tag must start with v, got: ${tag}" >&2
+              exit 1
+              ;;
+          esac
+
+          git rev-parse -q --verify "refs/tags/${tag}" >/dev/null || {
+            echo "tag does not exist: ${tag}" >&2
+            exit 1
+          }
+
           version="${tag#v}"
           previous_tag="$(git tag --list 'v[0-9]*' --sort=-version:refname | grep -vx "${tag}" | head -n1 || true)"
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
