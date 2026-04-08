@@ -15,6 +15,15 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
+		if err := runUpgrade(ctx, os.Args[2:], os.Stdout, os.Stderr); err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	clean := flag.Bool("clean", false, "reset config to defaults before starting")
 	showVersion := flag.Bool("version", false, "print version information and exit")
 	flag.Parse()
@@ -24,7 +33,6 @@ func main() {
 		return
 	}
 
-	ctx := context.Background()
 	deps, err := bootstrap.LoadDependencies(ctx, *clean)
 	if err != nil {
 		log.Fatal(err)

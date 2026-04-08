@@ -22,6 +22,21 @@ Useful startup flags:
 - `blackdesk --clean` resets local config before launch
 - `blackdesk --version` prints the installed version
 
+Useful maintenance commands:
+
+- `blackdesk upgrade --check` checks whether a newer published release is available
+- `blackdesk upgrade` upgrades the installed binary to the latest published release
+
+## Status Bar
+
+The bottom status bar always shows:
+
+- the active market-data source
+- the active AI model or unset state
+- the current app version
+
+If a newer release is available, the version segment changes from `vCurrent` to `vCurrent -> vLatest`.
+
 ## Core Navigation
 
 The product is organized into five workspaces:

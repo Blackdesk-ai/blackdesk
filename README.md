@@ -33,6 +33,13 @@ It keeps symbol research, market-wide news, screeners, and local AI workflows in
 curl -fsSL https://blackdesk.ai/install | bash
 ```
 
+Upgrade an installed binary:
+
+```bash
+blackdesk upgrade --check
+blackdesk upgrade
+```
+
 Local equivalent:
 
 ```bash
@@ -52,6 +59,9 @@ Optional installer overrides:
 - `News`: a dedicated normalized headline wire
 - `Screeners`: discovery flows for finding setups and movers
 - `AI`: local connectors targeted with desk-aware market context
+
+The bottom status bar shows the active market-data source, AI model, and app version.
+When a newer published release is available, the version segment changes to `vCurrent -> vLatest`.
 
 ## Why Blackdesk
 

@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"blackdesk/internal/application"
+	"blackdesk/internal/buildinfo"
 	"blackdesk/internal/domain"
 )
 
@@ -56,6 +57,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		clock:                  now,
 		lastAutoRefresh:        now,
 		lastMarketNews:         now,
+		appVersion:             buildinfo.NormalizedVersion(),
 		searchInput:            ti,
 		aiInput:                ai,
 		aiModels:               make(map[string][]string),
@@ -75,6 +77,9 @@ func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		m.loadAllCmd(m.activeSymbol()),
 		tickCmd(time.Second),
+	}
+	if m.shouldCheckForUpdates() {
+		cmds = append(cmds, m.checkForUpdatesCmd())
 	}
 	if m.tabIdx == tabNews {
 		cmds = append(cmds, m.loadMarketNewsCmd(), m.loadMarketQuotesCmd())
@@ -128,6 +133,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleAIModelsLoaded(msg)
 	case aiContextPreparedMsg:
 		return m.handleAIContextPrepared(msg)
+	case versionCheckLoadedMsg:
+		return m.handleVersionCheckLoaded(msg)
 	}
 	return m, nil
 }

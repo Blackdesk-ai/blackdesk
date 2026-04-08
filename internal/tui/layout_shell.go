@@ -108,7 +108,7 @@ func (m Model) View() string {
 
 	status := muted.Width(viewportWidth).Render(statusText)
 	line := lipgloss.NewStyle().Width(viewportWidth).MaxWidth(viewportWidth).Render(
-		renderStatusLine(viewportWidth, lineText, muted.Render(m.statusMetaText())),
+		renderStatusLine(viewportWidth, lineText, m.renderStatusMeta(muted, pos.Bold(true))),
 	)
 
 	parts := []string{topSpacer, top, mainRow}
