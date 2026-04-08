@@ -22,3 +22,17 @@ func TestDetailedIncludesAllBuildMetadata(t *testing.T) {
 		t.Fatalf("unexpected detailed build info:\n got: %q\nwant: %q", got, want)
 	}
 }
+
+func TestVersionLabel(t *testing.T) {
+	tests := map[string]string{
+		"":       "unknown",
+		"dev":    "dev",
+		"0.1.0":  "v0.1.0",
+		"v0.1.0": "v0.1.0",
+	}
+	for input, want := range tests {
+		if got := VersionLabel(input); got != want {
+			t.Fatalf("VersionLabel(%q) = %q, want %q", input, got, want)
+		}
+	}
+}

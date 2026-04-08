@@ -35,6 +35,20 @@ You can also use the local installer script from the repository:
 ./scripts/install.sh
 ```
 
+## How do I update Blackdesk?
+
+Check for a newer published release:
+
+```bash
+blackdesk upgrade --check
+```
+
+Upgrade the installed binary:
+
+```bash
+blackdesk upgrade
+```
+
 ## How do I start using it?
 
 A simple first-run flow:
@@ -48,11 +62,11 @@ A simple first-run flow:
 
 ## Where can I find the keyboard shortcuts?
 
-See [docs/KEYBOARD_SHORTCUTS.md](/Users/df/Documents/dev/stockterminal/docs/KEYBOARD_SHORTCUTS.md).
+See `docs/KEYBOARD_SHORTCUTS.md`.
 
 ## Where can I find the product guide?
 
-See [docs/USER_GUIDE.md](/Users/df/Documents/dev/stockterminal/docs/USER_GUIDE.md).
+See `docs/USER_GUIDE.md`.
 
 ## What data source does Blackdesk use?
 
@@ -102,4 +116,4 @@ Blackdesk exposes an intended public install surface, but some package-manager c
 ## How do I report a bug or security issue?
 
 - for product or usage issues, open a GitHub issue once the public repository is live
-- for security issues, follow [SECURITY.md](/Users/df/Documents/dev/stockterminal/SECURITY.md)
+- for security issues, follow `SECURITY.md`

@@ -43,6 +43,9 @@ type Model struct {
 	clock           time.Time
 	lastAutoRefresh time.Time
 	lastMarketNews  time.Time
+	appVersion      string
+	latestVersion   string
+	updateAvailable bool
 
 	searchInput                 textinput.Model
 	searchMode                  bool

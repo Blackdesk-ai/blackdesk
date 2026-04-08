@@ -45,8 +45,8 @@ func TestInitDoesNotLoadMarketNewsOutsideNewsTab(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected init to return batched commands, got %T", msg)
 	}
-	if len(batch) != 2 {
-		t.Fatalf("expected init to queue quote load and ticker only outside News tab, got %d commands", len(batch))
+	if len(batch) != 3 {
+		t.Fatalf("expected init to queue quote load, ticker, and version check outside News tab, got %d commands", len(batch))
 	}
 }
 

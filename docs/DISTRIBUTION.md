@@ -10,6 +10,7 @@ These distribution paths are live today:
 
 1. GitHub Releases
 2. `curl -fsSL https://blackdesk.ai/install | bash`
+3. `blackdesk upgrade`
 
 Other package-manager commands may appear on the website as intended install surface, but they should not be treated as live until their corresponding feed or package publication is actually in place.
 
@@ -44,6 +45,7 @@ The current release flow is:
 3. Merge the pull request.
 4. The `Tag Release From PR` workflow creates the version tag and publishes the GitHub Release.
 5. `blackdesk.ai/install` resolves the latest published GitHub Release and installs the matching asset for the local platform.
+6. installed binaries can move to the latest published release with `blackdesk upgrade`
 
 Version behavior:
 
@@ -89,6 +91,18 @@ curl -fsSL https://blackdesk.ai/install | bash
 ```
 
 The `blackdesk.ai/install` endpoint should serve the same logic as `scripts/install.sh`, with `Blackdesk-ai/blackdesk` baked in.
+
+### In-App Upgrade
+
+Installed binaries can update themselves with:
+
+```bash
+blackdesk upgrade --check
+blackdesk upgrade
+```
+
+The in-app updater resolves the latest GitHub Release, downloads the platform-matching archive, verifies its checksum, and replaces the current executable.
+The TUI status bar also shows the current version and surfaces `vCurrent -> vLatest` when a newer release is available.
 
 ### Homebrew
 
