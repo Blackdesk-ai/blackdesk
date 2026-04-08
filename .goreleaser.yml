@@ -47,6 +47,7 @@ nfpms:
     package_name: blackdesk
     file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     vendor: Blackdesk
+    maintainer: Blackdesk <maintainers@blackdesk.ai>
     description: Local-first Go TUI for market data.
     formats:
       - deb
