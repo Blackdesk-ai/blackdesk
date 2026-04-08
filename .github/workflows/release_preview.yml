@@ -36,7 +36,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --snapshot --clean --skip=publish --config .goreleaser.yml
+          args: release --snapshot --clean --skip=publish,sign --config .goreleaser.yml
 
       - name: Upload release preview artifacts
         uses: actions/upload-artifact@v4
