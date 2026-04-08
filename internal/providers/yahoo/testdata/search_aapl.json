@@ -1,0 +1,29 @@
+{
+  "quotes": [
+    {
+      "symbol": "AAPL",
+      "shortname": "Apple Inc.",
+      "longname": "Apple Inc.",
+      "exchange": "NMS",
+      "quoteType": "EQUITY",
+      "isYahooFinance": true
+    },
+    {
+      "symbol": "AAPL.MX",
+      "shortname": "Apple Inc.",
+      "longname": "Apple Inc.",
+      "exchange": "MEX",
+      "quoteType": "EQUITY",
+      "isYahooFinance": true
+    }
+  ],
+  "news": [
+    {
+      "uuid": "news-1",
+      "title": "Apple expands buyback plan",
+      "publisher": "Example News",
+      "link": "https://example.com/apple",
+      "providerPublishTime": 1710001000
+    }
+  ]
+}

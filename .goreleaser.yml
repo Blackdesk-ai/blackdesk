@@ -1,0 +1,71 @@
+project_name: blackdesk
+
+version: 2
+
+builds:
+  - id: blackdesk
+    binary: blackdesk
+    main: .
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X blackdesk/internal/buildinfo.Version={{ .Version }}
+        -X blackdesk/internal/buildinfo.Commit={{ .Commit }}
+        -X blackdesk/internal/buildinfo.Date={{ .Date }}
+
+archives:
+  - id: archives
+    ids:
+      - blackdesk
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+nfpms:
+  - id: packages
+    ids:
+      - blackdesk
+    package_name: blackdesk
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: Blackdesk
+    description: Local-first Go TUI for market data.
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - src: ./README.md
+        dst: /usr/share/doc/blackdesk/README.md
+        type: doc
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS.txt"
+
+signs:
+  - artifacts: checksum
+    cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --yes
+      - --bundle=${signature}
+      - ${artifact}

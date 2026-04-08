@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          files="$(git ls-files '*.go')"
+          if [ -n "${files}" ]; then
+            unformatted="$(gofmt -l ${files})"
+            if [ -n "${unformatted}" ]; then
+              echo "Unformatted Go files:"
+              echo "${unformatted}"
+              exit 1
+            fi
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run test suite
+        run: go test ./...
+
+      - name: Check GoReleaser config
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: check --config .goreleaser.yml

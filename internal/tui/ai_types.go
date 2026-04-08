@@ -1,0 +1,94 @@
+package tui
+
+import (
+	_ "embed"
+	"strings"
+	"time"
+
+	"blackdesk/internal/domain"
+)
+
+const (
+	aiMaxPromptChars  = 32000
+	aiMaxContextChars = 12000
+	aiMaxHistoryChars = 18000
+	aiMaxMessageChars = 4000
+)
+
+//go:embed prompts/ai_system.md
+var aiSystemPromptTemplate string
+
+type aiSnapshot struct {
+	GeneratedAt       string                          `json:"generated_at"`
+	MarketProvider    string                          `json:"market_provider"`
+	AIConnector       string                          `json:"ai_connector"`
+	AIModel           string                          `json:"ai_model"`
+	Status            string                          `json:"status"`
+	ActiveTab         string                          `json:"active_tab"`
+	ActiveSymbol      string                          `json:"active_symbol"`
+	SelectedRange     string                          `json:"selected_range"`
+	SelectedInterval  string                          `json:"selected_interval"`
+	ActiveQuote       domain.QuoteSnapshot            `json:"active_quote"`
+	Fundamentals      domain.FundamentalsSnapshot     `json:"fundamentals"`
+	Statements        aiStatementsSnapshot            `json:"statements"`
+	Insiders          domain.InsiderSnapshot          `json:"insiders"`
+	StatementInsights []aiStatRow                     `json:"statement_insights"`
+	QuoteStats        map[string]string               `json:"quote_stats"`
+	TechnicalValues   map[string]string               `json:"technical_values"`
+	Technicals        map[string][]aiStatRow          `json:"technicals"`
+	TechnicalLookup   map[string]aiStatRow            `json:"technical_lookup"`
+	Markets           map[string][]aiStatRow          `json:"markets"`
+	MarketNews        []domain.NewsItem               `json:"market_news"`
+	Watchlist         []string                        `json:"watchlist"`
+	WatchQuotes       map[string]domain.QuoteSnapshot `json:"watch_quotes"`
+	News              []domain.NewsItem               `json:"news"`
+	SearchResults     []domain.SymbolRef              `json:"search_results"`
+	ContextGuide      map[string]string               `json:"context_guide"`
+	StatRowGuide      map[string]string               `json:"stat_row_guide"`
+}
+
+type aiStatementsSnapshot struct {
+	IncomeAnnual          domain.FinancialStatement `json:"income_annual"`
+	BalanceSheetAnnual    domain.FinancialStatement `json:"balance_sheet_annual"`
+	CashFlowAnnual        domain.FinancialStatement `json:"cash_flow_annual"`
+	IncomeQuarterly       domain.FinancialStatement `json:"income_quarterly"`
+	BalanceSheetQuarterly domain.FinancialStatement `json:"balance_sheet_quarterly"`
+	CashFlowQuarterly     domain.FinancialStatement `json:"cash_flow_quarterly"`
+}
+
+type aiStatRow struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Signal string `json:"signal,omitempty"`
+}
+
+type aiMessageRole string
+
+const (
+	aiMessageUser      aiMessageRole = "user"
+	aiMessageAssistant aiMessageRole = "assistant"
+)
+
+type aiMessage struct {
+	Role      aiMessageRole
+	Body      string
+	Timestamp time.Time
+	Meta      string
+}
+
+func (s aiStatementsSnapshot) loadedCount() int {
+	count := 0
+	for _, stmt := range []domain.FinancialStatement{
+		s.IncomeAnnual,
+		s.BalanceSheetAnnual,
+		s.CashFlowAnnual,
+		s.IncomeQuarterly,
+		s.BalanceSheetQuarterly,
+		s.CashFlowQuarterly,
+	} {
+		if strings.TrimSpace(stmt.Symbol) != "" && len(stmt.Rows) > 0 {
+			count++
+		}
+	}
+	return count
+}

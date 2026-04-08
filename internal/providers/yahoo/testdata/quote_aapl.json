@@ -1,0 +1,31 @@
+{
+  "quoteResponse": {
+    "result": [
+      {
+        "symbol": "AAPL",
+        "shortName": "Apple Inc.",
+        "currency": "USD",
+        "regularMarketPrice": 221.13,
+        "regularMarketChange": 2.18,
+        "regularMarketChangePercent": 0.99,
+        "regularMarketPreviousClose": 218.95,
+        "regularMarketOpen": 219.4,
+        "regularMarketDayHigh": 222.0,
+        "regularMarketDayLow": 218.2,
+        "regularMarketVolume": 55000000,
+        "averageDailyVolume3Month": 62000000,
+        "marketCap": 3300000000000,
+        "regularMarketTime": 1710000000,
+        "marketState": "REGULAR",
+        "fullExchangeName": "NasdaqGS",
+        "priceHint": 2,
+        "preMarketPrice": 221.6,
+        "preMarketChange": 0.47,
+        "preMarketChangePercent": 0.21,
+        "postMarketPrice": 221.4,
+        "postMarketChange": 0.27,
+        "postMarketChangePercent": 0.12
+      }
+    ]
+  }
+}

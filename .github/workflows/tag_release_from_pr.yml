@@ -1,0 +1,90 @@
+name: Tag Release From PR
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+jobs:
+  tag-release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out base branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Create release tag from labeled PR
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bump=""
+          case " ${LABELS} " in
+            *" release:major "*) bump="major" ;;
+            *" release:minor "*) bump="minor" ;;
+            *" release:patch "*) bump="patch" ;;
+            *" release "*) bump="patch" ;;
+            *)
+              echo "No release label found on PR #${PR_NUMBER}; skipping tag creation."
+              exit 0
+              ;;
+          esac
+
+          git fetch --tags --force
+
+          if ! git cat-file -e "${MERGE_SHA}^{commit}" 2>/dev/null; then
+            echo "Merge commit ${MERGE_SHA} is not present in the local checkout."
+            exit 1
+          fi
+
+          latest_tag="$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n1)"
+
+          if [ -z "${latest_tag}" ]; then
+            major=0
+            minor=1
+            patch=0
+          else
+            version="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "${version}"
+            case "${bump}" in
+              major)
+                major="$((major + 1))"
+                minor=0
+                patch=0
+                ;;
+              minor)
+                minor="$((minor + 1))"
+                patch=0
+                ;;
+              patch)
+                patch="$((patch + 1))"
+                ;;
+            esac
+          fi
+
+          tag="v${major}.${minor}.${patch}"
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists; skipping."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" -m "Release ${tag} from PR #${PR_NUMBER}" "${MERGE_SHA}"
+          git push origin "${tag}"

@@ -1,0 +1,142 @@
+{
+  "quoteSummary": {
+    "result": [
+      {
+        "price": {
+          "marketCap": {
+            "raw": 3300000000000
+          }
+        },
+        "summaryDetail": {
+          "dividendYield": {
+            "raw": 0.0048
+          },
+          "fiftyTwoWeekLow": {
+            "raw": 164.08
+          },
+          "fiftyTwoWeekHigh": {
+            "raw": 237.23
+          },
+          "trailingPE": {
+            "raw": 34.2
+          },
+          "forwardPE": {
+            "raw": 29.1
+          },
+          "averageVolume": {
+            "raw": 62000000
+          },
+          "beta": {
+            "raw": 1.22
+          }
+        },
+        "defaultKeyStatistics": {
+          "earningsQuarterlyGrowth": {
+            "raw": 0.08
+          },
+          "enterpriseValue": {
+            "raw": 3375000000000
+          },
+          "enterpriseToRevenue": {
+            "raw": 8.63
+          },
+          "enterpriseToEbitda": {
+            "raw": 25.2
+          },
+          "bookValue": {
+            "raw": 4.31
+          },
+          "priceToBook": {
+            "raw": 48.7
+          },
+          "priceToSalesTrailing12Months": {
+            "raw": 8.44
+          },
+          "trailingEps": {
+            "raw": 4.9
+          }
+        },
+        "financialData": {
+          "epsCurrentYear": {
+            "raw": 6.43
+          },
+          "revenuePerShare": {
+            "raw": 25.68
+          },
+          "recommendationKey": "buy",
+          "recommendationMean": {
+            "raw": 1.9
+          },
+          "numberOfAnalystOpinions": {
+            "raw": 39
+          },
+          "targetLowPrice": {
+            "raw": 185
+          },
+          "targetMeanPrice": {
+            "raw": 225
+          },
+          "targetHighPrice": {
+            "raw": 250
+          },
+          "totalRevenue": {
+            "raw": 391000000000
+          },
+          "grossProfits": {
+            "raw": 180000000000
+          },
+          "ebitda": {
+            "raw": 134000000000
+          },
+          "operatingCashflow": {
+            "raw": 122000000000
+          },
+          "freeCashflow": {
+            "raw": 99000000000
+          },
+          "totalCash": {
+            "raw": 67000000000
+          },
+          "totalDebt": {
+            "raw": 110000000000
+          },
+          "currentRatio": {
+            "raw": 0.99
+          },
+          "quickRatio": {
+            "raw": 0.83
+          },
+          "debtToEquity": {
+            "raw": 167
+          },
+          "returnOnAssets": {
+            "raw": 0.28
+          },
+          "returnOnEquity": {
+            "raw": 1.55
+          },
+          "revenueGrowth": {
+            "raw": 0.06
+          },
+          "earningsGrowth": {
+            "raw": 0.10
+          },
+          "grossMargins": {
+            "raw": 0.46
+          },
+          "profitMargins": {
+            "raw": 0.26
+          },
+          "operatingMargins": {
+            "raw": 0.31
+          }
+        },
+        "assetProfile": {
+          "sector": "Technology",
+          "industry": "Consumer Electronics",
+          "longBusinessSummary": "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories, and sells related services."
+        }
+      }
+    ]
+  }
+}

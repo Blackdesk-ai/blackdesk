@@ -1,0 +1,27 @@
+.DS_Store
+
+# Go build outputs
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+
+# Go workspace caches
+.gocache/
+.gomodcache/
+
+# Coverage and profiling
+coverage.out
+*.coverprofile
+cpu.prof
+mem.prof
+
+# Editor and IDE files
+.idea/
+.vscode/
+.blackdesk/
+.claude/
