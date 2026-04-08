@@ -156,7 +156,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --config .goreleaser.yml
+          args: release --clean --skip=publish --config .goreleaser.yml
 
       - name: Validate release artifacts
         if: steps.version.outputs.tag != ''
@@ -204,7 +204,13 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: blackdesk ${{ steps.version.outputs.version }}
           target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
-          files: dist/*
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.deb
+            dist/*.rpm
+            dist/*SHA256SUMS.txt
+            dist/*SHA256SUMS.txt.sigstore.json
           body_path: .github-release-notes.txt
           fail_on_unmatched_files: true
           make_latest: true
