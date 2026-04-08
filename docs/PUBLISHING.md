@@ -14,6 +14,7 @@ Use this checklist when preparing the final history-free public repository.
 1. Keep `BLACKDESK_REPO=Blackdesk-ai/blackdesk` aligned across release documentation, install examples, and the website installer.
 2. Confirm release archives and checksums match the names expected by `scripts/install.sh`.
 3. Recheck `.goreleaser.yml`, README installation instructions, and release workflow files against `Blackdesk-ai/blackdesk`.
+4. For versioned production releases, merge a pull request labeled `release`, `release:patch`, `release:minor`, or `release:major`.
 
 ## Final Validation
 
