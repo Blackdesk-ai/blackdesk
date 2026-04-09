@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -67,10 +68,26 @@ func runCLI(ctx context.Context, args []string, stdout, stderr io.Writer) error 
 	model := tui.NewModel(ctx, deps)
 
 	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
-	if _, err := p.Run(); err != nil {
+	finalModel, err := p.Run()
+	if err != nil {
 		return err
 	}
+	if final, ok := finalModel.(tui.Model); ok && final.ShouldRestartOnQuit() {
+		return restartBlackdesk()
+	}
 	return nil
+}
+
+func restartBlackdesk() error {
+	executablePath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(executablePath, os.Args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func printMainUsage(w io.Writer) {

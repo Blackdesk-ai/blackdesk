@@ -9,16 +9,18 @@ import (
 func (m Model) statusText() string {
 	switch m.tabIdx {
 	case tabMarkets:
-		return strings.Join([]string{
+		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
 			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("i", "insight"),
 			renderStatusInlineKeyHint("r", "refresh"),
-			renderStatusKeyHint("?", "help"),
-		}, " | ")
+		}
+		parts = append(parts, renderStatusKeyHint("?", "help"))
+		parts = m.appendUpdateStatusKey(parts)
+		return strings.Join(parts, " | ")
 	case tabScreener:
-		return strings.Join([]string{
+		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
 			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("↑/↓", "results"),
@@ -27,20 +29,24 @@ func (m Model) statusText() string {
 			renderStatusInlineKeyHint("a", "add watchlist"),
 			renderStatusInlineKeyHint("r", "refresh"),
 			renderStatusInlineKeyHint("Enter", "open quote"),
-			renderStatusKeyHint("?", "help"),
-		}, " | ")
+		}
+		parts = append(parts, renderStatusKeyHint("?", "help"))
+		parts = m.appendUpdateStatusKey(parts)
+		return strings.Join(parts, " | ")
 	case tabNews:
-		return strings.Join([]string{
+		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
 			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("↑/↓", "stories"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("r", "refresh"),
 			renderStatusInlineKeyHint("o", "open story"),
-			renderStatusKeyHint("?", "help"),
-		}, " | ")
+		}
+		parts = append(parts, renderStatusKeyHint("?", "help"))
+		parts = m.appendUpdateStatusKey(parts)
+		return strings.Join(parts, " | ")
 	case tabAI:
-		return strings.Join([]string{
+		parts := []string{
 			"Keys: " + renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("c", "connector/model"),
 			renderStatusKeyHint("↑/↓", "scroll"),
@@ -48,8 +54,10 @@ func (m Model) statusText() string {
 			renderStatusInlineKeyHint("f", "fullscreen"),
 			renderStatusInlineKeyHint("r", "run"),
 			renderStatusInlineKeyHint("x", "clear"),
-			renderStatusKeyHint("?", "help"),
-		}, " | ")
+		}
+		parts = append(parts, renderStatusKeyHint("?", "help"))
+		parts = m.appendUpdateStatusKey(parts)
+		return strings.Join(parts, " | ")
 	default:
 		return m.quoteStatusText()
 	}
@@ -78,7 +86,15 @@ func (m Model) quoteStatusText() string {
 	}
 	parts = append(parts, renderStatusInlineKeyHint("r", "refresh"))
 	parts = append(parts, renderStatusKeyHint("?", "help"))
+	parts = m.appendUpdateStatusKey(parts)
 	return strings.Join(parts, " | ")
+}
+
+func (m Model) appendUpdateStatusKey(parts []string) []string {
+	if !m.updateAvailable || strings.TrimSpace(m.latestVersion) == "" || m.upgradeRunning {
+		return parts
+	}
+	return append(parts, renderStatusUpdateKeyHint("u", "update app"))
 }
 
 func renderStatusKeyHint(key, label string) string {
@@ -93,4 +109,10 @@ func renderStatusInlineKeyHint(key, label string) string {
 		return renderStatusKeyHint(key, label)
 	}
 	return label[:idx] + hotkeyStyle.Render(label[idx:idx+len(key)]) + label[idx+len(key):]
+}
+
+func renderStatusUpdateKeyHint(key, label string) string {
+	hotkeyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394")).Bold(true)
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394"))
+	return hotkeyStyle.Render(key) + " " + labelStyle.Render(label)
 }

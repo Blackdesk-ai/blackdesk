@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
 	"blackdesk/internal/providers"
@@ -82,5 +83,54 @@ func TestRenderStatusMetaHighlightsAvailableUpdate(t *testing.T) {
 
 	if !strings.Contains(got, "v0.1.0 -> v0.2.0") {
 		t.Fatalf("expected rendered update label, got %q", got)
+	}
+}
+
+func TestStatusTextShowsUpgradeKeyOnlyWhenUpdateAvailable(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabMarkets
+
+	if got := model.statusText(); strings.Contains(got, "u update app") {
+		t.Fatalf("expected no upgrade key without update, got %q", got)
+	}
+
+	model.latestVersion = "0.2.0"
+	model.updateAvailable = true
+	got := model.statusText()
+	if !strings.Contains(got, "u update app") {
+		t.Fatalf("expected upgrade key when update is available, got %q", got)
+	}
+	if strings.Index(got, "? help") > strings.Index(got, "u update app") {
+		t.Fatalf("expected update key after help, got %q", got)
+	}
+
+	model.upgradeRunning = true
+	if got := model.statusText(); strings.Contains(got, "u update app") {
+		t.Fatalf("expected upgrade key to hide while upgrading, got %q", got)
+	}
+}
+
+func TestUStartsUpgradeOnlyWhenUpdateIsAvailable(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabMarkets
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}})
+	m := updated.(Model)
+	if m.upgradeRunning {
+		t.Fatal("expected u to do nothing without an available update")
+	}
+	if cmd != nil {
+		t.Fatal("expected no upgrade command without an available update")
+	}
+
+	model.latestVersion = "0.2.0"
+	model.updateAvailable = true
+	updated, cmd = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}})
+	m = updated.(Model)
+	if !m.upgradeRunning {
+		t.Fatal("expected u to start upgrade when an update is available")
+	}
+	if cmd == nil {
+		t.Fatal("expected upgrade command when update is available")
 	}
 }

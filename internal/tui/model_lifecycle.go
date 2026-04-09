@@ -135,6 +135,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleAIContextPrepared(msg)
 	case versionCheckLoadedMsg:
 		return m.handleVersionCheckLoaded(msg)
+	case versionUpgradeLoadedMsg:
+		return m.handleVersionUpgradeLoaded(msg)
 	}
 	return m, nil
 }

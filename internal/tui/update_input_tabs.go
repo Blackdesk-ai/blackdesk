@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 
 	"blackdesk/internal/application"
@@ -94,6 +96,13 @@ func (m Model) handleGlobalWorkspaceActionKey(key string) (Model, tea.Cmd, bool)
 	case "r":
 		next, cmd := m.handleManualRefreshKey()
 		return next, cmd, true
+	case "u":
+		if !m.updateAvailable || strings.TrimSpace(m.latestVersion) == "" || m.upgradeRunning {
+			return m, nil, m.upgradeRunning
+		}
+		m.upgradeRunning = true
+		m.status = "Upgrading Blackdesk…"
+		return m, m.upgradeCmd(), true
 	default:
 		return m, nil, false
 	}

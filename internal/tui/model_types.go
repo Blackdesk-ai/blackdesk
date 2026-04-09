@@ -46,6 +46,8 @@ type Model struct {
 	appVersion      string
 	latestVersion   string
 	updateAvailable bool
+	upgradeRunning  bool
+	restartOnQuit   bool
 
 	searchInput                 textinput.Model
 	searchMode                  bool
