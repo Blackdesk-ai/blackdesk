@@ -74,6 +74,11 @@ func (m Model) runMarketOpinionCmd() tea.Cmd {
 			}
 			histories[key] = series
 		}
+		if risk, riskErr := m.fetchMarketRiskSnapshot(); riskErr != nil {
+			m.marketRisk = domain.MarketRiskSnapshot{}
+		} else {
+			m.marketRisk = risk
+		}
 		envelope, err := m.buildAIMarketOpinionRequest(histories)
 		if err != nil {
 			return aiMarketOpinionLoadedMsg{connectorID: connectorID, err: err}

@@ -13,7 +13,7 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 		m.services.HasStatements(),
 		m.services.HasInsiders(),
 	)
-	cmds := make([]tea.Cmd, 0, 8)
+	cmds := make([]tea.Cmd, 0, 10)
 	if plan.LoadQuote {
 		cmds = append(cmds, m.loadQuoteCmd(symbol))
 	}
@@ -41,6 +41,7 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	if plan.LoadInsiders {
 		cmds = append(cmds, m.loadInsidersCmd(symbol))
 	}
+	cmds = append(cmds, m.loadMarketRiskCmd())
 	return tea.Batch(cmds...)
 }
 

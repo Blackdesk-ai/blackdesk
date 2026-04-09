@@ -34,6 +34,11 @@ type marketNewsLoadedMsg struct {
 	err   error
 }
 
+type marketRiskLoadedMsg struct {
+	data domain.MarketRiskSnapshot
+	err  error
+}
+
 type screenerLoadedMsg struct {
 	data          domain.ScreenerResult
 	err           error

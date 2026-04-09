@@ -26,10 +26,11 @@ var aiStatementRequests = []statementRequest{
 }
 
 type Model struct {
-	ctx           context.Context
-	services      *application.Services
-	config        storage.Config
-	workspaceRoot string
+	ctx                context.Context
+	services           *application.Services
+	marketRiskProvider application.MarketRiskProvider
+	config             storage.Config
+	workspaceRoot      string
 
 	width           int
 	height          int
@@ -94,6 +95,7 @@ type Model struct {
 	newsSelected      int
 	marketNews        []domain.NewsItem
 	marketNewsSources []domain.MarketNewsSource
+	marketRisk        domain.MarketRiskSnapshot
 	marketNewsFresh   map[string]struct{}
 	marketNewsSeen    map[string]struct{}
 	marketNewsSel     int

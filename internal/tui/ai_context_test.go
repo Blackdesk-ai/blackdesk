@@ -16,6 +16,16 @@ import (
 func TestAIContextSnapshotIncludesMarkets(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.watchQuotes["SPY"] = domain.QuoteSnapshot{Symbol: "SPY", Price: 500, ChangePercent: 1.2}
+	model.marketRisk = domain.MarketRiskSnapshot{
+		Score:      2,
+		Min:        -4,
+		Max:        4,
+		Available:  true,
+		Components: map[string]int{"spy_vs_sma200": 1},
+		Inputs: map[string]domain.MarketRiskInput{
+			"spy": {Name: "SPY", Symbol: "SPY", Current: 500, SMA200: 480},
+		},
+	}
 
 	snapshot := model.aiContextSnapshot()
 	if len(snapshot.Markets) == 0 {
@@ -23,6 +33,12 @@ func TestAIContextSnapshotIncludesMarkets(t *testing.T) {
 	}
 	if _, ok := snapshot.Markets["futures"]; !ok {
 		t.Fatal("expected futures market section in AI context snapshot")
+	}
+	if snapshot.MarketRegime.Stance != "risk_on" {
+		t.Fatalf("expected external market regime in AI context, got %+v", snapshot.MarketRegime)
+	}
+	if snapshot.MarketRegime.Components["spy_vs_sma200"] != 1 || snapshot.MarketRegime.Inputs["spy"].Symbol != "SPY" {
+		t.Fatalf("expected market regime internals in AI context, got %+v", snapshot.MarketRegime)
 	}
 }
 
@@ -89,6 +105,17 @@ func TestBuildAIRequestExcludesScreenerDataFromPayload(t *testing.T) {
 func TestBuildAIMarketOpinionRequestUsesMarketOnlyContext(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.watchQuotes["SPY"] = domain.QuoteSnapshot{Symbol: "SPY", Price: 500, ChangePercent: 1.2}
+	model.marketRisk = domain.MarketRiskSnapshot{
+		Score:      -1,
+		Min:        -4,
+		Max:        4,
+		Available:  true,
+		Thresholds: domain.MarketRiskThresholds{SMABufferPct: 1, Breadth50Buffer: 2},
+		Components: map[string]int{"s5th_vs_sma200": -1},
+		Inputs: map[string]domain.MarketRiskInput{
+			"s5th": {Name: "S&P 500 Stocks Above 200-Day Average", Symbol: "$S5TH", Current: 54.98, SMA200: 59},
+		},
+	}
 
 	req, err := model.buildAIMarketOpinionRequest(nil)
 	if err != nil {
@@ -99,6 +126,15 @@ func TestBuildAIMarketOpinionRequestUsesMarketOnlyContext(t *testing.T) {
 	}
 	if !strings.Contains(req.ContextPayload, "\"markets\"") {
 		t.Fatal("expected market opinion payload to include markets section")
+	}
+	if !strings.Contains(req.ContextPayload, "\"market_regime\"") {
+		t.Fatal("expected market opinion payload to include external market regime")
+	}
+	if !strings.Contains(req.ContextPayload, "\"components\"") || !strings.Contains(req.ContextPayload, "\"inputs\"") || !strings.Contains(req.ContextPayload, "\"thresholds\"") {
+		t.Fatal("expected market opinion payload to include full regime breakdown")
+	}
+	if strings.Contains(req.ContextPayload, "\"market_regime_signals\"") {
+		t.Fatal("expected old tape-style regime signals to be removed from market opinion payload")
 	}
 	if strings.Contains(req.ContextPayload, "\"active_quote\"") || strings.Contains(req.ContextPayload, "\"fundamentals\"") || strings.Contains(req.ContextPayload, "\"news\"") {
 		t.Fatal("expected market opinion payload to stay market-only")
@@ -119,6 +155,17 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 		TargetMeanPrice:   225,
 	}
 	model.news = []domain.NewsItem{{Title: "Apple expands AI push"}}
+	model.marketRisk = domain.MarketRiskSnapshot{
+		Score:      -2,
+		Min:        -4,
+		Max:        4,
+		Available:  true,
+		Thresholds: domain.MarketRiskThresholds{SMABufferPct: 1, Breadth50Buffer: 2},
+		Components: map[string]int{"spy_vs_sma200": 1, "hyg_vs_sma200": 0},
+		Inputs: map[string]domain.MarketRiskInput{
+			"spy": {Name: "SPY", Symbol: "SPY", Current: 210, SMA200: 205},
+		},
+	}
 	populateAllStatementCache(&model, "AAPL")
 	candles := make([]domain.Candle, 0, 260)
 	for i := 260; i >= 0; i-- {
@@ -147,6 +194,12 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 	}
 	if !strings.Contains(req.ContextPayload, "\"fundamentals\"") || !strings.Contains(req.ContextPayload, "\"technicals\"") || !strings.Contains(req.ContextPayload, "\"statements\"") {
 		t.Fatal("expected quote insight payload to include fundamentals, statements, and technicals")
+	}
+	if !strings.Contains(req.ContextPayload, "\"market_regime\"") {
+		t.Fatal("expected quote insight payload to include market regime context")
+	}
+	if !strings.Contains(req.SystemPrompt, "market_regime") {
+		t.Fatal("expected quote insight prompt to explicitly instruct use of market regime")
 	}
 	if !strings.Contains(req.ContextPayload, "\"Industry\": \"Consumer Electronics\"") {
 		t.Fatal("expected hidden fundamentals fields to remain in quote insight context")

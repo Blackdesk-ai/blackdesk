@@ -26,6 +26,7 @@ func (m Model) aiContextSnapshot() aiSnapshot {
 		ContextGuide:      aiContextGuide(),
 		StatRowGuide:      aiStatRowGuide(),
 		MarketProvider:    m.statusMetaMarketSource(),
+		MarketRegime:      aiMarketRegimeFromSnapshot(m.marketRisk),
 		AIConnector:       m.activeAIConnectorID(),
 		AIModel:           strings.TrimSpace(m.config.AIModel),
 		Status:            m.status,
@@ -55,6 +56,7 @@ func aiContextGuide() map[string]string {
 	return map[string]string{
 		"generated_at":       "RFC3339 timestamp for when the Blackdesk snapshot was generated.",
 		"market_provider":    "Market data source currently backing the app, such as Yahoo.",
+		"market_regime":      "External market regime snapshot from Blackdesk risk service. `score` runs from -4 to +4, where 0 is neutral, values above 0 are risk-on, values below 0 are risk-off, and larger absolute values mean a stronger regime. `components` shows each signed contribution to the total score, `inputs` shows the raw market series used to score it, and `thresholds` shows the decision buffers used by the model.",
 		"ai_connector":       "Selected local AI connector id, such as codex, claude, or opencode.",
 		"ai_model":           "Selected model name passed to the local AI connector.",
 		"status":             "Current Blackdesk status line text at request time.",

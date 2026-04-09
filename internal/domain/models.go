@@ -75,6 +75,33 @@ type MarketNewsSource struct {
 	Name string
 }
 
+type MarketRiskThresholds struct {
+	SMABufferPct    float64
+	Breadth50Buffer float64
+}
+
+type MarketRiskInput struct {
+	Name    string
+	Symbol  string
+	Current float64
+	SMA200  float64
+}
+
+type MarketRiskSnapshot struct {
+	Score          int
+	Label          string
+	Min            int
+	Max            int
+	Thresholds     MarketRiskThresholds
+	Components     map[string]int
+	Inputs         map[string]MarketRiskInput
+	MarketNow      time.Time
+	MarketZone     string
+	MarketCalendar string
+	GeneratedAt    time.Time
+	Available      bool
+}
+
 type ScreenerDefinition struct {
 	ID          string
 	Name        string

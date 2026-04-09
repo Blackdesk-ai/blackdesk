@@ -11,6 +11,8 @@ import (
 type aiPreparedLoadInput struct {
 	prompt          string
 	symbol          string
+	marketRisk      domain.MarketRiskSnapshot
+	marketRiskErr   error
 	quote           *domain.QuoteSnapshot
 	quoteErr        error
 	quotes          []domain.QuoteSnapshot
@@ -36,6 +38,8 @@ type aiPreparedLoadInput struct {
 func (m Model) handleAIQuoteInsightPrepared(msg aiQuoteInsightPreparedMsg) (Model, tea.Cmd) {
 	m.applyAIPreparedData(aiPreparedLoadInput{
 		symbol:          msg.symbol,
+		marketRisk:      msg.marketRisk,
+		marketRiskErr:   msg.marketRiskErr,
 		quote:           msg.quote,
 		quoteErr:        msg.quoteErr,
 		history:         msg.history,
@@ -63,6 +67,8 @@ func (m Model) handleAIContextPrepared(msg aiContextPreparedMsg) (Model, tea.Cmd
 	m.applyAIPreparedData(aiPreparedLoadInput{
 		prompt:          msg.prompt,
 		symbol:          msg.symbol,
+		marketRisk:      msg.marketRisk,
+		marketRiskErr:   msg.marketRiskErr,
 		quote:           msg.quote,
 		quoteErr:        msg.quoteErr,
 		quotes:          msg.quotes,
@@ -91,6 +97,11 @@ func (m Model) handleAIContextPrepared(msg aiContextPreparedMsg) (Model, tea.Cmd
 func (m *Model) applyAIPreparedData(input aiPreparedLoadInput) {
 	for _, stmt := range input.statementBundle {
 		m.cacheStatement(stmt)
+	}
+	if input.marketRiskErr != nil {
+		m.marketRisk = domain.MarketRiskSnapshot{}
+	} else if input.marketRisk.Available {
+		m.marketRisk = input.marketRisk
 	}
 	if input.quote != nil {
 		m.quote = *input.quote

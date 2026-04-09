@@ -21,6 +21,7 @@ var aiSystemPromptTemplate string
 type aiSnapshot struct {
 	GeneratedAt       string                          `json:"generated_at"`
 	MarketProvider    string                          `json:"market_provider"`
+	MarketRegime      aiMarketRegime                  `json:"market_regime"`
 	AIConnector       string                          `json:"ai_connector"`
 	AIModel           string                          `json:"ai_model"`
 	Status            string                          `json:"status"`
@@ -45,6 +46,36 @@ type aiSnapshot struct {
 	SearchResults     []domain.SymbolRef              `json:"search_results"`
 	ContextGuide      map[string]string               `json:"context_guide"`
 	StatRowGuide      map[string]string               `json:"stat_row_guide"`
+}
+
+type aiMarketRegime struct {
+	Available      bool                         `json:"available"`
+	Score          int                          `json:"score"`
+	Min            int                          `json:"min"`
+	Max            int                          `json:"max"`
+	Stance         string                       `json:"stance"`
+	Strength       string                       `json:"strength"`
+	Interpretation string                       `json:"interpretation"`
+	SourceLabel    string                       `json:"source_label,omitempty"`
+	Thresholds     aiMarketRiskThresholds       `json:"thresholds"`
+	Components     map[string]int               `json:"components,omitempty"`
+	Inputs         map[string]aiMarketRiskInput `json:"inputs,omitempty"`
+	GeneratedAt    string                       `json:"generated_at,omitempty"`
+	MarketNow      string                       `json:"market_now,omitempty"`
+	MarketTimezone string                       `json:"market_timezone,omitempty"`
+	MarketCalendar string                       `json:"market_calendar,omitempty"`
+}
+
+type aiMarketRiskThresholds struct {
+	SMABufferPct    float64 `json:"sma_buffer_pct"`
+	Breadth50Buffer float64 `json:"breadth_50_buffer"`
+}
+
+type aiMarketRiskInput struct {
+	Name    string  `json:"name"`
+	Symbol  string  `json:"symbol"`
+	Current float64 `json:"current"`
+	SMA200  float64 `json:"sma200"`
 }
 
 type aiStatementsSnapshot struct {

@@ -11,37 +11,34 @@ import (
 func (m Model) buildAIMarketOpinionRequest(histories map[string]domain.PriceSeries) (RequestEnvelope, error) {
 	fullGuide := aiContextGuide()
 	payloadStruct := struct {
-		GeneratedAt         string                 `json:"generated_at"`
-		MarketProvider      string                 `json:"market_provider"`
-		AIConnector         string                 `json:"ai_connector"`
-		AIModel             string                 `json:"ai_model"`
-		ActiveTab           string                 `json:"active_tab"`
-		Markets             map[string][]aiStatRow `json:"markets"`
-		MarketNews          []domain.NewsItem      `json:"market_news"`
-		MarketRegimeSignals map[string]string      `json:"market_regime_signals"`
-		ContextGuide        map[string]string      `json:"context_guide"`
-		StatRowGuide        map[string]string      `json:"stat_row_guide"`
+		GeneratedAt    string                 `json:"generated_at"`
+		MarketProvider string                 `json:"market_provider"`
+		MarketRegime   aiMarketRegime         `json:"market_regime"`
+		AIConnector    string                 `json:"ai_connector"`
+		AIModel        string                 `json:"ai_model"`
+		ActiveTab      string                 `json:"active_tab"`
+		Markets        map[string][]aiStatRow `json:"markets"`
+		MarketNews     []domain.NewsItem      `json:"market_news"`
+		ContextGuide   map[string]string      `json:"context_guide"`
+		StatRowGuide   map[string]string      `json:"stat_row_guide"`
 	}{
 		GeneratedAt:    time.Now().Format(time.RFC3339),
 		MarketProvider: m.statusMetaMarketSource(),
+		MarketRegime:   aiMarketRegimeFromSnapshot(m.marketRisk),
 		AIConnector:    m.activeAIConnectorID(),
 		AIModel:        strings.TrimSpace(m.config.AIModel),
 		ActiveTab:      "global market board",
 		Markets:        m.aiMarketSections(),
 		MarketNews:     compactAINews(append([]domain.NewsItem(nil), m.marketNews...), 8),
-		MarketRegimeSignals: marketRegimeSignals(
-			m.watchQuotes,
-			histories,
-		),
 		ContextGuide: map[string]string{
-			"generated_at":          fullGuide["generated_at"],
-			"market_provider":       fullGuide["market_provider"],
-			"ai_connector":          fullGuide["ai_connector"],
-			"ai_model":              fullGuide["ai_model"],
-			"active_tab":            fullGuide["active_tab"],
-			"markets":               fullGuide["markets"],
-			"market_news":           fullGuide["market_news"],
-			"market_regime_signals": "Derived multi-session regime cues for the markets widget, including trend-vs-SMA200 context and selected cross-asset direction checks.",
+			"generated_at":    fullGuide["generated_at"],
+			"market_provider": fullGuide["market_provider"],
+			"market_regime":   fullGuide["market_regime"],
+			"ai_connector":    fullGuide["ai_connector"],
+			"ai_model":        fullGuide["ai_model"],
+			"active_tab":      fullGuide["active_tab"],
+			"markets":         fullGuide["markets"],
+			"market_news":     fullGuide["market_news"],
 		},
 		StatRowGuide: aiStatRowGuide(),
 	}
@@ -65,7 +62,8 @@ func buildAIMarketOpinionSystemPrompt(payload string) string {
 	b.WriteString("\n\n")
 	b.WriteString("This request is for the Markets sidebar AI Insight widget.\n")
 	b.WriteString("Use only the provided market board context.\n")
-	b.WriteString("Use both `markets` and `market_regime_signals`, and take `market_regime_signals` seriously as higher-level regime context derived from the basket history.\n")
+	b.WriteString("Use `market_regime` as the higher-level regime anchor and `markets` for cross-asset confirmation or contradiction.\n")
+	b.WriteString("Read `market_regime.interpretation`, `market_regime.components`, `market_regime.inputs`, and `market_regime.thresholds` before writing the conclusion.\n")
 	b.WriteString("Start the response with exactly one regime label followed by a colon: Risk-on:, Risk-off:, or Mixed:.\n")
 	b.WriteString("The regime label must be explicit and easy to scan.\n")
 	b.WriteString("Return exactly one short paragraph of one or two sentences and about 160 characters.\n")

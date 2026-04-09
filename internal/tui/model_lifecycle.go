@@ -49,6 +49,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 	return Model{
 		ctx:                    ctx,
 		services:               services,
+		marketRiskProvider:     deps.MarketRiskProvider,
 		config:                 deps.Config,
 		workspaceRoot:          deps.WorkspaceRoot,
 		selectedIdx:            selectedIdx,
@@ -109,6 +110,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleNewsLoaded(msg)
 	case marketNewsLoadedMsg:
 		return m.handleMarketNewsLoaded(msg)
+	case marketRiskLoadedMsg:
+		return m.handleMarketRiskLoaded(msg)
 	case screenerLoadedMsg:
 		return m.handleScreenerLoaded(msg)
 	case fundamentalsLoadedMsg:

@@ -11,7 +11,7 @@ import (
 
 func (m Model) renderLeftPanel(section, muted, pos, neg lipgloss.Style, width, height int) string {
 	if m.tabIdx == tabMarkets {
-		return m.renderMarketLeft(section, lipgloss.NewStyle().Foreground(lipgloss.Color("245")), muted, width, height)
+		return m.renderMarketLeft(section, lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#D8C9B8")), muted, width, height)
 	}
 	if m.tabIdx == tabScreener {
 		return m.renderScreenerLeft(section, lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#D8C9B8")), muted, width, height)

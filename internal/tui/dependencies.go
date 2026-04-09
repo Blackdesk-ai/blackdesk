@@ -8,10 +8,11 @@ import (
 )
 
 type Dependencies struct {
-	Services      *application.Services
-	Registry      *providers.Registry
-	AgentRegistry *agents.Registry
-	ConfigStore   *storage.ConfigStore
-	Config        storage.Config
-	WorkspaceRoot string
+	Services           *application.Services
+	MarketRiskProvider application.MarketRiskProvider
+	Registry           *providers.Registry
+	AgentRegistry      *agents.Registry
+	ConfigStore        *storage.ConfigStore
+	Config             storage.Config
+	WorkspaceRoot      string
 }

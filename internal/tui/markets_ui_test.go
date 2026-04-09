@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -47,11 +48,21 @@ func TestDefaultViewShowsMarketDashboard(t *testing.T) {
 	if !strings.Contains(view, "Global Market Board") {
 		t.Fatal("expected market dashboard center")
 	}
-	if !strings.Contains(view, "MARKET PULSE") {
+	if !strings.Contains(view, "CROSS-ASSET PULSE") {
 		t.Fatal("expected market dashboard right rail")
 	}
 	if !strings.Contains(view, "GLOBAL SNAPSHOT") {
 		t.Fatal("expected market dashboard left rail")
+	}
+	stripped := ansi.Strip(view)
+	if !strings.Contains(stripped, "Regime") || !strings.Contains(stripped, "N/A") {
+		t.Fatal("expected market regime fallback when risk feed is unavailable")
+	}
+	if strings.Contains(stripped, "Bias ") || strings.Contains(stripped, "Updated ") {
+		t.Fatal("expected bias and updated lines to be removed from global snapshot")
+	}
+	if strings.Contains(ansi.Strip(view), "Tape ") {
+		t.Fatal("expected tape line to be removed from market sidebar")
 	}
 	if !strings.Contains(ansi.Strip(view), "AI INSIGHT (i)") {
 		t.Fatal("expected market AI insight key hint in sidebar")
@@ -174,5 +185,47 @@ func TestMarketsRefreshAndInsightKeysAreSeparated(t *testing.T) {
 	model = updated.(Model)
 	if !model.pendingMarketOpinionRefresh {
 		t.Fatal("expected insight key to queue market AI opinion refresh")
+	}
+}
+
+func TestMarketRiskLineRendersExternalRegimeMeter(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.marketRisk = domain.MarketRiskSnapshot{
+		Score:     1,
+		Label:     "CAUTIOUS RISK ON",
+		Min:       -4,
+		Max:       4,
+		Available: true,
+	}
+
+	view := ansi.Strip(model.renderMarketLeft(lipgloss.NewStyle(), lipgloss.NewStyle(), lipgloss.NewStyle(), 40, 20))
+	if !strings.Contains(view, "=====... +1 CAUTIOUS RISK ON") {
+		t.Fatalf("expected external regime meter, got %q", view)
+	}
+	if strings.Contains(view, "Tape ") {
+		t.Fatal("expected tape line to be removed")
+	}
+}
+
+func TestMarketRiskLoadFailureLeavesSidebarAtNA(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:             storage.DefaultConfig(),
+		Registry:           providers.NewRegistry(testProvider{}),
+		MarketRiskProvider: marketRiskProvider{err: errors.New("timeout")},
+	})
+
+	cmd := model.loadMarketRiskCmd()
+	if cmd == nil {
+		t.Fatal("expected market risk load command")
+	}
+	updated, _ := model.Update(cmd())
+	model = updated.(Model)
+
+	view := ansi.Strip(model.renderMarketLeft(lipgloss.NewStyle(), lipgloss.NewStyle(), lipgloss.NewStyle(), 40, 20))
+	if !strings.Contains(view, "Regime") || !strings.Contains(view, "N/A") {
+		t.Fatalf("expected N/A fallback after risk load failure, got %q", view)
 	}
 }
