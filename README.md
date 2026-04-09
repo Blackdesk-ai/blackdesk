@@ -71,6 +71,7 @@ Optional installer overrides:
 - `News`: a dedicated normalized headline wire
 - `Screeners`: discovery flows for finding setups and movers
 - `AI`: local connectors targeted with desk-aware market context
+  currently `Codex`, `Claude Code`, and `Opencode`
 
 The bottom status bar shows the active market-data source, AI model, and app version.
 When a newer published release is available, the version segment changes to `vCurrent -> vLatest`.
