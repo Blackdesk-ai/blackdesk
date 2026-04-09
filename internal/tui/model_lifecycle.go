@@ -20,7 +20,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 	ti.CharLimit = 40
 	ti.Width = 32
 	ai := textinput.New()
-	ai.Placeholder = "Ask the selected local AI about the market, this symbol, or the current app state"
+	ai.Placeholder = "Ask the selected local AI about the market, this symbol, or the current app state (Esc to close)"
 	ai.CharLimit = 1000
 	ai.Width = 96
 

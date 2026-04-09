@@ -28,9 +28,9 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 		m.aiInput.Focus()
 		m.status = "AI composer focused"
 		return m, nil, true
-	case ",":
+	case "c":
 		if m.tabIdx != tabAI {
-			return m, nil, true
+			return m, nil, false
 		}
 		m.searchMode = false
 		m.aiFocused = false

@@ -20,8 +20,6 @@ func (m Model) renderAIContextBlock(section, label, muted lipgloss.Style, width 
 	statementSummary := fmt.Sprintf("%d/6 loaded", statements.loadedCount())
 	for _, line := range []string{
 		fmt.Sprintf("Symbol %s", m.activeSymbol()),
-		fmt.Sprintf("Provider %s", m.statusMetaMarketSource()),
-		fmt.Sprintf("Market %s", m.statusMetaMarketSource()),
 		fmt.Sprintf("AI %s", m.activeAIConnectorLabel()),
 		fmt.Sprintf("Model %s", valueOrDash(strings.TrimSpace(m.config.AIModel))),
 		fmt.Sprintf("Watchlist %d", len(m.config.Watchlist)),

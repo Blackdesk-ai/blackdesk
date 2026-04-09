@@ -57,7 +57,7 @@
 ## AI
 
 - `.`: focus input or send prompt
-- `,`: open connector and model picker
+- `c`: open connector and model picker
 - `↑ / ↓`: scroll transcript
 - `f`: toggle fullscreen
 - `r`: run again with fresh context

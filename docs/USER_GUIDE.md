@@ -182,7 +182,7 @@ What it is for:
 Main controls:
 
 - `.` focuses the AI input and sends the prompt when already focused
-- `,` opens connector and model selection from the AI workspace
+- `c` opens connector and model selection from the AI workspace
 - `↑ / ↓` scrolls the transcript
 - `f` toggles AI fullscreen
 - `r` re-runs the last prompt with fresh context

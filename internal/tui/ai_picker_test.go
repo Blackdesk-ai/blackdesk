@@ -55,11 +55,11 @@ func TestDotFocusesAIComposerWithoutChangingTab(t *testing.T) {
 	}
 }
 
-func TestCommaOpensAIPickerOnlyOnAITab(t *testing.T) {
+func TestCOpensAIPickerOnlyOnAITab(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.tabIdx = tabQuote
 
-	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{','}})
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 	m := updated.(Model)
 	if m.aiPickerOpen {
 		t.Fatal("expected AI picker to stay closed outside AI tab")
@@ -69,7 +69,7 @@ func TestCommaOpensAIPickerOnlyOnAITab(t *testing.T) {
 	}
 
 	model.tabIdx = tabAI
-	updated, cmd = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{','}})
+	updated, cmd = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 	m = updated.(Model)
 	if !m.aiPickerOpen {
 		t.Fatal("expected AI picker to open on AI tab")
@@ -79,6 +79,21 @@ func TestCommaOpensAIPickerOnlyOnAITab(t *testing.T) {
 	}
 	if cmd != nil {
 		t.Fatal("expected no model-loading command until connector is confirmed")
+	}
+}
+
+func TestCStillSwitchesQuoteToChart(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFundamentals
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+	m := updated.(Model)
+	if m.aiPickerOpen {
+		t.Fatal("expected AI picker to stay closed on quote tab")
+	}
+	if m.quoteCenterMode != quoteCenterChart {
+		t.Fatal("expected c to keep quote chart shortcut on quote tab")
 	}
 }
 

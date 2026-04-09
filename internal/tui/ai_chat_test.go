@@ -50,6 +50,27 @@ func TestAITabRendersTranscriptAndComposer(t *testing.T) {
 	}
 }
 
+func TestAITabContextSidebarHidesProviderAndMarketRows(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabAI
+
+	view := ansi.Strip(model.View())
+	if strings.Contains(view, "Provider test") {
+		t.Fatal("expected provider row to be hidden from context sidebar")
+	}
+	if strings.Contains(view, "Market test") {
+		t.Fatal("expected market row to be hidden from context sidebar")
+	}
+	if !strings.Contains(view, "Symbol") || !strings.Contains(view, "Model") {
+		t.Fatal("expected other context rows to remain visible")
+	}
+}
+
 func TestAITabShowsTypingIndicatorWhileRunning(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.width = 120

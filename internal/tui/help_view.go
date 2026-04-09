@@ -67,7 +67,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 		}},
 		{"AI", []helpEntry{
 			{".", "Focus input / send prompt"},
-			{",", "Open connector & model picker"},
+			{"c", "Open connector & model picker"},
 			{"↑ / ↓", "Scroll transcript"},
 			{"f", "Toggle fullscreen"},
 			{"r", "Re-run with fresh context"},
