@@ -97,6 +97,15 @@ func (m Model) handleMarketNewsLoaded(msg marketNewsLoadedMsg) (Model, tea.Cmd) 
 	return m, nil
 }
 
+func (m Model) handleMarketRiskLoaded(msg marketRiskLoadedMsg) (Model, tea.Cmd) {
+	if msg.err != nil {
+		m.marketRisk = domain.MarketRiskSnapshot{}
+		return m, nil
+	}
+	m.marketRisk = msg.data
+	return m, nil
+}
+
 func (m Model) handleTick(msg tickMsg) (Model, tea.Cmd) {
 	now := time.Time(msg)
 	m.clock = now

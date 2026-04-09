@@ -27,6 +27,8 @@ type aiMarketOpinionLoadedMsg struct {
 
 type aiQuoteInsightPreparedMsg struct {
 	symbol          string
+	marketRisk      domain.MarketRiskSnapshot
+	marketRiskErr   error
 	quote           *domain.QuoteSnapshot
 	quoteErr        error
 	history         *domain.PriceSeries
@@ -65,6 +67,8 @@ type aiModelsLoadedMsg struct {
 type aiContextPreparedMsg struct {
 	prompt          string
 	symbol          string
+	marketRisk      domain.MarketRiskSnapshot
+	marketRiskErr   error
 	quote           *domain.QuoteSnapshot
 	quoteErr        error
 	quotes          []domain.QuoteSnapshot

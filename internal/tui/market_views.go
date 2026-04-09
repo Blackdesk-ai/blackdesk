@@ -18,10 +18,10 @@ func (m Model) renderMarketCenter(header, section, label, muted, pos, neg lipglo
 func (m Model) renderMarketLeft(section, label, muted lipgloss.Style, width, height int) string {
 	var b strings.Builder
 	b.WriteString(section.Render("GLOBAL SNAPSHOT") + "\n\n")
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Regime"), colorizeRegimeLabel(regimeSummary(m))))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Breadth"), colorizeBreadthLine(marketBreadthLine(m))))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Pressure"), marketPressureLine(m)))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Focus"), focusAssetLine(m)))
+	b.WriteString(renderMarketSnapshotLine(label, "Regime", marketRiskLine(m.marketRisk), width) + "\n")
+	b.WriteString(renderMarketSnapshotLine(label, "Breadth", colorizeBreadthLine(marketBreadthLine(m)), width) + "\n")
+	b.WriteString(renderMarketSnapshotLine(label, "Pressure", marketPressureLine(m), width) + "\n")
+	b.WriteString(renderMarketSnapshotLine(label, "Focus", focusAssetLine(m), width) + "\n")
 	b.WriteString("\n" + section.Render("VOLATILITY") + "\n\n")
 	b.WriteString(muted.Render(renderMarketTableHeaderWithValueLabel(width, "Level", label)) + "\n")
 	for _, row := range marketBoardRows(m, marketVolBoard) {
@@ -54,7 +54,7 @@ func (m Model) renderMarketOpinionBlock(muted lipgloss.Style, width int) string 
 
 func (m Model) renderMarketRight(section, label, muted lipgloss.Style, width, height int) string {
 	var b strings.Builder
-	b.WriteString(section.Render("MARKET PULSE") + "\n\n")
+	b.WriteString(section.Render("CROSS-ASSET PULSE") + "\n\n")
 	b.WriteString(renderHeatMeter("US Equity", marketBasketScore(m, marketUSBoard), 10) + "\n")
 	b.WriteString(renderHeatMeter("Credit", marketBasketScore(m, marketRatesBoard), 10) + "\n")
 	b.WriteString(renderHeatMeter("Commods", marketBasketScore(m, marketMacroBoard[:3]), 10) + "\n")

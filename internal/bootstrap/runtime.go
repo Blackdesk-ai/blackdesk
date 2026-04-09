@@ -9,6 +9,7 @@ import (
 	"blackdesk/internal/agents"
 	"blackdesk/internal/application"
 	"blackdesk/internal/providers"
+	"blackdesk/internal/providers/blackdeskapi"
 	"blackdesk/internal/providers/composite"
 	"blackdesk/internal/providers/rss"
 	"blackdesk/internal/providers/yahoo"
@@ -49,7 +50,11 @@ func LoadDependencies(ctx context.Context) (tui.Dependencies, error) {
 	}
 
 	return tui.Dependencies{
-		Services:      application.NewServices(providers.NewRegistry(provider), agents.NewRegistry(), cfgStore),
+		Services: application.NewServices(providers.NewRegistry(provider), agents.NewRegistry(), cfgStore),
+		MarketRiskProvider: blackdeskapi.NewRiskProvider(blackdeskapi.RiskConfig{
+			Cache:   storage.NewMemoryCache(),
+			Timeout: 4 * time.Second,
+		}),
 		Config:        cfg,
 		WorkspaceRoot: filepath.Clean(workspaceRoot),
 	}, nil

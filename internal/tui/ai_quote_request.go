@@ -15,6 +15,7 @@ func (m Model) buildAIQuoteInsightRequest(symbol string) (RequestEnvelope, error
 	payloadStruct := struct {
 		GeneratedAt       string                      `json:"generated_at"`
 		MarketProvider    string                      `json:"market_provider"`
+		MarketRegime      aiMarketRegime              `json:"market_regime"`
 		AIConnector       string                      `json:"ai_connector"`
 		AIModel           string                      `json:"ai_model"`
 		ActiveTab         string                      `json:"active_tab"`
@@ -36,6 +37,7 @@ func (m Model) buildAIQuoteInsightRequest(symbol string) (RequestEnvelope, error
 	}{
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		MarketProvider:    m.statusMetaMarketSource(),
+		MarketRegime:      aiMarketRegimeFromSnapshot(m.marketRisk),
 		AIConnector:       m.activeAIConnectorID(),
 		AIModel:           strings.TrimSpace(m.config.AIModel),
 		ActiveTab:         "quote and research",
@@ -55,6 +57,7 @@ func (m Model) buildAIQuoteInsightRequest(symbol string) (RequestEnvelope, error
 		ContextGuide: map[string]string{
 			"generated_at":       fullGuide["generated_at"],
 			"market_provider":    fullGuide["market_provider"],
+			"market_regime":      fullGuide["market_regime"],
 			"ai_connector":       fullGuide["ai_connector"],
 			"ai_model":           fullGuide["ai_model"],
 			"active_tab":         fullGuide["active_tab"],
@@ -94,6 +97,7 @@ func buildAIQuoteInsightSystemPrompt(payload string) string {
 	b.WriteString("\n\n")
 	b.WriteString("This request is for the Quote sidebar AI Insight widget.\n")
 	b.WriteString("Use only the provided single-company Blackdesk context for the active symbol.\n")
+	b.WriteString("Use `market_regime` as the market backdrop and read its interpretation, components, inputs, and thresholds before making the stance call.\n")
 	b.WriteString("Start the response with exactly one stance label followed by a colon: Buy:, Hold:, Reduce:, Sell:, or Watchlist:.\n")
 	b.WriteString("The stance must be explicit and easy to scan.\n")
 	b.WriteString("Base the call on the combined evidence from price action, technicals, fundamentals, financial statements, valuation, analyst target context, and recent company news.\n")

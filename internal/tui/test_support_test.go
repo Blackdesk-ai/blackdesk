@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"blackdesk/internal/application"
 	"blackdesk/internal/domain"
 )
 
@@ -39,6 +40,11 @@ type marketNewsProvider struct {
 	testProvider
 	marketNewsCalls int
 	quotesCalls     int
+}
+
+type marketRiskProvider struct {
+	data domain.MarketRiskSnapshot
+	err  error
 }
 
 func (testProvider) Name() string { return "test" }
@@ -78,6 +84,15 @@ func (p *marketNewsProvider) GetMarketNews(context.Context) ([]domain.NewsItem, 
 	p.marketNewsCalls++
 	return nil, nil
 }
+
+func (p marketRiskProvider) GetMarketRisk(context.Context) (domain.MarketRiskSnapshot, error) {
+	if p.err != nil {
+		return domain.MarketRiskSnapshot{}, p.err
+	}
+	return p.data, nil
+}
+
+var _ application.MarketRiskProvider = marketRiskProvider{}
 
 func (p *countingHistoryProvider) Name() string { return "test" }
 

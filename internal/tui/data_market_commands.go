@@ -42,6 +42,23 @@ func (m Model) loadMarketNewsCmd() tea.Cmd {
 	}
 }
 
+func (m Model) loadMarketRiskCmd() tea.Cmd {
+	if m.marketRiskProvider == nil {
+		return nil
+	}
+	return func() tea.Msg {
+		data, err := m.fetchMarketRiskSnapshot()
+		return marketRiskLoadedMsg{data: data, err: err}
+	}
+}
+
+func (m Model) fetchMarketRiskSnapshot() (domain.MarketRiskSnapshot, error) {
+	if m.marketRiskProvider == nil {
+		return domain.MarketRiskSnapshot{}, nil
+	}
+	return m.marketRiskProvider.GetMarketRisk(m.ctx)
+}
+
 func (m Model) loadScreenerCmd(userTriggered bool) tea.Cmd {
 	if !m.services.HasScreeners() || len(m.screenerDefs) == 0 {
 		return nil

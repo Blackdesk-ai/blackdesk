@@ -2,6 +2,7 @@ package tui
 
 import (
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 
@@ -74,6 +75,64 @@ func (m Model) aiMarketSections() map[string][]aiStatRow {
 		"countries":   aiRowsFromMarketRows(marketBoardRows(m, marketCountryBoard)),
 		"sectors":     aiRowsFromMarketRows(marketBoardRows(m, marketSectorBoard)),
 	}
+}
+
+func aiMarketRegimeFromSnapshot(risk domain.MarketRiskSnapshot) aiMarketRegime {
+	if !risk.Available || risk.Min >= risk.Max {
+		return aiMarketRegime{}
+	}
+	out := aiMarketRegime{
+		Available:      true,
+		Score:          risk.Score,
+		Min:            risk.Min,
+		Max:            risk.Max,
+		Stance:         marketRiskStanceKey(risk),
+		Strength:       marketRiskStrength(risk),
+		Interpretation: "score 0 is neutral, scores above 0 are risk-on, scores below 0 are risk-off, and larger absolute values mean stronger conviction",
+		SourceLabel:    strings.TrimSpace(risk.Label),
+		Thresholds: aiMarketRiskThresholds{
+			SMABufferPct:    risk.Thresholds.SMABufferPct,
+			Breadth50Buffer: risk.Thresholds.Breadth50Buffer,
+		},
+		Components:     cloneAIMarketRiskComponents(risk.Components),
+		Inputs:         cloneAIMarketRiskInputs(risk.Inputs),
+		MarketTimezone: strings.TrimSpace(risk.MarketZone),
+		MarketCalendar: strings.TrimSpace(risk.MarketCalendar),
+	}
+	if !risk.GeneratedAt.IsZero() {
+		out.GeneratedAt = risk.GeneratedAt.Format(time.RFC3339)
+	}
+	if !risk.MarketNow.IsZero() {
+		out.MarketNow = risk.MarketNow.Format(time.RFC3339)
+	}
+	return out
+}
+
+func cloneAIMarketRiskComponents(src map[string]int) map[string]int {
+	if len(src) == 0 {
+		return nil
+	}
+	out := make(map[string]int, len(src))
+	for key, value := range src {
+		out[key] = value
+	}
+	return out
+}
+
+func cloneAIMarketRiskInputs(src map[string]domain.MarketRiskInput) map[string]aiMarketRiskInput {
+	if len(src) == 0 {
+		return nil
+	}
+	out := make(map[string]aiMarketRiskInput, len(src))
+	for key, value := range src {
+		out[key] = aiMarketRiskInput{
+			Name:    value.Name,
+			Symbol:  value.Symbol,
+			Current: value.Current,
+			SMA200:  value.SMA200,
+		}
+	}
+	return out
 }
 
 func (m Model) aiTechnicalLookup() map[string]aiStatRow {
