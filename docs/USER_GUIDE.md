@@ -17,10 +17,10 @@ Run it:
 blackdesk
 ```
 
-Useful startup flags:
+Useful CLI commands:
 
-- `blackdesk --clean` resets local config before launch
-- `blackdesk --version` prints the installed version
+- `blackdesk -v` or `blackdesk --version` prints the installed version
+- `blackdesk -h`, `blackdesk --help`, or `blackdesk ?` shows CLI help
 
 Useful maintenance commands:
 
@@ -182,7 +182,7 @@ What it is for:
 Main controls:
 
 - `.` focuses the AI input and sends the prompt when already focused
-- `,` opens connector and model selection from the AI workspace
+- `c` opens connector and model selection from the AI workspace
 - `↑ / ↓` scrolls the transcript
 - `f` toggles AI fullscreen
 - `r` re-runs the last prompt with fresh context

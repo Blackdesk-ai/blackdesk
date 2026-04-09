@@ -109,14 +109,6 @@ func (s *ConfigStore) Save(cfg Config) error {
 	return os.WriteFile(s.file, data, 0o644)
 }
 
-func (s *ConfigStore) Reset() (Config, error) {
-	cfg := DefaultConfig()
-	if err := s.Save(cfg); err != nil {
-		return Config{}, err
-	}
-	return cfg, nil
-}
-
 func isLegacyDefaultWatchlist(items []string) bool {
 	if len(items) != len(legacyDefaultWatchlist) {
 		return false

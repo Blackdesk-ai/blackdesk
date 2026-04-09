@@ -49,6 +49,23 @@ Upgrade the installed binary:
 blackdesk upgrade
 ```
 
+## How do I see the available CLI commands?
+
+Use any of these:
+
+```bash
+blackdesk -h
+blackdesk --help
+blackdesk ?
+```
+
+Print the installed version:
+
+```bash
+blackdesk -v
+blackdesk --version
+```
+
 ## How do I start using it?
 
 A simple first-run flow:
