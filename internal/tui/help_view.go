@@ -100,9 +100,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 		}
 		*target = append(*target, label.Render(sec.title))
 		for _, e := range sec.entries {
-			keyPad := e.key + strings.Repeat(" ", max(0, keyColW-len(e.key)))
-			line := keyStyle.Render(keyPad) + descStyle.Render(e.desc)
-			*target = append(*target, line)
+			*target = append(*target, renderHelpEntryLine(keyStyle, descStyle, e.key, e.desc, keyColW))
 		}
 		*target = append(*target, "")
 	}
@@ -123,4 +121,9 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 	}
 
 	return clipLines(strings.TrimRight(out.String(), "\n"), height)
+}
+
+func renderHelpEntryLine(keyStyle, descStyle lipgloss.Style, key, desc string, keyColW int) string {
+	keyPad := key + strings.Repeat(" ", max(0, keyColW-lipgloss.Width(key)))
+	return keyStyle.Render(keyPad) + descStyle.Render(desc)
 }
