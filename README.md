@@ -40,6 +40,18 @@ blackdesk upgrade --check
 blackdesk upgrade
 ```
 
+CLI:
+
+```bash
+blackdesk -h
+blackdesk --help
+blackdesk ?
+blackdesk -v
+blackdesk --version
+blackdesk upgrade --check
+blackdesk upgrade
+```
+
 Local equivalent:
 
 ```bash

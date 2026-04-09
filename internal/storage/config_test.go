@@ -107,46 +107,6 @@ func TestConfigStoreLoadTrimsWatchlistToMaxAndRepairsActiveSymbol(t *testing.T) 
 	}
 }
 
-func TestConfigStoreResetRestoresDefaults(t *testing.T) {
-	root := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", root)
-	t.Setenv("HOME", root)
-
-	store, err := NewConfigStore("blackdesk-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cfg := DefaultConfig()
-	cfg.ActiveSymbol = "TSLA"
-	cfg.Watchlist = []string{"TSLA", "AAPL"}
-	if err := store.Save(cfg); err != nil {
-		t.Fatal(err)
-	}
-
-	reset, err := store.Reset()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if reset.ActiveSymbol != DefaultConfig().ActiveSymbol {
-		t.Fatalf("expected default active symbol %s, got %s", DefaultConfig().ActiveSymbol, reset.ActiveSymbol)
-	}
-	if len(reset.Watchlist) != len(DefaultConfig().Watchlist) {
-		t.Fatalf("expected default watchlist length %d, got %d", len(DefaultConfig().Watchlist), len(reset.Watchlist))
-	}
-
-	reloaded, err := store.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if reloaded.ActiveSymbol != DefaultConfig().ActiveSymbol {
-		t.Fatalf("expected persisted default active symbol %s, got %s", DefaultConfig().ActiveSymbol, reloaded.ActiveSymbol)
-	}
-	if reloaded.AIConnector != "" {
-		t.Fatalf("expected reset AI connector to be empty, got %q", reloaded.AIConnector)
-	}
-}
-
 func TestDefaultConfigStartsWithoutAISelection(t *testing.T) {
 	cfg := DefaultConfig()
 	if cfg.AIConnector != "" {

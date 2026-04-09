@@ -39,6 +39,12 @@ Examples:
   curl -fsSL https://blackdesk.ai/install | bash -s -- --version 0.1.0
   curl -fsSL https://blackdesk.ai/install | bash -s -- --install-dir "\$HOME/bin"
   ./scripts/install.sh --binary ./bin/blackdesk --install-dir /tmp/blackdesk-bin
+
+Installed binary commands:
+  blackdesk --help
+  blackdesk ?
+  blackdesk --version
+  blackdesk upgrade --check
 EOF
 }
 
@@ -379,7 +385,10 @@ install_local_binary() {
 print_next_steps() {
   printf '\n'
   print_message info "${MUTED}Next:${NC}"
+  print_message info "  ${APP} --help"
+  print_message info "  ${APP} ?"
   print_message info "  ${APP} --version"
+  print_message info "  ${APP} upgrade --check"
   print_message info "  ${APP}"
   printf '\n'
 }

@@ -17,10 +17,10 @@ Run it:
 blackdesk
 ```
 
-Useful startup flags:
+Useful CLI commands:
 
-- `blackdesk --clean` resets local config before launch
-- `blackdesk --version` prints the installed version
+- `blackdesk -v` or `blackdesk --version` prints the installed version
+- `blackdesk -h`, `blackdesk --help`, or `blackdesk ?` shows CLI help
 
 Useful maintenance commands:
 

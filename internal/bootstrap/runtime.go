@@ -18,18 +18,13 @@ import (
 
 const appName = "blackdesk"
 
-func LoadDependencies(ctx context.Context, clean bool) (tui.Dependencies, error) {
+func LoadDependencies(ctx context.Context) (tui.Dependencies, error) {
 	cfgStore, err := storage.NewConfigStore(appName)
 	if err != nil {
 		return tui.Dependencies{}, err
 	}
 
-	var cfg storage.Config
-	if clean {
-		cfg, err = cfgStore.Reset()
-	} else {
-		cfg, err = cfgStore.Load()
-	}
+	cfg, err := cfgStore.Load()
 	if err != nil {
 		return tui.Dependencies{}, err
 	}

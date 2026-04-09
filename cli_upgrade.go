@@ -15,10 +15,17 @@ import (
 func runUpgrade(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("upgrade", flag.ContinueOnError)
 	flags.SetOutput(stderr)
+	flags.Usage = func() {
+		printUpgradeUsage(flags.Output())
+	}
 
 	checkOnly := flags.Bool("check", false, "check whether a newer release is available")
 	requestedVersion := flags.String("version", "", "upgrade to a specific release version")
 	if err := flags.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			printUpgradeUsage(stdout)
+			return nil
+		}
 		return err
 	}
 
@@ -64,4 +71,21 @@ func runUpgrade(ctx context.Context, args []string, stdout, stderr io.Writer) er
 		fmt.Fprintln(stdout, "Restart Blackdesk to begin using the staged update.")
 	}
 	return nil
+}
+
+func printUpgradeUsage(w io.Writer) {
+	fmt.Fprintln(w, "Blackdesk upgrade")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Usage:")
+	fmt.Fprintln(w, "  blackdesk upgrade [flags]")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Flags:")
+	fmt.Fprintln(w, "  --check              Check whether a newer release is available")
+	fmt.Fprintln(w, "  --version <version>  Upgrade to a specific release version")
+	fmt.Fprintln(w, "  -h, --help           Show this help message")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Examples:")
+	fmt.Fprintln(w, "  blackdesk upgrade --check")
+	fmt.Fprintln(w, "  blackdesk upgrade")
+	fmt.Fprintln(w, "  blackdesk upgrade --version 0.1.0")
 }
