@@ -128,6 +128,9 @@ func TestQuoteTabNavigationSwitchesCenterBetweenChartAndFundamentals(t *testing.
 	if !strings.Contains(fundamentalsView, "ROIC") {
 		t.Fatal("expected ROIC to be shown in profitability card")
 	}
+	if !strings.Contains(fundamentalsView, "PROFITABILITY") {
+		t.Fatal("expected implied eps growth band in profitability card")
+	}
 	if strings.Contains(fundamentalsView, "ANALYST VIEW") {
 		t.Fatal("expected analyst view card to be removed from fundamentals board")
 	}
@@ -239,6 +242,20 @@ func TestQuoteCenterMetricLabelsUseAnalystsLabelStyle(t *testing.T) {
 		t.Fatal("expected fundamentals metric labels to use analysts label style")
 	}
 
+	splitCard := renderQuoteFundamentalsSplitCard(sectionStyle, labelStyle, muted, 42, []marketTableRow{
+		{name: "Gross margin", price: "46.20%"},
+		{name: "Operating", price: "31.10%"},
+	}, []marketTableRow{
+		{name: "ROIC", price: "42.10%"},
+		{name: "Growth Est.", price: "13%-15%"},
+	}, "PROFITABILITY")
+	if strings.Count(splitCard, "Name") != 2 || strings.Count(splitCard, "Value") != 2 {
+		t.Fatal("expected split fundamentals card to render two table headers")
+	}
+	if !strings.Contains(splitCard, "PROFITABILITY") {
+		t.Fatal("expected split fundamentals card to include implied eps row")
+	}
+
 	technicalsCard := renderQuoteTechnicalsCard(sectionStyle, labelStyle, muted, 28, []marketTableRow{
 		{name: "RSI 14", price: "62.1", chg: "bull", move: 1, styled: true},
 	}, "MOMENTUM")
@@ -259,6 +276,42 @@ func TestQuoteCenterMetricLabelsUseAnalystsLabelStyle(t *testing.T) {
 	}, 1, len("Operating Cash Flow"), len("115.80B"), labelStyle)
 	if !strings.Contains(statementRow, labelStyle.Render("Operating Cash Flow")) {
 		t.Fatal("expected statement row labels to use analysts label style")
+	}
+}
+
+func TestRenderQuoteFundamentalsGridStacksCardsWhenWidthIsNarrow(t *testing.T) {
+	quote := domain.QuoteSnapshot{Symbol: "AAPL"}
+	fundamentals := domain.FundamentalsSnapshot{
+		TrailingPE:              31.2,
+		ForwardPE:               28.4,
+		PEGRatio:                2.14,
+		PriceToBook:             45.1,
+		PriceToSales:            8.10,
+		EnterpriseToEBITDA:      24.5,
+		GrossMargins:            0.462,
+		ProfitMargins:           0.262,
+		OperatingMargins:        0.311,
+		ReturnOnAssets:          0.284,
+		ReturnOnEquity:          1.55,
+		ReturnOnInvestedCapital: 0.421,
+		RevenueGrowth:           0.061,
+		EarningsGrowth:          0.104,
+		Revenue:                 391_000_000_000,
+		EBITDA:                  134_000_000_000,
+		OperatingCashflow:       122_000_000_000,
+		FreeCashflow:            99_000_000_000,
+		TotalCash:               67_000_000_000,
+		TotalDebt:               110_000_000_000,
+		CurrentRatio:            0.99,
+		RevenuePerShare:         25.1,
+	}
+
+	view := renderQuoteFundamentalsGrid(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), quote, fundamentals, 56, 40)
+	if strings.Count(view, "VALUATION") != 1 || strings.Count(view, "PROFITABILITY") != 1 || strings.Count(view, "FINANCIALS") == 0 {
+		t.Fatal("expected stacked fundamentals cards to keep all sections visible")
+	}
+	if !strings.Contains(view, "Op cash flow") || !strings.Contains(view, "Free cash flow") {
+		t.Fatal("expected narrow stacked layout to keep lower financial rows visible")
 	}
 }
 

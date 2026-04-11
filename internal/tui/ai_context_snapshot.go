@@ -71,7 +71,7 @@ func aiContextGuide() map[string]string {
 		"statements":         "Normalized financial statement bundle for the active symbol with income, balance sheet, and cash flow data across annual and quarterly views when available.",
 		"insiders":           "Normalized insider activity snapshot for the active symbol, including recent insider transactions with explicit action labels such as Buy or Sale when derivable from provider text, roster holders, and six-month purchase or sale summary when the provider supports it.",
 		"statement_insights": "Derived high-signal statement metrics for the active symbol, such as revenue growth, earnings trend, cash flow trend, leverage, and liquidity, computed from the normalized statement bundle.",
-		"quote_stats":        "Compact quote stat labels rendered in the quote view for the active symbol.",
+		"quote_stats":        "Compact quote stat labels rendered in the quote view for the active symbol. This also includes the derived `Growth Est.` field when PE and PEG are available. `Growth Est.` is the market-implied 5-year EPS CAGR band reverse-engineered from forward PE, trailing PE, or both, and it represents expectations already embedded in the current price rather than a Blackdesk forecast.",
 		"technicals":         "Technical indicator sections for the active symbol, grouped by momentum, trend, stat_edge, volatility, and volume.",
 		"technical_lookup":   "Normalized technical indicator lookup keyed by compact aliases such as HV21, HV63, ATR14, RSI14, PRICEZ21, HVRANK, and HVPCTL.",
 		"technical_values":   "Direct alias-to-value map for active symbol technical indicators. Use this first when the user asks for the exact value of an indicator such as HV21, ATR14, RSI14, ADX14, or PRICEZ21.",

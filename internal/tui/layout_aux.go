@@ -63,7 +63,17 @@ func (m Model) renderNewsPanel(section, muted lipgloss.Style, width, height int)
 
 func (m Model) renderProfilePanel(section, muted lipgloss.Style, width, height int) string {
 	var b strings.Builder
-	b.WriteString(section.Render("PROFILE") + " " + muted.Render("(p)") + "\n\n")
+	header := section.Render("PROFILE") + " " + muted.Render("(p)")
+	sector := strings.TrimSpace(m.fundamentals.Sector)
+	if sector != "" {
+		sectorText := muted.Render(sector)
+		if lipgloss.Width(header)+1+lipgloss.Width(sectorText) <= width {
+			header += strings.Repeat(" ", max(1, width-lipgloss.Width(header)-lipgloss.Width(sectorText))) + sectorText
+		} else {
+			header += "\n" + sectorText
+		}
+	}
+	b.WriteString(header + "\n\n")
 	if strings.TrimSpace(m.fundamentals.Description) == "" {
 		if m.errFundamentals != nil {
 			b.WriteString(muted.Render("Profile unavailable: " + m.errFundamentals.Error()))

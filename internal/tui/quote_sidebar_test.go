@@ -152,6 +152,25 @@ func TestQuoteViewShowsAIInsightBlock(t *testing.T) {
 	}
 }
 
+func TestProfilePanelShowsSectorInHeader(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.fundamentals = domain.FundamentalsSnapshot{
+		Sector:      "Technology",
+		Description: "Apple designs consumer devices and software.",
+	}
+
+	panel := ansi.Strip(model.renderProfilePanel(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), 36, 8))
+	if !strings.Contains(panel, "PROFILE (p)") {
+		t.Fatal("expected profile header key hint")
+	}
+	if !strings.Contains(panel, "Technology") {
+		t.Fatal("expected sector value in profile header")
+	}
+}
+
 func TestQuoteRefreshAndInsightKeysAreSeparated(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),
