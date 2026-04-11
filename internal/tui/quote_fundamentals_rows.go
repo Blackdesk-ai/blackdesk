@@ -33,7 +33,7 @@ func quoteFundamentalsProfitabilityRows(q domain.QuoteSnapshot, f domain.Fundame
 		{name: "ROA", price: percentDash(f.ReturnOnAssets), chg: "", move: 0, styled: false},
 		{name: "Rev growth", price: percentDash(f.RevenueGrowth), chg: "", move: 0, styled: false},
 		{name: "EPS growth", price: percentDash(f.EarningsGrowth), chg: "", move: 0, styled: false},
-		{name: "Fwd. EPS%", price: impliedEPSGrowthBandText(q, f), chg: "", move: 0, styled: false},
+		{name: "Growth Est.", price: impliedEPSGrowthBandText(q, f), chg: "", move: 0, styled: false},
 	}
 }
 

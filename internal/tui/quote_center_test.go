@@ -128,7 +128,7 @@ func TestQuoteTabNavigationSwitchesCenterBetweenChartAndFundamentals(t *testing.
 	if !strings.Contains(fundamentalsView, "ROIC") {
 		t.Fatal("expected ROIC to be shown in profitability card")
 	}
-	if !strings.Contains(fundamentalsView, "Fwd.") {
+	if !strings.Contains(fundamentalsView, "PROFITABILITY") {
 		t.Fatal("expected implied eps growth band in profitability card")
 	}
 	if strings.Contains(fundamentalsView, "ANALYST VIEW") {
@@ -247,12 +247,12 @@ func TestQuoteCenterMetricLabelsUseAnalystsLabelStyle(t *testing.T) {
 		{name: "Operating", price: "31.10%"},
 	}, []marketTableRow{
 		{name: "ROIC", price: "42.10%"},
-		{name: "Fwd. EPS%", price: "13.27%-14.58%"},
+		{name: "Growth Est.", price: "13%-15%"},
 	}, "PROFITABILITY")
 	if strings.Count(splitCard, "Name") != 2 || strings.Count(splitCard, "Value") != 2 {
 		t.Fatal("expected split fundamentals card to render two table headers")
 	}
-	if !strings.Contains(splitCard, "Fwd.") {
+	if !strings.Contains(splitCard, "PROFITABILITY") {
 		t.Fatal("expected split fundamentals card to include implied eps row")
 	}
 

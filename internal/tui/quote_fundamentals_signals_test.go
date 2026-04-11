@@ -12,7 +12,7 @@ func TestImpliedEPSGrowthBandTextUsesForwardAndTrailingPE(t *testing.T) {
 		ForwardPE:  28.4,
 		PEGRatio:   2.14,
 	})
-	if got != "13.27%-14.58%" {
+	if got != "13%-15%" {
 		t.Fatalf("expected implied growth band, got %q", got)
 	}
 }
@@ -22,7 +22,7 @@ func TestImpliedEPSGrowthBandTextFallsBackToQuoteTrailingPEG(t *testing.T) {
 		TrailingPE: 30,
 		ForwardPE:  24,
 	})
-	if got != "16.00%-20.00%" {
+	if got != "16%-20%" {
 		t.Fatalf("expected quote trailing peg fallback band, got %q", got)
 	}
 }

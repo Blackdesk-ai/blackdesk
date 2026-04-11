@@ -3,6 +3,7 @@ package tui
 import (
 	"blackdesk/internal/domain"
 	"blackdesk/internal/ui"
+	"fmt"
 )
 
 func formatCompactIntDash(v int64) string {
@@ -82,7 +83,11 @@ func impliedEPSGrowthBandText(q domain.QuoteSnapshot, f domain.FundamentalsSnaps
 		return "-"
 	}
 	if low == high {
-		return ui.FormatPercent(low * 100)
+		return formatImpliedGrowthPercent(low * 100)
 	}
-	return ui.FormatPercent(low*100) + "-" + ui.FormatPercent(high*100)
+	return formatImpliedGrowthPercent(low*100) + "-" + formatImpliedGrowthPercent(high*100)
+}
+
+func formatImpliedGrowthPercent(v float64) string {
+	return fmt.Sprintf("%.0f%%", v)
 }
