@@ -10,11 +10,13 @@ func quoteFundamentalsValuationRows(quote domain.QuoteSnapshot, f domain.Fundame
 	if marketCap == 0 {
 		marketCap = quote.MarketCap
 	}
+	earningsYield, earningsYieldOK := earningsYieldValue(quote, f)
 	return []marketTableRow{
 		{name: "Market cap", price: ui.FormatCompactInt(marketCap), chg: "", move: 0, styled: false},
 		{name: "Ent value", price: formatCompactIntDash(f.EnterpriseValue), chg: "", move: 0, styled: false},
 		{name: "Trailing PE", price: formatMetricFloat(f.TrailingPE), chg: "", move: 0, styled: false},
 		{name: "Forward PE", price: formatMetricFloat(f.ForwardPE), chg: "", move: 0, styled: false},
+		{name: "Earnings Yield", price: formatOptionalPercent(earningsYield, earningsYieldOK), chg: "", move: earningsYield, styled: earningsYieldOK && earningsYield != 0},
 		{name: "PEG", price: formatMetricFloat(pegRatioValue(quote, f)), chg: "", move: 0, styled: false},
 		{name: "P/B", price: formatMetricFloat(f.PriceToBook), chg: "", move: 0, styled: false},
 		{name: "P/S", price: formatMetricFloat(f.PriceToSales), chg: "", move: 0, styled: false},
@@ -54,10 +56,7 @@ func quoteFundamentalsFinancialRows(f domain.FundamentalsSnapshot) []marketTable
 }
 
 func splitFinancialFundamentalsRows(rows []marketTableRow) ([]marketTableRow, []marketTableRow) {
-	if len(rows) <= 4 {
-		return rows, nil
-	}
-	return rows[:4], rows[4:]
+	return splitFundamentalsRows(rows)
 }
 
 func splitFundamentalsRows(rows []marketTableRow) ([]marketTableRow, []marketTableRow) {

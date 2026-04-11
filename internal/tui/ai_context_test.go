@@ -151,6 +151,7 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 		TrailingPE:        31.2,
 		ForwardPE:         28.4,
 		PEGRatio:          2.14,
+		DebtToEquity:      1.45,
 		GrossMargins:      0.46,
 		ProfitMargins:     0.26,
 		OperatingMargins:  0.31,
@@ -210,6 +211,9 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 	if !strings.Contains(req.ContextPayload, "\"GrossMargins\": 0.46") {
 		t.Fatal("expected margin fields to remain in quote insight context")
 	}
+	if !strings.Contains(req.ContextPayload, "\"DebtToEquity\": 1.45") {
+		t.Fatal("expected debt/equity to remain normalized in quote insight context")
+	}
 	if !strings.Contains(req.ContextPayload, "\"Label\": \"Total Revenue\"") {
 		t.Fatal("expected financial statement rows to remain in quote insight context")
 	}
@@ -221,6 +225,9 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 	}
 	if !strings.Contains(req.ContextPayload, "\"quote_stats\"") || !strings.Contains(req.ContextPayload, "\"Growth Est.\": \"13%-15%\"") {
 		t.Fatal("expected quote insight payload to include derived growth estimate in quote_stats")
+	}
+	if !strings.Contains(req.ContextPayload, "\"Earnings Yield\": \"3.21%\"") {
+		t.Fatal("expected quote insight payload to include derived earnings yield in quote_stats")
 	}
 }
 

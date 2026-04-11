@@ -92,7 +92,7 @@ func TestQuoteTabNavigationSwitchesCenterBetweenChartAndFundamentals(t *testing.
 		EarningsGrowth:          0.104,
 		CurrentRatio:            0.99,
 		QuickRatio:              0.83,
-		DebtToEquity:            167.0,
+		DebtToEquity:            1.67,
 		RecommendationMean:      1.9,
 		RecommendationKey:       "buy",
 		AnalystOpinions:         39,
@@ -312,6 +312,46 @@ func TestRenderQuoteFundamentalsGridStacksCardsWhenWidthIsNarrow(t *testing.T) {
 	}
 	if !strings.Contains(view, "Op cash flow") || !strings.Contains(view, "Free cash flow") {
 		t.Fatal("expected narrow stacked layout to keep lower financial rows visible")
+	}
+}
+
+func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t *testing.T) {
+	quote := domain.QuoteSnapshot{Symbol: "AAPL", Price: 210}
+	fundamentals := domain.FundamentalsSnapshot{
+		TrailingPE:              31.2,
+		ForwardPE:               28.4,
+		PEGRatio:                2.14,
+		PriceToBook:             45.1,
+		PriceToSales:            8.10,
+		EnterpriseToEBITDA:      24.5,
+		DividendYield:           0.0048,
+		GrossMargins:            0.462,
+		ProfitMargins:           0.262,
+		OperatingMargins:        0.311,
+		ReturnOnAssets:          0.284,
+		ReturnOnEquity:          1.55,
+		ReturnOnInvestedCapital: 0.421,
+		RevenueGrowth:           0.061,
+		EarningsGrowth:          0.104,
+		Revenue:                 391_000_000_000,
+		EBITDA:                  134_000_000_000,
+		OperatingCashflow:       122_000_000_000,
+		FreeCashflow:            99_000_000_000,
+		TotalCash:               67_000_000_000,
+		TotalDebt:               110_000_000_000,
+		CurrentRatio:            0.99,
+		RevenuePerShare:         25.1,
+	}
+
+	view := renderQuoteFundamentalsGrid(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), quote, fundamentals, 100, 60)
+	if strings.Count(view, "FINANCIALS") != 1 {
+		t.Fatal("expected wide fundamentals layout to render a single financials card")
+	}
+	if strings.Count(view, "Name") != 5 || strings.Count(view, "Value") != 5 {
+		t.Fatal("expected wide fundamentals layout to render valuation plus two split cards")
+	}
+	if !strings.Contains(view, "Earnings Yield") {
+		t.Fatal("expected valuation card to include earnings yield")
 	}
 }
 

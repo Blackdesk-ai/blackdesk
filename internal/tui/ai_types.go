@@ -9,10 +9,20 @@ import (
 )
 
 const (
-	aiMaxPromptChars  = 32000
-	aiMaxContextChars = 12000
-	aiMaxHistoryChars = 18000
-	aiMaxMessageChars = 4000
+	aiMaxPromptChars          = 64000
+	aiMaxContextChars         = 24000
+	aiMaxHistoryChars         = 36000
+	aiMaxMessageChars         = 8000
+	aiContextNewsItems        = 20
+	aiContextMarketNewsItems  = 24
+	aiContextSearchResults    = 20
+	aiQuoteInsightNewsItems   = 20
+	aiQuoteInsightMarketItems = 16
+	aiMarketOpinionNewsItems  = 16
+	aiNewsTitleChars          = 320
+	aiNewsSummaryChars        = 560
+	aiNewsPublisherChars      = 96
+	aiNewsURLChars            = 320
 )
 
 //go:embed prompts/ai_system.md

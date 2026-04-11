@@ -154,7 +154,7 @@ func TestViewRendersTabSpecificContent(t *testing.T) {
 		EarningsGrowth:          0.104,
 		CurrentRatio:            0.99,
 		QuickRatio:              0.83,
-		DebtToEquity:            167.0,
+		DebtToEquity:            1.67,
 		RecommendationMean:      1.9,
 		RecommendationKey:       "buy",
 		AnalystOpinions:         39,

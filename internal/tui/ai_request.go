@@ -88,10 +88,10 @@ func compactAINews(items []domain.NewsItem, limit int) []domain.NewsItem {
 	}
 	out := make([]domain.NewsItem, 0, len(items))
 	for _, item := range items {
-		item.Title = truncateRunes(strings.TrimSpace(item.Title), 160)
-		item.Summary = truncateRunes(strings.TrimSpace(item.Summary), 280)
-		item.Publisher = truncateRunes(strings.TrimSpace(item.Publisher), 48)
-		item.URL = truncateRunes(strings.TrimSpace(item.URL), 240)
+		item.Title = truncateRunes(strings.TrimSpace(item.Title), aiNewsTitleChars)
+		item.Summary = truncateRunes(strings.TrimSpace(item.Summary), aiNewsSummaryChars)
+		item.Publisher = truncateRunes(strings.TrimSpace(item.Publisher), aiNewsPublisherChars)
+		item.URL = truncateRunes(strings.TrimSpace(item.URL), aiNewsURLChars)
 		out = append(out, item)
 	}
 	return out
