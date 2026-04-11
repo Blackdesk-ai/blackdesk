@@ -207,14 +207,14 @@ func normalizeFundamentals(symbol string, resp quoteSummaryResponse) (domain.Fun
 		CurrentRatio:        r.FinancialData.CurrentRatio.Raw,
 		QuickRatio:          r.FinancialData.QuickRatio.Raw,
 		// Yahoo returns debtToEquity on a percent-like base (e.g. 145 for 1.45x).
-		DebtToEquity:        r.FinancialData.DebtToEquity.Raw / 100,
-		RecommendationMean:  r.FinancialData.RecommendationMean.Raw,
-		RecommendationKey:   r.FinancialData.RecommendationKey,
-		AnalystOpinions:     int(r.FinancialData.NumberOfAnalystOpinions.Raw),
-		TargetLowPrice:      r.FinancialData.TargetLowPrice.Raw,
-		TargetMeanPrice:     r.FinancialData.TargetMeanPrice.Raw,
-		TargetHighPrice:     r.FinancialData.TargetHighPrice.Raw,
-		Freshness:           domain.FreshnessLive,
+		DebtToEquity:       r.FinancialData.DebtToEquity.Raw / 100,
+		RecommendationMean: r.FinancialData.RecommendationMean.Raw,
+		RecommendationKey:  r.FinancialData.RecommendationKey,
+		AnalystOpinions:    int(r.FinancialData.NumberOfAnalystOpinions.Raw),
+		TargetLowPrice:     r.FinancialData.TargetLowPrice.Raw,
+		TargetMeanPrice:    r.FinancialData.TargetMeanPrice.Raw,
+		TargetHighPrice:    r.FinancialData.TargetHighPrice.Raw,
+		Freshness:          domain.FreshnessLive,
 	}, nil
 }
 
