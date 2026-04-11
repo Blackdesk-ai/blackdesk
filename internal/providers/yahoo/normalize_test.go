@@ -317,6 +317,9 @@ func TestNormalizeFundamentals(t *testing.T) {
 	if f.Revenue != 400 || f.FreeCashflow != 95 || f.TotalDebt != 98 {
 		t.Fatalf("unexpected financial data %+v", f)
 	}
+	if f.DebtToEquity != 1.45 {
+		t.Fatalf("unexpected debt/equity %+v", f)
+	}
 }
 
 func TestNormalizeFundamentalsDerivesMissingValuationRatios(t *testing.T) {
