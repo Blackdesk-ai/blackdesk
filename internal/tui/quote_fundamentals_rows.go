@@ -23,7 +23,7 @@ func quoteFundamentalsValuationRows(quote domain.QuoteSnapshot, f domain.Fundame
 	}
 }
 
-func quoteFundamentalsProfitabilityRows(f domain.FundamentalsSnapshot) []marketTableRow {
+func quoteFundamentalsProfitabilityRows(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) []marketTableRow {
 	return []marketTableRow{
 		{name: "Gross margin", price: percentDash(f.GrossMargins), chg: "", move: 0, styled: false},
 		{name: "Operating", price: percentDash(f.OperatingMargins), chg: "", move: 0, styled: false},
@@ -33,6 +33,7 @@ func quoteFundamentalsProfitabilityRows(f domain.FundamentalsSnapshot) []marketT
 		{name: "ROA", price: percentDash(f.ReturnOnAssets), chg: "", move: 0, styled: false},
 		{name: "Rev growth", price: percentDash(f.RevenueGrowth), chg: "", move: 0, styled: false},
 		{name: "EPS growth", price: percentDash(f.EarningsGrowth), chg: "", move: 0, styled: false},
+		{name: "Fwd. EPS%", price: impliedEPSGrowthBandText(q, f), chg: "", move: 0, styled: false},
 	}
 }
 

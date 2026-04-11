@@ -25,9 +25,10 @@ func renderInsiderSummaryCard(section, label, muted lipgloss.Style, width int, s
 		b.WriteString(muted.Render("Insider activity unavailable for the active symbol"))
 		return b.String()
 	}
-	b.WriteString(muted.Render(renderFundamentalsTableHeader(width)) + "\n")
+	labelWidth, valueWidth := fundamentalsTableWidths(rows, width, 18)
+	b.WriteString(muted.Render(renderFundamentalsTableHeader(labelWidth, valueWidth)) + "\n")
 	for _, row := range rows {
-		b.WriteString(renderQuoteFundamentalsTableRow(row, width, label) + "\n")
+		b.WriteString(renderQuoteFundamentalsTableRow(row, labelWidth, valueWidth, label) + "\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
 }

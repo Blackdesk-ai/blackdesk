@@ -198,6 +198,12 @@ func TestViewRendersTabSpecificContent(t *testing.T) {
 	if !strings.Contains(ansi.Strip(quoteView), "PROFILE (p)") {
 		t.Fatal("expected quote bottom profile panel key hint")
 	}
+	if !strings.Contains(ansi.Strip(quoteView), "Technology") {
+		t.Fatal("expected sector value in profile header")
+	}
+	if strings.Contains(ansi.Strip(quoteView), "Sector Technology") {
+		t.Fatal("expected sector label removed from quote right sidebar")
+	}
 	if strings.Contains(quoteView, "Capital Deck") || strings.Contains(quoteView, "Signal Engine") || strings.Contains(quoteView, "News Wire") {
 		t.Fatal("expected removed dedicated tabs to stay absent")
 	}

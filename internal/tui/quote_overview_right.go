@@ -22,7 +22,6 @@ func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, 
 	b.WriteString(section.Render("ANALYSTS") + "\n\n")
 	b.WriteString(fmt.Sprintf("%s %s %s\n", label.Render("Target"), analystTargetLine(m.fundamentals), colorizeRecommendationBadge(m.fundamentals.RecommendationKey)))
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Upside"), upsideLine))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Sector"), valueOrDash(m.fundamentals.Sector)))
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Fwd PE"), formatMetricFloat(m.fundamentals.ForwardPE)))
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("PEG"), formatMetricFloat(pegRatioValue(m.quote, m.fundamentals))))
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("EPS TTM"), formatMetricFloat(m.fundamentals.EPS)))

@@ -88,25 +88,21 @@ func renderQuoteTechnicalsCard(section, label, muted lipgloss.Style, width int, 
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func renderFundamentalsTableHeader(width int) string {
-	labelWidth := clamp(width/2, 8, 16)
-	valueWidth := max(8, width-labelWidth-1)
+func renderFundamentalsTableHeader(labelWidth, valueWidth int) string {
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		lipgloss.NewStyle().Width(labelWidth).Render("Name"),
-		" ",
-		lipgloss.NewStyle().Width(valueWidth).Render("Value"),
+		lipgloss.NewStyle().Width(labelWidth).Render(ansi.Truncate("Name", labelWidth, "...")),
+		strings.Repeat(" ", fundamentalsColumnGap),
+		lipgloss.NewStyle().Width(valueWidth).Render(ansi.Truncate("Value", valueWidth, "...")),
 	)
 }
 
-func renderQuoteFundamentalsTableRow(row marketTableRow, width int, label lipgloss.Style) string {
-	labelWidth := clamp(width/2, 8, 16)
-	valueWidth := max(8, width-labelWidth-1)
-	value := colorizeMarketPrice(row.price, row.move, row.styled)
+func renderQuoteFundamentalsTableRow(row marketTableRow, labelWidth, valueWidth int, label lipgloss.Style) string {
+	value := ansi.Truncate(colorizeMarketPrice(row.price, row.move, row.styled), valueWidth, "...")
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		lipgloss.NewStyle().Width(labelWidth).Render(label.Render(row.name)),
-		" ",
+		lipgloss.NewStyle().Width(labelWidth).Render(label.Render(ansi.Truncate(row.name, labelWidth, "..."))),
+		strings.Repeat(" ", fundamentalsColumnGap),
 		lipgloss.NewStyle().Width(valueWidth).Render(value),
 	)
 }
