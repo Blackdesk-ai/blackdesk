@@ -49,6 +49,23 @@ func pegRatioValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) float6
 	return q.TrailingPEGRatio
 }
 
+func earningsYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	if f.TrailingPE != 0 {
+		return 1 / f.TrailingPE, true
+	}
+	if q.Price <= 0 {
+		return 0, false
+	}
+	eps := f.TrailingEPS
+	if eps == 0 {
+		eps = f.EPS
+	}
+	if eps == 0 {
+		return 0, false
+	}
+	return eps / q.Price, true
+}
+
 func impliedEPSGrowthBand(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, float64, bool) {
 	peg := pegRatioValue(q, f)
 	if peg <= 0 {

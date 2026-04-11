@@ -45,6 +45,9 @@ func (m Model) aiQuoteStats() map[string]string {
 		}
 		stats[strings.Join(parts[:len(parts)-1], " ")] = parts[len(parts)-1]
 	}
+	if earningsYield, ok := earningsYieldValue(m.quote, m.fundamentals); ok {
+		stats["Earnings Yield"] = formatOptionalPercent(earningsYield, true)
+	}
 	if growthEst := impliedEPSGrowthBandText(m.quote, m.fundamentals); growthEst != "-" {
 		stats["Growth Est."] = growthEst
 	}

@@ -13,20 +13,17 @@ const fundamentalsColumnGap = 2
 
 func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, width, height int) string {
 	gap := 2
-	financialTop, financialBottom := splitFinancialFundamentalsRows(quoteFundamentalsFinancialRows(fundamentals))
+	financialLeft, financialRight := splitFinancialFundamentalsRows(quoteFundamentalsFinancialRows(fundamentals))
 	profitabilityLeft, profitabilityRight := splitFundamentalsRows(quoteFundamentalsProfitabilityRows(quote, fundamentals))
-	leftDesired, rightDesired := fundamentalsGridDesiredWidths(quote, fundamentals, financialTop, profitabilityLeft, profitabilityRight, financialBottom)
+	leftDesired, rightDesired := fundamentalsGridDesiredWidths(quote, fundamentals, profitabilityLeft, profitabilityRight, financialLeft, financialRight)
 	if width < 60 {
 		return renderQuoteFundamentalsStacked(section, label, muted, quote, fundamentals, width, height)
 	}
 	leftWidth, rightWidth, gap := fundamentalsGridLayout(width, gap, leftDesired, rightDesired)
-	leftCol := strings.Join([]string{
-		renderQuoteFundamentalsCard(section, label, muted, leftWidth, quoteFundamentalsValuationRows(quote, fundamentals), "VALUATION"),
-		renderQuoteFundamentalsCard(section, label, muted, leftWidth, financialTop, "FINANCIALS"),
-	}, "\n\n")
+	leftCol := renderQuoteFundamentalsCard(section, label, muted, leftWidth, quoteFundamentalsValuationRows(quote, fundamentals), "VALUATION")
 	rightCol := strings.Join([]string{
 		renderQuoteFundamentalsSplitCard(section, label, muted, rightWidth, profitabilityLeft, profitabilityRight, "PROFITABILITY"),
-		renderQuoteFundamentalsCard(section, label, muted, rightWidth, financialBottom, "FINANCIALS"),
+		renderQuoteFundamentalsSplitCard(section, label, muted, rightWidth, financialLeft, financialRight, "FINANCIALS"),
 	}, "\n\n")
 	grid := lipgloss.JoinHorizontal(
 		lipgloss.Top,
@@ -86,14 +83,11 @@ func renderQuoteFundamentalsTableBlock(muted, label lipgloss.Style, width int, r
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func fundamentalsGridDesiredWidths(quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, financialTop, profitabilityLeft, profitabilityRight, financialBottom []marketTableRow) (int, int) {
-	leftDesired := max(
-		fundamentalsTableDesiredWidth(quoteFundamentalsValuationRows(quote, fundamentals), 16),
-		fundamentalsTableDesiredWidth(financialTop, 16),
-	)
+func fundamentalsGridDesiredWidths(quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, profitabilityLeft, profitabilityRight, financialLeft, financialRight []marketTableRow) (int, int) {
+	leftDesired := fundamentalsTableDesiredWidth(quoteFundamentalsValuationRows(quote, fundamentals), 16)
 	rightDesired := max(
 		fundamentalsSplitDesiredWidth(profitabilityLeft, profitabilityRight, 3),
-		fundamentalsTableDesiredWidth(financialBottom, 16),
+		fundamentalsSplitDesiredWidth(financialLeft, financialRight, 3),
 	)
 	return leftDesired, rightDesired
 }

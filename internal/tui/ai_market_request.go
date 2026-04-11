@@ -29,7 +29,7 @@ func (m Model) buildAIMarketOpinionRequest(histories map[string]domain.PriceSeri
 		AIModel:        strings.TrimSpace(m.config.AIModel),
 		ActiveTab:      "global market board",
 		Markets:        m.aiMarketSections(),
-		MarketNews:     compactAINews(append([]domain.NewsItem(nil), m.marketNews...), 8),
+		MarketNews:     compactAINews(append([]domain.NewsItem(nil), m.marketNews...), aiMarketOpinionNewsItems),
 		ContextGuide: map[string]string{
 			"generated_at":    fullGuide["generated_at"],
 			"market_provider": fullGuide["market_provider"],

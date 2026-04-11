@@ -26,3 +26,23 @@ func TestImpliedEPSGrowthBandTextFallsBackToQuoteTrailingPEG(t *testing.T) {
 		t.Fatalf("expected quote trailing peg fallback band, got %q", got)
 	}
 }
+
+func TestEarningsYieldValueUsesTrailingPE(t *testing.T) {
+	got, ok := earningsYieldValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{TrailingPE: 31.2})
+	if !ok {
+		t.Fatal("expected earnings yield from trailing pe")
+	}
+	if got < 0.0320 || got > 0.0321 {
+		t.Fatalf("expected earnings yield near 3.21%%, got %.6f", got)
+	}
+}
+
+func TestEarningsYieldValueFallsBackToEPSOverPrice(t *testing.T) {
+	got, ok := earningsYieldValue(domain.QuoteSnapshot{Price: 200}, domain.FundamentalsSnapshot{TrailingEPS: 8})
+	if !ok {
+		t.Fatal("expected earnings yield fallback from eps and price")
+	}
+	if got != 0.04 {
+		t.Fatalf("expected 4%% earnings yield, got %.6f", got)
+	}
+}

@@ -52,8 +52,8 @@ func (m Model) buildAIQuoteInsightRequest(symbol string) (RequestEnvelope, error
 		TechnicalValues:   m.aiTechnicalValues(),
 		Technicals:        m.aiTechnicalSections(),
 		TechnicalLookup:   m.aiTechnicalLookup(),
-		MarketNews:        compactAINews(append([]domain.NewsItem(nil), m.marketNews...), 8),
-		News:              compactAINews(append([]domain.NewsItem(nil), m.news...), 10),
+		MarketNews:        compactAINews(append([]domain.NewsItem(nil), m.marketNews...), aiQuoteInsightMarketItems),
+		News:              compactAINews(append([]domain.NewsItem(nil), m.news...), aiQuoteInsightNewsItems),
 		ContextGuide: map[string]string{
 			"generated_at":       fullGuide["generated_at"],
 			"market_provider":    fullGuide["market_provider"],
@@ -68,7 +68,7 @@ func (m Model) buildAIQuoteInsightRequest(symbol string) (RequestEnvelope, error
 			"fundamentals":       "Full normalized fundamentals snapshot for the active symbol, including fields that may not currently be visible in the Quote sidebar UI, such as ROIC and invested capital when available.",
 			"statements":         "Normalized financial statement bundle for the active symbol. Use annual and quarterly income, balance-sheet, and cash-flow sections for revenue, margins, leverage, liquidity, and cash generation confirmation.",
 			"statement_insights": "Derived high-signal statement metrics computed from the statement bundle. Use these first for quick read-through of growth, cash generation, leverage, and liquidity.",
-			"quote_stats":        "Compact quote stat labels rendered in the quote view for the active symbol. `Growth Est.` is the market-implied 5-year EPS CAGR band reverse-engineered from PE and PEG. Treat it as expectations already embedded in the current price, not as a Blackdesk forecast.",
+			"quote_stats":        "Compact quote stat labels rendered in the quote view for the active symbol. This may include derived fields such as `Earnings Yield` and `Growth Est.`. `Earnings Yield` is the inverse of trailing PE when available, with a fallback to EPS divided by price. `Growth Est.` is the market-implied 5-year EPS CAGR band reverse-engineered from PE and PEG. Treat both as market-implied context rather than a Blackdesk forecast.",
 			"technicals":         "Technical indicator sections for the active symbol. Use these for trend, momentum, volatility, and volume confirmation.",
 			"technical_lookup":   fullGuide["technical_lookup"],
 			"technical_values":   fullGuide["technical_values"],
@@ -102,6 +102,7 @@ func buildAIQuoteInsightSystemPrompt(payload string) string {
 	b.WriteString("The stance must be explicit and easy to scan.\n")
 	b.WriteString("Base the call on the combined evidence from price action, technicals, fundamentals, financial statements, valuation, analyst target context, and recent company news.\n")
 	b.WriteString("Use `statement_insights` first for the fast read, then verify with the full fundamentals object and statement bundle when needed.\n")
+	b.WriteString("When `quote_stats` includes `Earnings Yield`, treat it as a derived valuation shortcut built from trailing PE or EPS divided by price.\n")
 	b.WriteString("When `quote_stats` includes `Growth Est.`, treat it as the market-implied 5-year EPS growth band extracted from PE and PEG, which reflects expectations already priced into the stock rather than Blackdesk's own forecast.\n")
 	b.WriteString("If the signals conflict, state the main conflict briefly after the stance.\n")
 	b.WriteString("Return exactly one very short paragraph of one or two tight sentences and about 140 to 170 characters.\n")
