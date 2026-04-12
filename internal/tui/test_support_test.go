@@ -73,6 +73,10 @@ func (testProvider) GetFundamentals(context.Context, string) (domain.Fundamental
 	return domain.FundamentalsSnapshot{}, nil
 }
 
+func (testProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
+	return sampleEarningsSnapshot(), nil
+}
+
 func (testProvider) SearchSymbols(context.Context, string) ([]domain.SymbolRef, error) {
 	return nil, nil
 }
@@ -177,6 +181,10 @@ func (p *countingHistoryProvider) GetFundamentals(context.Context, string) (doma
 	return domain.FundamentalsSnapshot{}, nil
 }
 
+func (p *countingHistoryProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
+	return sampleEarningsSnapshot(), nil
+}
+
 func (p *countingHistoryProvider) SearchSymbols(context.Context, string) ([]domain.SymbolRef, error) {
 	return nil, nil
 }
@@ -243,6 +251,10 @@ func (p *aiPrepProvider) GetFundamentals(context.Context, string) (domain.Fundam
 	return domain.FundamentalsSnapshot{Symbol: "AAPL", Description: "Apple", MarketCap: 1}, nil
 }
 
+func (p *aiPrepProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
+	return sampleEarningsSnapshot(), nil
+}
+
 func (p *aiPrepProvider) SearchSymbols(context.Context, string) ([]domain.SymbolRef, error) {
 	return nil, nil
 }
@@ -257,6 +269,54 @@ func (insidersProvider) Capabilities() domain.ProviderCapabilities {
 
 func (researchProvider) Capabilities() domain.ProviderCapabilities {
 	return domain.ProviderCapabilities{Statements: true, Insiders: true}
+}
+
+func sampleEarningsSnapshot() domain.EarningsSnapshot {
+	return domain.EarningsSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		Items: []domain.EarningsItem{
+			{
+				Kind:           "upcoming",
+				Title:          "Next earnings",
+				WindowStart:    time.Date(2026, 5, 2, 0, 0, 0, 0, time.UTC),
+				WindowEnd:      time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
+				EPSEstimate:    1.62,
+				EPSLow:         1.55,
+				EPSHigh:        1.71,
+				RevenueAverage: 95_400_000_000,
+				RevenueLow:     94_100_000_000,
+				RevenueHigh:    97_800_000_000,
+			},
+			{
+				Kind:            "reported",
+				Title:           "Reported quarter",
+				QuarterEnd:      time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC),
+				EPSEstimate:     1.48,
+				EPSActual:       1.52,
+				EPSDifference:   0.04,
+				SurprisePercent: 0.027,
+			},
+			{
+				Kind:            "reported",
+				Title:           "Reported quarter",
+				QuarterEnd:      time.Date(2025, 9, 30, 0, 0, 0, 0, time.UTC),
+				EPSEstimate:     1.41,
+				EPSActual:       1.37,
+				EPSDifference:   -0.04,
+				SurprisePercent: -0.028,
+			},
+		},
+		Estimates: []domain.EarningsEstimate{
+			{Period: "0q", EPSAverage: 1.62, RevenueAverage: 95_400_000_000},
+			{Period: "+1q", EPSAverage: 1.77, RevenueAverage: 102_300_000_000},
+			{Period: "0y", EPSAverage: 7.08, RevenueAverage: 403_000_000_000},
+			{Period: "+1y", EPSAverage: 7.44, RevenueAverage: 420_000_000_000},
+		},
+		Freshness: domain.FreshnessLive,
+		Provider:  "test",
+		UpdatedAt: time.Now(),
+	}
 }
 
 func (statementsProvider) GetStatement(_ context.Context, _ string, kind domain.StatementKind, freq domain.StatementFrequency) (domain.FinancialStatement, error) {

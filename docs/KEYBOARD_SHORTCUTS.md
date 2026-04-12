@@ -16,6 +16,16 @@
 - `Enter`: open selected function or symbol
 - `Esc`: close command palette
 
+Common Quote functions in the palette:
+
+- `Chart`
+- `Fundamentals`
+- `Technicals`
+- `Statements`
+- `Insiders`
+- `Filings`
+- `Earnings`
+
 ## Search
 
 - `Enter`: open typed ticker or selected result

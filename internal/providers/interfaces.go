@@ -39,6 +39,10 @@ type InsidersProvider interface {
 	GetInsiders(context.Context, string) (domain.InsiderSnapshot, error)
 }
 
+type EarningsProvider interface {
+	GetEarnings(context.Context, string) (domain.EarningsSnapshot, error)
+}
+
 type SymbolSearchProvider interface {
 	SearchSymbols(context.Context, string) ([]domain.SymbolRef, error)
 }
@@ -83,6 +87,14 @@ func (r *Registry) Insiders() (InsidersProvider, bool) {
 		return nil, false
 	}
 	p, ok := r.active.(InsidersProvider)
+	return p, ok
+}
+
+func (r *Registry) Earnings() (EarningsProvider, bool) {
+	if r == nil || r.active == nil {
+		return nil, false
+	}
+	p, ok := r.active.(EarningsProvider)
 	return p, ok
 }
 

@@ -41,3 +41,16 @@ func (m Model) handleFilingsLoaded(msg filingsLoadedMsg) (Model, tea.Cmd) {
 	m.errFilings = msg.err
 	return m, nil
 }
+
+func (m Model) handleEarningsLoaded(msg earningsLoadedMsg) (Model, tea.Cmd) {
+	m.earnings = msg.data
+	if msg.err == nil {
+		m.cacheEarnings(msg.data)
+		items := m.earningsItemsForSymbol(msg.data.Symbol)
+		if len(items) == 0 || m.earningsSel >= len(items) {
+			m.earningsSel = 0
+		}
+	}
+	m.errEarnings = msg.err
+	return m, nil
+}

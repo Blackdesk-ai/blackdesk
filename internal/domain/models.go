@@ -293,6 +293,49 @@ type FilingDocument struct {
 	RetrievedAt time.Time
 }
 
+type EarningsEstimate struct {
+	Period          string
+	EPSAverage      float64
+	EPSLow          float64
+	EPSHigh         float64
+	EPSYearAgo      float64
+	EPSGrowth       float64
+	RevenueAverage  float64
+	RevenueLow      float64
+	RevenueHigh     float64
+	RevenueYearAgo  float64
+	RevenueGrowth   float64
+	AnalystCount    int
+	RevenueAnalysts int
+}
+
+type EarningsItem struct {
+	Kind            string
+	Title           string
+	QuarterEnd      time.Time
+	WindowStart     time.Time
+	WindowEnd       time.Time
+	EPSEstimate     float64
+	EPSActual       float64
+	EPSDifference   float64
+	SurprisePercent float64
+	EPSLow          float64
+	EPSHigh         float64
+	RevenueAverage  float64
+	RevenueLow      float64
+	RevenueHigh     float64
+}
+
+type EarningsSnapshot struct {
+	Symbol      string
+	CompanyName string
+	Items       []EarningsItem
+	Estimates   []EarningsEstimate
+	Freshness   string
+	Provider    string
+	UpdatedAt   time.Time
+}
+
 type InsiderTransaction struct {
 	Insider   string
 	Relation  string

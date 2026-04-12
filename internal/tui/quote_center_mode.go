@@ -9,5 +9,6 @@ const (
 	quoteCenterStatements
 	quoteCenterInsiders
 	quoteCenterFilings
+	quoteCenterEarnings
 	quoteCenterNews
 )

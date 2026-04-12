@@ -46,6 +46,9 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	if plan.LoadFilings {
 		cmds = append(cmds, m.loadFilingsCmd(symbol))
 	}
+	if plan.LoadEarnings {
+		cmds = append(cmds, m.loadEarningsCmd(symbol))
+	}
 	cmds = append(cmds, m.loadMarketRiskCmd())
 	return tea.Batch(cmds...)
 }
@@ -93,5 +96,20 @@ func (m Model) loadFilingsCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
 		data, err := m.services.GetFilings(m.ctx, symbol)
 		return filingsLoadedMsg{data: data, err: err}
+	}
+}
+
+func (m Model) loadEarningsCmd(symbol string) tea.Cmd {
+	if m.services == nil || !m.services.HasEarnings() {
+		return nil
+	}
+	if data, ok := m.cachedEarnings(symbol); ok {
+		return func() tea.Msg {
+			return earningsLoadedMsg{data: data, err: nil}
+		}
+	}
+	return func() tea.Msg {
+		data, err := m.services.GetEarnings(m.ctx, symbol)
+		return earningsLoadedMsg{data: data, err: err}
 	}
 }

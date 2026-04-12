@@ -112,6 +112,14 @@ func (p *Provider) GetInsiders(ctx context.Context, symbol string) (domain.Insid
 	return insidersProvider.GetInsiders(ctx, symbol)
 }
 
+func (p *Provider) GetEarnings(ctx context.Context, symbol string) (domain.EarningsSnapshot, error) {
+	earningsProvider, ok := p.base.(providers.EarningsProvider)
+	if !ok {
+		return domain.EarningsSnapshot{}, fmt.Errorf("earnings provider unavailable")
+	}
+	return earningsProvider.GetEarnings(ctx, symbol)
+}
+
 func (p *Provider) Screeners() []domain.ScreenerDefinition {
 	screenerProvider, ok := p.base.(providers.ScreenerProvider)
 	if !ok {

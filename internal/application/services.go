@@ -141,6 +141,25 @@ func (s *Services) GetInsiders(ctx context.Context, symbol string) (domain.Insid
 	return provider.GetInsiders(ctx, symbol)
 }
 
+func (s *Services) HasEarnings() bool {
+	if s == nil || s.registry == nil {
+		return false
+	}
+	_, ok := s.registry.Earnings()
+	return ok
+}
+
+func (s *Services) GetEarnings(ctx context.Context, symbol string) (domain.EarningsSnapshot, error) {
+	if s == nil || s.registry == nil {
+		return domain.EarningsSnapshot{}, errServiceUnavailable
+	}
+	provider, _ := s.registry.Earnings()
+	if provider == nil {
+		return domain.EarningsSnapshot{}, errServiceUnavailable
+	}
+	return provider.GetEarnings(ctx, symbol)
+}
+
 func (s *Services) HasScreeners() bool {
 	if s == nil || s.registry == nil {
 		return false

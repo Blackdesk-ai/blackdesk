@@ -54,7 +54,7 @@ func (m Model) View() string {
 	mainTotalHeight := max(12, int(float64(availableH)*0.68))
 	bottomTotalHeight := max(4, availableH-mainTotalHeight)
 	fullHeightQuoteCenter := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterStatements || m.quoteCenterMode == quoteCenterInsiders)
-	fullscreenQuotePage := m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings
+	fullscreenQuotePage := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterFilings || m.quoteCenterMode == quoteCenterEarnings)
 	fullHeightNews := m.tabIdx == tabNews || m.tabIdx == tabScreener
 	if m.commandPaletteOpen || m.tabIdx == tabAI || fullscreenQuotePage || fullHeightQuoteCenter || fullHeightNews {
 		mainTotalHeight = availableH
@@ -78,9 +78,8 @@ func (m Model) View() string {
 			m.renderCommandPalette(sectionStyle, labelStyle, muted, viewportWidth-frameX, mainHeight-2),
 		)
 	} else if fullscreenQuotePage {
-		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(
-			m.renderQuoteFilingsPage(headerStyle, sectionStyle, labelStyle, muted, pos, neg, viewportWidth-frameX, mainHeight-2),
-		)
+		page := m.renderQuoteFullscreenPage(headerStyle, sectionStyle, labelStyle, muted, pos, neg, viewportWidth-frameX, mainHeight-2)
+		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(page)
 	} else if m.tabIdx == tabAI && m.aiFullscreen && !m.aiPickerOpen {
 		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(
 			m.renderCenterPanel(headerStyle, sectionStyle, labelStyle, muted, pos, neg, viewportWidth-frameX, mainHeight-2),

@@ -258,6 +258,15 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 			Description: fmt.Sprintf("Open recent SEC filings for %s.", activeSymbol),
 		})
 	}
+	if m.services.HasEarnings() {
+		items = append(items, commandPaletteFunction{
+			ID:          "earnings",
+			Title:       "Earnings",
+			Aliases:     []string{"results", "eps", "earnings history", "earnings date"},
+			Category:    "Quote",
+			Description: fmt.Sprintf("Open earnings history and estimates for %s.", activeSymbol),
+		})
+	}
 	return items
 }
 
@@ -392,6 +401,11 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterFilings)
 		return m, tea.Batch(tabCmd, m.loadFilingsCmd(activeSymbol))
+	case "earnings":
+		m.closeCommandPalette("Opened earnings view")
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterEarnings)
+		return m, tea.Batch(tabCmd, m.loadEarningsCmd(activeSymbol))
 	default:
 		return m, nil
 	}

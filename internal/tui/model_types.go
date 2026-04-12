@@ -108,6 +108,7 @@ type Model struct {
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot
 	filingsCache      map[string]domain.FilingsSnapshot
+	earningsCache     map[string]domain.EarningsSnapshot
 	news              []domain.NewsItem
 	newsSelected      int
 	marketNews        []domain.NewsItem
@@ -133,6 +134,8 @@ type Model struct {
 	filings           domain.FilingsSnapshot
 	filingsSel        int
 	filingsFilter     filingsFilterMode
+	earnings          domain.EarningsSnapshot
+	earningsSel       int
 
 	errQuote            error
 	errHistory          error
@@ -143,5 +146,6 @@ type Model struct {
 	errStatement        error
 	errInsiders         error
 	errFilings          error
+	errEarnings         error
 	errScreener         error
 }

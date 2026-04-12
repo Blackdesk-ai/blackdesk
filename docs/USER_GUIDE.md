@@ -92,6 +92,16 @@ The command palette is the global launcher for functions and symbols.
 - `Enter` opens the selected function or symbol
 - `Esc` closes the palette
 
+Common Quote functions available from the palette include:
+
+- `Chart`
+- `Fundamentals`
+- `Technicals`
+- `Statements`
+- `Insiders`
+- `Filings`
+- `Earnings`
+
 Use `/` when you want the fastest path to a symbol.
 Use `Ctrl+K` when you want a broader launcher across workspaces and symbol results.
 
@@ -124,6 +134,7 @@ What it is for:
 - fundamentals and company context
 - technicals and trend state
 - statements and insiders
+- filings and earnings review from the command palette
 - symbol-specific news and AI insight
 
 Main controls:
@@ -142,6 +153,11 @@ Main controls:
 - `d` removes the selected symbol from the watchlist
 - `i` generates AI insight for the active symbol
 - `r` refreshes symbol data
+
+Additional Quote pages:
+
+- `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
+- `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
 
 ## News
 
