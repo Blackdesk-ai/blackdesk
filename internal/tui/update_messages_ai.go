@@ -10,6 +10,7 @@ import (
 
 func (m Model) handleAIResponseLoaded(msg aiResponseLoadedMsg) (Model, tea.Cmd) {
 	m.aiRunning = false
+	m.clearAIFilingRun()
 	m.aiDuration = msg.duration
 	m.aiErr = msg.err
 	m.aiOutput = strings.TrimSpace(msg.output)

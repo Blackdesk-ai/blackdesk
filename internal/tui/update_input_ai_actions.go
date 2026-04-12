@@ -25,6 +25,7 @@ func (m Model) handleAIWorkspaceActionKey(key string) (Model, tea.Cmd, bool) {
 		m.aiConversationSummary = ""
 		m.aiCompactedMessages = 0
 		m.aiLastRequestTruncation = aiRequestTruncation{}
+		m.clearAIFilingRun()
 		m.status = "Cleared AI response"
 		return m, nil, true
 	default:

@@ -258,3 +258,143 @@ func TestAIFilingAnalysisRequestReportsFilingTextTruncation(t *testing.T) {
 		t.Fatal("expected filing analysis request to track filing text truncation")
 	}
 }
+
+func TestSplitFilingTextChunksUsesOverlap(t *testing.T) {
+	text := "abcdefghijklmnopqrstuvwxyz"
+
+	chunks := splitFilingTextChunks(text, 10, 2)
+	if len(chunks) != 3 {
+		t.Fatalf("expected 3 chunks, got %d", len(chunks))
+	}
+	if chunks[0].Text != "abcdefghij" {
+		t.Fatalf("unexpected first chunk %q", chunks[0].Text)
+	}
+	if chunks[1].Text != "ijklmnopqr" {
+		t.Fatalf("unexpected second chunk %q", chunks[1].Text)
+	}
+	if chunks[2].Text != "qrstuvwxyz" {
+		t.Fatalf("unexpected third chunk %q", chunks[2].Text)
+	}
+	if chunks[1].Start != 8 || chunks[1].End != 18 {
+		t.Fatalf("unexpected second chunk bounds %+v", chunks[1])
+	}
+}
+
+func TestAIFilingChunkAnalysisRequestIncludesChunkMetadata(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	snapshot := domain.FilingsSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		CIK:         "0000320193",
+	}
+	doc := domain.FilingDocument{
+		Item: domain.FilingItem{
+			Form:                  "10-K",
+			PrimaryDocument:       "aapl-20240928x10k.htm",
+			PrimaryDocDescription: "Annual report",
+			URL:                   "https://www.sec.gov/Archives/example",
+		},
+		ContentType: "text/html",
+		Text:        "Revenue grew 12%. Services margin expanded. Risk factors include China concentration.",
+	}
+	chunk := filingTextChunk{Index: 2, Total: 4, Start: 200000, End: 400000, Text: "Chunk body text"}
+
+	req, err := model.buildAIFilingChunkAnalysisRequest("AAPL", snapshot, doc, chunk)
+	if err != nil {
+		t.Fatalf("buildAIFilingChunkAnalysisRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<selected_filing_chunk>") {
+		t.Fatal("expected selected filing chunk block in chunk analysis request")
+	}
+	if !strings.Contains(req.SystemPrompt, `"chunk_index": 2`) {
+		t.Fatal("expected chunk index metadata in chunk analysis request")
+	}
+	if !strings.Contains(req.SystemPrompt, "Chunk body text") {
+		t.Fatal("expected chunk text in chunk analysis request")
+	}
+	if strings.Contains(req.SystemPrompt, "<blackdesk_context_update>") {
+		t.Fatal("expected filing chunk analysis request to exclude broader app context")
+	}
+}
+
+func TestAIFilingSynthesisRequestIncludesChunkAnalyses(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	snapshot := domain.FilingsSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		CIK:         "0000320193",
+	}
+	doc := domain.FilingDocument{
+		Item: domain.FilingItem{
+			Form:                  "10-K",
+			PrimaryDocument:       "aapl-20240928x10k.htm",
+			PrimaryDocDescription: "Annual report",
+			URL:                   "https://www.sec.gov/Archives/example",
+		},
+		ContentType: "text/html",
+		Text:        "Source text",
+	}
+
+	req, err := model.buildAIFilingSynthesisRequest("AAPL", snapshot, doc, "Analyze the selected 10-K filing for AAPL.", []filingChunkAnalysisSummary{
+		{ChunkIndex: 1, ChunkRange: "chars 1-200000", Analysis: "Revenue grew 12%."},
+		{ChunkIndex: 2, ChunkRange: "chars 196001-400000", Analysis: "Risk factors highlighted China concentration."},
+	})
+	if err != nil {
+		t.Fatalf("buildAIFilingSynthesisRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<selected_filing_synthesis>") {
+		t.Fatal("expected filing synthesis block to be included")
+	}
+	if !strings.Contains(req.SystemPrompt, "Revenue grew 12%.") || !strings.Contains(req.SystemPrompt, "China concentration") {
+		t.Fatal("expected chunk analyses to be included in synthesis request")
+	}
+	if !strings.Contains(req.SystemPrompt, "What Was Filed") || !strings.Contains(req.SystemPrompt, "Bottom Line") {
+		t.Fatal("expected final filing report sections in synthesis request")
+	}
+}
+
+func TestAIFollowUpAfterFilingAnalysisUsesChatAndAppContextWithoutRawFilingPayload(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.config.AIConnector = "codex"
+	model.config.AIModel = "gpt-5.4"
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.quote = domain.QuoteSnapshot{Symbol: "AAPL", Price: 210.25}
+	model.fundamentals = domain.FundamentalsSnapshot{
+		Symbol:        "AAPL",
+		Sector:        "Technology",
+		ForwardPE:     28.4,
+		ProfitMargins: 0.26,
+	}
+	model.aiMessages = []aiMessage{
+		{Role: aiMessageUser, Body: "Analyze the selected 10-K filing for AAPL."},
+		{Role: aiMessageAssistant, Body: "Key takeaways: revenue grew 12%, services margin expanded, and China concentration remains a material risk."},
+	}
+
+	req, err := model.buildAIRequest("Which of those risks matters most now?")
+	if err != nil {
+		t.Fatalf("buildAIRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<blackdesk_context_update>") {
+		t.Fatal("expected standard app context block in follow-up request")
+	}
+	if !strings.Contains(req.SystemPrompt, "<conversation>") {
+		t.Fatal("expected transcript history in follow-up request")
+	}
+	if !strings.Contains(req.SystemPrompt, "services margin expanded") {
+		t.Fatal("expected prior AI filing report text to remain available through chat history")
+	}
+	if !strings.Contains(req.ContextPayload, "\"fundamentals\"") || !strings.Contains(req.ContextPayload, "\"ForwardPE\": 28.4") {
+		t.Fatal("expected quote app context to remain available on follow-up")
+	}
+	for _, forbidden := range []string{
+		"<selected_filing>",
+		"<selected_filing_chunk>",
+		"<selected_filing_synthesis>",
+		"RAW FILING TEXT THAT SHOULD NEVER REAPPEAR",
+	} {
+		if strings.Contains(req.SystemPrompt, forbidden) || strings.Contains(req.ContextPayload, forbidden) {
+			t.Fatalf("expected follow-up request to exclude raw filing payload marker %q", forbidden)
+		}
+	}
+}

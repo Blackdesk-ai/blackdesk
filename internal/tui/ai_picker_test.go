@@ -41,6 +41,23 @@ func TestAIPickerUsesCenterSetup(t *testing.T) {
 	}
 }
 
+func TestAISetupShowsFilingProgressState(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.width = 120
+	model.height = 40
+	model.tabIdx = tabAI
+	model.aiFilingRun = aiFilingRunState{
+		chunks:       []filingTextChunk{{Index: 1, Total: 4}, {Index: 2, Total: 4}, {Index: 3, Total: 4}, {Index: 4, Total: 4}},
+		nextChunkIdx: 2,
+	}
+	model.aiFilingRunActive = true
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Filing    chunk 3/4") {
+		t.Fatalf("expected filing progress in AI setup block, got %q", view)
+	}
+}
+
 func TestTypingOnAITabFocusesAIComposer(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.tabIdx = tabAI

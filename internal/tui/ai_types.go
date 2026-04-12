@@ -20,6 +20,9 @@ const (
 	aiSummaryAssistantChars   = 1800
 	aiFilingPromptChars       = 700000
 	aiFilingDocumentChars     = 550000
+	aiFilingChunkChars        = 200000
+	aiFilingChunkOverlapChars = 4000
+	aiFilingChunkSummaryChars = 9000
 	aiContextNewsItems        = 20
 	aiContextMarketNewsItems  = 24
 	aiContextSearchResults    = 20

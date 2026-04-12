@@ -34,6 +34,16 @@ func (t aiRequestTruncation) hasAny() bool {
 	return len(t.activeLabels()) > 0
 }
 
+func (t aiRequestTruncation) merge(other aiRequestTruncation) aiRequestTruncation {
+	return aiRequestTruncation{
+		ContextPayload:      t.ContextPayload || other.ContextPayload,
+		ConversationSummary: t.ConversationSummary || other.ConversationSummary,
+		ConversationHistory: t.ConversationHistory || other.ConversationHistory,
+		FilingText:          t.FilingText || other.FilingText,
+		FinalPrompt:         t.FinalPrompt || other.FinalPrompt,
+	}
+}
+
 func (t aiRequestTruncation) summaryLine() string {
 	if !t.hasAny() {
 		return "full"

@@ -16,6 +16,19 @@ type statementRequest struct {
 	frequency domain.StatementFrequency
 }
 
+type aiFilingRunState struct {
+	symbol        string
+	snapshot      domain.FilingsSnapshot
+	filing        domain.FilingDocument
+	prompt        string
+	chunks        []filingTextChunk
+	analyses      []filingChunkAnalysisSummary
+	nextChunkIdx  int
+	synthesizing  bool
+	totalDuration time.Duration
+	truncation    aiRequestTruncation
+}
+
 var aiStatementRequests = []statementRequest{
 	{kind: domain.StatementKindIncome, frequency: domain.StatementFrequencyAnnual},
 	{kind: domain.StatementKindBalanceSheet, frequency: domain.StatementFrequencyAnnual},
@@ -96,6 +109,8 @@ type Model struct {
 	aiQuoteInsightRunning       bool
 	aiQuoteInsightUpdated       time.Time
 	aiQuoteInsightSymbol        string
+	aiFilingRun                 aiFilingRunState
+	aiFilingRunActive           bool
 	marketOpinionHistory        map[string]domain.PriceSeries
 	marketOpinionHistoryAt      map[string]time.Time
 	pendingMarketOpinionRefresh bool

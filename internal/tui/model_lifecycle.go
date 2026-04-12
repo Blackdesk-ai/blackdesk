@@ -159,6 +159,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleAIContextPrepared(msg)
 	case aiFilingAnalysisPreparedMsg:
 		return m.handleAIFilingAnalysisPrepared(msg)
+	case aiFilingChunkLoadedMsg:
+		return m.handleAIFilingChunkLoaded(msg)
+	case aiFilingSynthesisLoadedMsg:
+		return m.handleAIFilingSynthesisLoaded(msg)
 	case versionCheckLoadedMsg:
 		return m.handleVersionCheckLoaded(msg)
 	case versionUpgradeLoadedMsg:

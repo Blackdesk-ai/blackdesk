@@ -44,6 +44,9 @@ func (m Model) renderAISetupBlock(section, muted lipgloss.Style, width int) stri
 	}
 	b.WriteString(truncateText(fmt.Sprintf("Symbol    %s", m.activeSymbol()), width) + "\n")
 	b.WriteString(truncateText(fmt.Sprintf("Context   %s", m.aiContextStatusLine()), width) + "\n")
+	if label := m.aiFilingProgressLabel(); label != "" {
+		b.WriteString(truncateText(fmt.Sprintf("Filing    %s", label), width) + "\n")
+	}
 	if m.aiLastRequestTruncation.hasAny() {
 		b.WriteString(truncateText(fmt.Sprintf("Request   %s", m.aiLastRequestTruncation.summaryLine()), width) + "\n")
 	}
