@@ -240,7 +240,6 @@ Main controls:
 - `c` opens connector and model selection from the AI workspace
 - `↑ / ↓` scrolls the transcript
 - `f` toggles AI fullscreen
-- `r` re-runs the last prompt with fresh context
 - `x` clears the conversation
 
 ## AI Picker

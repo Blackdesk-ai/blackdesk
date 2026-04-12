@@ -34,13 +34,7 @@ func filingAnalysisPrompt(symbol string, item domain.FilingItem) string {
 }
 
 func (m Model) buildAIFilingAnalysisRequest(symbol string, snapshot domain.FilingsSnapshot, filing domain.FilingDocument, prompt string) (RequestEnvelope, error) {
-	ctxPayload, err := json.MarshalIndent(m.aiContextSnapshot(), "", "  ")
-	if err != nil {
-		return RequestEnvelope{}, err
-	}
-	rawPayload := string(ctxPayload)
-	payload, payloadTruncated := truncateRunesFlag(rawPayload, aiFilingContextChars)
-	truncation := aiRequestTruncation{ContextPayload: payloadTruncated}
+	truncation := aiRequestTruncation{}
 	filingText, filingTextTruncated := truncateRunesFlag(strings.TrimSpace(filing.Text), aiFilingDocumentChars)
 	truncation.FilingText = filingTextTruncated
 	filingPayload, err := json.MarshalIndent(filingAnalysisContext{
@@ -84,10 +78,8 @@ func (m Model) buildAIFilingAnalysisRequest(symbol string, snapshot domain.Filin
 	b.WriteString("7. Bottom Line\n")
 	b.WriteString("Cite exact figures, dates, and concrete disclosures from the filing when possible.\n")
 	b.WriteString("If the filing is an insider, ownership, or governance filing instead of a full report, adapt the analysis to that filing type instead of forcing an earnings-style summary.\n")
-	b.WriteString("If the filing text appears incomplete or truncated, say so clearly.\n\n")
-	b.WriteString("<blackdesk_context_update>\n")
-	b.WriteString(payload)
-	b.WriteString("\n</blackdesk_context_update>\n\n")
+	b.WriteString("If the filing text appears incomplete or truncated, say so clearly.\n")
+	b.WriteString("Base this first response only on the selected filing payload below, not on the broader app context.\n\n")
 	b.WriteString("<selected_filing>\n")
 	b.WriteString(string(filingPayload))
 	b.WriteString("\n</selected_filing>\n")
@@ -97,9 +89,9 @@ func (m Model) buildAIFilingAnalysisRequest(symbol string, snapshot domain.Filin
 	return RequestEnvelope{
 		Prompt:          strings.TrimSpace(prompt),
 		SystemPrompt:    systemPrompt,
-		ContextPayload:  payload + "\n\n<selected_filing>\n" + string(filingPayload) + "\n</selected_filing>",
+		ContextPayload:  "",
 		ActiveSymbol:    strings.ToUpper(strings.TrimSpace(symbol)),
-		ContextRevision: m.aiContextRevision,
+		ContextRevision: 0,
 		Truncation:      truncation,
 	}, nil
 }

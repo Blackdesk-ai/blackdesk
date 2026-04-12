@@ -1,10 +1,6 @@
 package tui
 
-import (
-	"strings"
-
-	tea "github.com/charmbracelet/bubbletea"
-)
+import tea "github.com/charmbracelet/bubbletea"
 
 func (m Model) handleAIWorkspaceActionKey(key string) (Model, tea.Cmd, bool) {
 	if m.tabIdx != tabAI {
@@ -20,16 +16,7 @@ func (m Model) handleAIWorkspaceActionKey(key string) (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	case "r":
-		prompt := strings.TrimSpace(m.aiInput.Value())
-		if prompt == "" || m.aiRunning {
-			return m, nil, true
-		}
-		m.pushAIUserMessage(prompt)
-		m.aiInput.SetValue("")
-		m.aiRunning = true
-		m.aiErr = nil
-		m.status = "Refreshing AI context…"
-		return m, m.prepareAIContextCmd(prompt), true
+		return m, nil, true
 	case "x":
 		m.aiOutput = ""
 		m.aiErr = nil

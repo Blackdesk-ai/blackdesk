@@ -3,6 +3,7 @@ package tui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
+	"blackdesk/internal/application"
 	"blackdesk/internal/domain"
 )
 
@@ -34,15 +35,10 @@ func (m Model) prepareQuoteInsightCmd(symbol string) tea.Cmd {
 }
 
 func (m Model) prepareFilingAnalysisCmd(symbol string, item domain.FilingItem) tea.Cmd {
-	req := m.buildPrepareAIContextRequest(symbol, nil)
-
 	return func() tea.Msg {
-		result := m.services.PrepareAIContext(m.ctx, req)
-		risk, riskErr := m.fetchMarketRiskSnapshot()
 		filing, filingErr := m.services.GetFilingDocument(m.ctx, item)
-		msg := aiFilingAnalysisPreparedMsgFromResult(filingAnalysisPrompt(symbol, item), symbol, filing, filingErr, result)
-		msg.marketRisk = risk
-		msg.marketRiskErr = riskErr
+		msg := aiFilingAnalysisPreparedMsgFromResult(filingAnalysisPrompt(symbol, item), symbol, filing, filingErr, application.PreparedAIContext{})
+		msg.marketRisk = m.marketRisk
 		return msg
 	}
 }

@@ -229,14 +229,17 @@ func TestAIFilingAnalysisRequestIncludesSelectedFilingBlock(t *testing.T) {
 	if !strings.Contains(req.SystemPrompt, "<selected_filing>") {
 		t.Fatal("expected filing analysis request to include selected filing block")
 	}
+	if strings.Contains(req.SystemPrompt, "<blackdesk_context_update>") {
+		t.Fatal("expected initial filing analysis request to exclude broader app context")
+	}
 	if !strings.Contains(req.SystemPrompt, "Revenue grew 12%.") {
 		t.Fatal("expected filing text to be included in filing analysis request")
 	}
 	if !strings.Contains(req.SystemPrompt, "What Was Filed") || !strings.Contains(req.SystemPrompt, "Bottom Line") {
 		t.Fatal("expected filing analysis sections in system prompt")
 	}
-	if req.ContextRevision != model.aiContextRevision {
-		t.Fatal("expected filing analysis request to retain context revision")
+	if req.ContextPayload != "" {
+		t.Fatal("expected initial filing analysis request to avoid storing app context payload")
 	}
 }
 

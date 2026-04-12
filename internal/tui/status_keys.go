@@ -53,7 +53,6 @@ func (m Model) statusText() string {
 			renderStatusKeyHint("↑/↓", "scroll"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("f", "fullscreen"),
-			renderStatusInlineKeyHint("r", "run"),
 			renderStatusInlineKeyHint("x", "clear"),
 		}
 		parts = append(parts, renderStatusKeyHint("?", "help"))

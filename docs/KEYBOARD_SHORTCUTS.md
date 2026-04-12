@@ -87,7 +87,6 @@ Common palette functions:
 - `c`: open connector and model picker
 - `↑ / ↓`: scroll transcript
 - `f`: toggle fullscreen
-- `r`: run again with fresh context
 - `x`: clear conversation
 
 ## AI Picker

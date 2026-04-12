@@ -174,6 +174,24 @@ func TestAITabFTogglesFullscreen(t *testing.T) {
 	}
 }
 
+func TestAITabRIgnored(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabAI
+	model.aiInput.SetValue("Summarize")
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	m := updated.(Model)
+	if cmd != nil {
+		t.Fatal("expected no AI rerun command on r")
+	}
+	if len(m.aiMessages) != 0 {
+		t.Fatal("expected r to leave transcript unchanged on AI tab")
+	}
+	if m.aiRunning {
+		t.Fatal("expected r not to start an AI run")
+	}
+}
+
 func TestAIFullscreenHidesSidebars(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),

@@ -84,7 +84,6 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"c", "Open AI config"},
 			{"↑ / ↓", "Scroll transcript"},
 			{"f", "Toggle fullscreen"},
-			{"r", "Re-run with fresh context"},
 			{"x", "Clear conversation"},
 		}},
 		{"AI PICKER", []helpEntry{
