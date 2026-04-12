@@ -89,26 +89,26 @@ func renderStatusLine(width int, left, right string) string {
 		return ""
 	}
 	if width < 24 {
-		return truncateText(left, width)
+		return ansi.Truncate(left, width, "...")
 	}
 
 	left = strings.TrimSpace(left)
 	right = strings.TrimSpace(right)
 	if right == "" {
-		return truncateText(left, width)
+		return ansi.Truncate(left, width, "...")
 	}
 	if left == "" {
-		return truncateText(right, width)
+		return ansi.Truncate(right, width, "...")
 	}
 
 	rightWidth := lipgloss.Width(right)
 	if rightWidth >= width {
-		return truncateText(right, width)
+		return ansi.Truncate(right, width, "...")
 	}
 	leftWidth := width - rightWidth - 1
 	if leftWidth <= 0 {
-		return truncateText(right, width)
+		return ansi.Truncate(right, width, "...")
 	}
-	leftText := padRight(truncateText(left, leftWidth), leftWidth)
+	leftText := ansi.Truncate(left, leftWidth, "...")
 	return leftText + strings.Repeat(" ", max(1, width-lipgloss.Width(leftText)-lipgloss.Width(right))) + right
 }

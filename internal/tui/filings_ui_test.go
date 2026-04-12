@@ -13,6 +13,26 @@ import (
 	"blackdesk/internal/storage"
 )
 
+func batchContainsMsg(cmd tea.Cmd, match func(tea.Msg) bool) bool {
+	if cmd == nil {
+		return false
+	}
+	msg := cmd()
+	if match(msg) {
+		return true
+	}
+	batch, ok := msg.(tea.BatchMsg)
+	if !ok {
+		return false
+	}
+	for _, subcmd := range batch {
+		if batchContainsMsg(subcmd, match) {
+			return true
+		}
+	}
+	return false
+}
+
 func TestCommandPaletteFilingsOpensQuoteFilingsMode(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:          storage.DefaultConfig(),
@@ -229,5 +249,33 @@ func TestQuoteFilingsModeIStartsAIAnalysisFlow(t *testing.T) {
 	}
 	if !strings.Contains(prepared.filing.Text, "Revenue grew 12%") {
 		t.Fatalf("expected filing document text in prepared message, got %q", prepared.filing.Text)
+	}
+}
+
+func TestSearchOpenSymbolInFilingsModeLoadsFilingsForNewSymbol(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		Registry:        providers.NewRegistry(testProvider{}),
+		FilingsProvider: filingsProvider{},
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+	model.searchMode = true
+	model.searchInput.Focus()
+	model.searchInput.SetValue("msft")
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.config.ActiveSymbol != "MSFT" {
+		t.Fatalf("expected active symbol MSFT, got %q", m.config.ActiveSymbol)
+	}
+	if cmd == nil {
+		t.Fatal("expected search enter to trigger workspace reload command")
+	}
+	if !batchContainsMsg(cmd, func(msg tea.Msg) bool {
+		_, ok := msg.(filingsLoadedMsg)
+		return ok
+	}) {
+		t.Fatal("expected filings reload to be included when opening a new symbol from search in filings mode")
 	}
 }

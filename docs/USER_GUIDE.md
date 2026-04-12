@@ -195,6 +195,7 @@ What it is for:
 
 Main controls:
 
+- `.` focuses the AI input and sends the prompt when already focused
 - start typing to focus the AI input
 - `Enter` sends the prompt when the input is focused
 - `c` opens connector and model selection from the AI workspace
@@ -212,7 +213,7 @@ Controls:
 - `↑ / ↓` cycles connectors or models
 - `← / →` switches between connector and model steps
 - `Enter` confirms the current selection
-- `Esc` closes the picker
+- `Esc` or `.` closes the picker
 
 ## Watchlist Workflow
 

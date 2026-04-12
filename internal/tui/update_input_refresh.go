@@ -41,9 +41,6 @@ func (m Model) handleManualRefreshKey() (Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0, 2)
 	if plan.RefreshAll {
 		cmds = append(cmds, m.loadAllCmd(m.activeSymbol()))
-		if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings {
-			cmds = append(cmds, m.loadFilingsCmd(m.activeSymbol()))
-		}
 	}
 	if plan.RefreshScreener {
 		cmds = append(cmds, m.loadScreenerCmd(true))

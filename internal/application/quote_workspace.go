@@ -22,6 +22,7 @@ type QuoteWorkspaceLoadPlan struct {
 	LoadTechnical       bool
 	LoadStatement       bool
 	LoadInsiders        bool
+	LoadFilings         bool
 }
 
 func PlanQuoteWorkspaceLoad(mode QuoteCenterMode, needsTechnical, hasStatements, hasInsiders bool) QuoteWorkspaceLoadPlan {
@@ -41,6 +42,9 @@ func PlanQuoteWorkspaceLoad(mode QuoteCenterMode, needsTechnical, hasStatements,
 	}
 	if mode == QuoteCenterInsiders && hasInsiders {
 		plan.LoadInsiders = true
+	}
+	if mode == QuoteCenterFilings {
+		plan.LoadFilings = true
 	}
 	return plan
 }

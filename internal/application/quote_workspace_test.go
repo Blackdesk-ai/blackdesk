@@ -23,3 +23,14 @@ func TestPlanQuoteWorkspaceLoadSkipsUnavailableCenterLoads(t *testing.T) {
 		t.Fatalf("expected unavailable center loads to stay disabled, got %+v", plan)
 	}
 }
+
+func TestPlanQuoteWorkspaceLoadEnablesFilingsLoad(t *testing.T) {
+	plan := PlanQuoteWorkspaceLoad(QuoteCenterFilings, false, true, true)
+
+	if !plan.LoadFilings {
+		t.Fatalf("expected filings load for filings mode, got %+v", plan)
+	}
+	if plan.LoadStatement || plan.LoadInsiders || plan.LoadTechnical {
+		t.Fatalf("expected unrelated center loads to stay disabled, got %+v", plan)
+	}
+}

@@ -43,6 +43,9 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	if plan.LoadInsiders {
 		cmds = append(cmds, m.loadInsidersCmd(symbol))
 	}
+	if plan.LoadFilings {
+		cmds = append(cmds, m.loadFilingsCmd(symbol))
+	}
 	cmds = append(cmds, m.loadMarketRiskCmd())
 	return tea.Batch(cmds...)
 }

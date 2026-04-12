@@ -12,7 +12,7 @@ func (m Model) handleAIPickerKey(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 		return m, nil, false
 	}
 	switch msg.String() {
-	case "esc":
+	case ".", "esc":
 		m.aiPickerOpen = false
 		m.aiModelBusy = false
 		m.aiPickerStep = aiPickerStepConnector
@@ -88,7 +88,7 @@ func (m Model) handleAIFocusedKey(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 		m.aiFocused = false
 		m.aiInput.Blur()
 		return m, nil, true
-	case "enter":
+	case ".", "enter":
 		prompt := strings.TrimSpace(m.aiInput.Value())
 		if prompt == "" || m.aiRunning {
 			return m, nil, true
@@ -111,6 +111,12 @@ func (m Model) handleAIFocusedKey(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 func (m Model) handleAIComposerEntryKey(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 	if m.tabIdx != tabAI || m.aiPickerOpen || m.aiFocused {
 		return m, nil, false
+	}
+	if msg.String() == "." {
+		m.aiFocused = true
+		m.aiInput.Focus()
+		m.status = "AI composer focused"
+		return m, nil, true
 	}
 	if msg.Type != tea.KeyRunes || len(msg.Runes) == 0 {
 		return m, nil, false

@@ -48,6 +48,7 @@ func (m Model) statusText() string {
 	case tabAI:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("Ctrl+K", "palette"),
+			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("c", "connector/model"),
 			renderStatusKeyHint("↑/↓", "scroll"),
 			renderStatusKeyHint("Tab", "tabs"),

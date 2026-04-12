@@ -19,11 +19,7 @@ func (m Model) handleWatchlistNavigation(step int) (Model, tea.Cmd, bool) {
 		m.selectedIdx = plan.NextIndex
 		m.ensureWatchlistSelectionVisible()
 		m.selectSymbol(m.activeSymbol())
-		cmds := []tea.Cmd{m.persistCmd(), m.loadAllCmd(m.activeSymbol())}
-		if m.quoteCenterMode == quoteCenterFilings {
-			cmds = append(cmds, m.loadFilingsCmd(m.activeSymbol()))
-		}
-		return m, tea.Batch(cmds...), true
+		return m, tea.Batch(m.persistCmd(), m.loadAllCmd(m.activeSymbol())), true
 	}
 	return m, nil, true
 }

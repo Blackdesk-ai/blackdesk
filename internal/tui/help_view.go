@@ -72,6 +72,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"r", "Refresh news feed"},
 		}},
 		{"AI", []helpEntry{
+			{".", "Focus input or send prompt"},
 			{"Type", "Focus input and compose prompt"},
 			{"Enter", "Send prompt when input is focused"},
 			{"c", "Open connector & model picker"},
@@ -84,7 +85,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"↑ / ↓", "Cycle connectors / models"},
 			{"← / →", "Switch connector & model step"},
 			{"Enter", "Confirm selection"},
-			{"Esc", "Close picker"},
+			{"Esc  .", "Close picker"},
 		}},
 	}
 

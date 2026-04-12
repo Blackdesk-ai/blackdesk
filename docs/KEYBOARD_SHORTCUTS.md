@@ -63,6 +63,7 @@
 
 ## AI
 
+- `.`: focus input or send prompt
 - `Type`: focus input and compose prompt
 - `Enter`: send prompt when input is focused
 - `c`: open connector and model picker
@@ -76,4 +77,4 @@
 - `↑ / ↓`: cycle connectors or models
 - `← / →`: switch picker step
 - `Enter`: confirm selection
-- `Esc`: close picker
+- `Esc` or `.`: close picker
