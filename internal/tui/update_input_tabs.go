@@ -51,6 +51,13 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 	case "1", "2", "3", "4", "5":
 		return m, m.setActiveTab(int(key[0] - '1')), true
 	case "enter":
+		if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings {
+			if item, ok := m.currentFiling(); ok && item.URL != "" {
+				_ = openURLFunc(item.URL)
+				m.status = "Opened SEC filing in browser"
+			}
+			return m, nil, true
+		}
 		if m.tabIdx != tabScreener {
 			return m, nil, true
 		}

@@ -261,6 +261,29 @@ type InsiderPurchaseActivity struct {
 	NetPercentInsiderShares float64
 }
 
+type FilingItem struct {
+	AccessionNumber       string
+	Form                  string
+	FilingDate            time.Time
+	ReportDate            time.Time
+	AcceptedAt            time.Time
+	PrimaryDocument       string
+	PrimaryDocDescription string
+	URL                   string
+	IsXBRL                bool
+	IsInlineXBRL          bool
+}
+
+type FilingsSnapshot struct {
+	Symbol      string
+	CompanyName string
+	CIK         string
+	Items       []FilingItem
+	Freshness   string
+	Provider    string
+	UpdatedAt   time.Time
+}
+
 type InsiderTransaction struct {
 	Insider   string
 	Relation  string

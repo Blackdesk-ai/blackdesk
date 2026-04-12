@@ -249,6 +249,15 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 			Description: fmt.Sprintf("Open insider activity for %s.", activeSymbol),
 		})
 	}
+	if m.services.HasFilings() {
+		items = append(items, commandPaletteFunction{
+			ID:          "filings",
+			Title:       "Filings",
+			Aliases:     []string{"sec", "10-k", "10-q", "8-k", "edgar"},
+			Category:    "Quote",
+			Description: fmt.Sprintf("Open recent SEC filings for %s.", activeSymbol),
+		})
+	}
 	return items
 }
 
@@ -378,6 +387,11 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		m.tabIdx = tabQuote
 		m.quoteCenterMode = quoteCenterInsiders
 		return m, m.loadInsidersCmd(activeSymbol)
+	case "filings":
+		m.closeCommandPalette("Opened filings view")
+		m.tabIdx = tabQuote
+		m.quoteCenterMode = quoteCenterFilings
+		return m, m.loadFilingsCmd(activeSymbol)
 	default:
 		return m, nil
 	}

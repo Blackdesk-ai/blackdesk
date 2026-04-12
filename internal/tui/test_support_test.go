@@ -47,6 +47,8 @@ type marketRiskProvider struct {
 	err  error
 }
 
+type filingsProvider struct{}
+
 func (testProvider) Name() string { return "test" }
 
 func (testProvider) Capabilities() domain.ProviderCapabilities { return domain.ProviderCapabilities{} }
@@ -93,6 +95,38 @@ func (p marketRiskProvider) GetMarketRisk(context.Context) (domain.MarketRiskSna
 }
 
 var _ application.MarketRiskProvider = marketRiskProvider{}
+var _ application.FilingsProvider = filingsProvider{}
+
+func (filingsProvider) GetFilings(context.Context, string) (domain.FilingsSnapshot, error) {
+	return domain.FilingsSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		CIK:         "0000320193",
+		Items: []domain.FilingItem{
+			{
+				AccessionNumber:       "0000320193-24-000123",
+				Form:                  "10-K",
+				FilingDate:            time.Date(2024, 11, 1, 0, 0, 0, 0, time.UTC),
+				PrimaryDocument:       "aapl-20240928x10k.htm",
+				PrimaryDocDescription: "Annual report",
+				URL:                   "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928x10k.htm",
+				IsXBRL:                true,
+				IsInlineXBRL:          true,
+			},
+			{
+				AccessionNumber:       "0000320193-24-000098",
+				Form:                  "8-K",
+				FilingDate:            time.Date(2024, 8, 1, 0, 0, 0, 0, time.UTC),
+				PrimaryDocument:       "aapl-8k.htm",
+				PrimaryDocDescription: "Current report",
+				URL:                   "https://www.sec.gov/Archives/edgar/data/320193/000032019324000098/aapl-8k.htm",
+			},
+		},
+		Freshness: domain.FreshnessLive,
+		Provider:  "sec",
+		UpdatedAt: time.Now(),
+	}, nil
+}
 
 func (p *countingHistoryProvider) Name() string { return "test" }
 

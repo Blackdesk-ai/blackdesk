@@ -51,6 +51,13 @@ func (m Model) canChangeTimeframe() bool {
 	return m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterChart
 }
 
+func (m Model) quoteBottomPanelsVisible() bool {
+	return m.tabIdx == tabQuote &&
+		m.quoteCenterMode != quoteCenterStatements &&
+		m.quoteCenterMode != quoteCenterInsiders &&
+		m.quoteCenterMode != quoteCenterFilings
+}
+
 func (m *Model) activeSymbol() string {
 	if len(m.config.Watchlist) == 0 {
 		return "AAPL"
@@ -74,6 +81,8 @@ func (m Model) applicationQuoteCenterMode() application.QuoteCenterMode {
 		return application.QuoteCenterStatements
 	case quoteCenterInsiders:
 		return application.QuoteCenterInsiders
+	case quoteCenterFilings:
+		return application.QuoteCenterFilings
 	case quoteCenterFundamentals:
 		return application.QuoteCenterFundamentals
 	case quoteCenterNews:

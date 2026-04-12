@@ -8,6 +8,7 @@ const (
 	QuoteCenterTechnicals   QuoteCenterMode = "technicals"
 	QuoteCenterStatements   QuoteCenterMode = "statements"
 	QuoteCenterInsiders     QuoteCenterMode = "insiders"
+	QuoteCenterFilings      QuoteCenterMode = "filings"
 	QuoteCenterNews         QuoteCenterMode = "news"
 )
 

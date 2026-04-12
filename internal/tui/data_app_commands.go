@@ -82,3 +82,13 @@ func (m Model) persistCmd() tea.Cmd {
 		return nil
 	}
 }
+
+func (m Model) loadFilingsCmd(symbol string) tea.Cmd {
+	if m.services == nil || !m.services.HasFilings() {
+		return nil
+	}
+	return func() tea.Msg {
+		data, err := m.services.GetFilings(m.ctx, symbol)
+		return filingsLoadedMsg{data: data, err: err}
+	}
+}

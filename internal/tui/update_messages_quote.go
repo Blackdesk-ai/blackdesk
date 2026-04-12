@@ -26,3 +26,17 @@ func (m Model) handleInsidersLoaded(msg insidersLoadedMsg) (Model, tea.Cmd) {
 	m.errInsiders = msg.err
 	return m, nil
 }
+
+func (m Model) handleFilingsLoaded(msg filingsLoadedMsg) (Model, tea.Cmd) {
+	m.filings = msg.data
+	if msg.err == nil {
+		m.cacheFilings(msg.data)
+		if len(msg.data.Items) == 0 {
+			m.filingsSel = 0
+		} else if m.filingsSel >= len(msg.data.Items) {
+			m.filingsSel = 0
+		}
+	}
+	m.errFilings = msg.err
+	return m, nil
+}

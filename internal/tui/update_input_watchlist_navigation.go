@@ -19,7 +19,11 @@ func (m Model) handleWatchlistNavigation(step int) (Model, tea.Cmd, bool) {
 		m.selectedIdx = plan.NextIndex
 		m.ensureWatchlistSelectionVisible()
 		m.selectSymbol(m.activeSymbol())
-		return m, tea.Batch(m.persistCmd(), m.loadAllCmd(m.activeSymbol())), true
+		cmds := []tea.Cmd{m.persistCmd(), m.loadAllCmd(m.activeSymbol())}
+		if m.quoteCenterMode == quoteCenterFilings {
+			cmds = append(cmds, m.loadFilingsCmd(m.activeSymbol()))
+		}
+		return m, tea.Batch(cmds...), true
 	}
 	return m, nil, true
 }
@@ -36,6 +40,10 @@ func (m Model) handleWorkspaceVerticalNavigation(step int) (Model, tea.Cmd, bool
 		m.cycleMarketNewsSelection(step)
 		return m, nil, true
 	default:
+		if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings {
+			m.cycleFilingsSelection(step)
+			return m, nil, true
+		}
 		return m.handleWatchlistNavigation(step)
 	}
 }

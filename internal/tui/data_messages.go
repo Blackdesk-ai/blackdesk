@@ -60,6 +60,11 @@ type insidersLoadedMsg struct {
 	err  error
 }
 
+type filingsLoadedMsg struct {
+	data domain.FilingsSnapshot
+	err  error
+}
+
 type searchDebouncedMsg struct {
 	id    int
 	query string

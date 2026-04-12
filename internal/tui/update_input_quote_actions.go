@@ -74,6 +74,9 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 		}
 		return m, nil, true
 	case "i":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		if !m.aiQuoteInsightRunning {
 			m.aiQuoteInsightSymbol = strings.ToUpper(m.activeSymbol())
 			m.aiQuoteInsightErr = nil
@@ -83,18 +86,30 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 		}
 		return m, nil, true
 	case "d":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		if len(m.config.Watchlist) > 1 {
 			m.removeSelectedWatchlistSymbol()
 			return m, tea.Batch(m.persistCmd(), m.loadAllCmd(m.activeSymbol())), true
 		}
 		return m, nil, true
 	case "n":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		m.cycleNewsSelection()
 		return m, nil, true
 	case "p":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		m.cycleProfileScroll()
 		return m, nil, true
 	case "o":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		if len(m.news) > 0 {
 			_ = openURLFunc(m.news[m.newsSelected].URL)
 			m.status = "Opened news item in browser"

@@ -12,6 +12,7 @@ import (
 	"blackdesk/internal/providers/blackdeskapi"
 	"blackdesk/internal/providers/composite"
 	"blackdesk/internal/providers/rss"
+	"blackdesk/internal/providers/sec"
 	"blackdesk/internal/providers/yahoo"
 	"blackdesk/internal/storage"
 	"blackdesk/internal/tui"
@@ -50,7 +51,14 @@ func LoadDependencies(ctx context.Context) (tui.Dependencies, error) {
 	}
 
 	return tui.Dependencies{
-		Services: application.NewServices(providers.NewRegistry(provider), agents.NewRegistry(), cfgStore),
+		Services: application.NewServicesWithFilings(
+			providers.NewRegistry(provider),
+			agents.NewRegistry(),
+			cfgStore,
+			sec.New(sec.Config{
+				Cache: storage.NewMemoryCache(),
+			}),
+		),
 		MarketRiskProvider: blackdeskapi.NewRiskProvider(blackdeskapi.RiskConfig{
 			Cache:   storage.NewMemoryCache(),
 			Timeout: 4 * time.Second,

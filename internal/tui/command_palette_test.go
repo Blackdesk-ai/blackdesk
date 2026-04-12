@@ -127,3 +127,23 @@ func TestCommandPaletteViewRendersFullscreenPage(t *testing.T) {
 		t.Fatal("expected results and preview sections in command palette view")
 	}
 }
+
+func TestCommandPaletteIncludesFilingsWhenAvailable(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		FilingsProvider: filingsProvider{},
+	})
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyCtrlK})
+	m := updated.(Model)
+	found := false
+	for _, item := range m.commandPaletteItems {
+		if item.Kind == commandPaletteItemFunction && item.FunctionID == "filings" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected filings function in command palette")
+	}
+}

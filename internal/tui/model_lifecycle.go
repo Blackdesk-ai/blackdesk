@@ -46,7 +46,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 
 	services := deps.Services
 	if services == nil {
-		services = application.NewServices(deps.Registry, deps.AgentRegistry, deps.ConfigStore)
+		services = application.NewServicesWithFilings(deps.Registry, deps.AgentRegistry, deps.ConfigStore, deps.FilingsProvider)
 	}
 	screenerDefs := services.Screeners()
 
@@ -71,6 +71,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		technicalCache:         make(map[string]domain.PriceSeries),
 		statementCache:         make(map[string]domain.FinancialStatement),
 		insiderCache:           make(map[string]domain.InsiderSnapshot),
+		filingsCache:           make(map[string]domain.FilingsSnapshot),
 		marketOpinionHistory:   make(map[string]domain.PriceSeries),
 		marketOpinionHistoryAt: make(map[string]time.Time),
 		screenerDefs:           append([]domain.ScreenerDefinition(nil), screenerDefs...),
@@ -125,6 +126,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleStatementLoaded(msg)
 	case insidersLoadedMsg:
 		return m.handleInsidersLoaded(msg)
+	case filingsLoadedMsg:
+		return m.handleFilingsLoaded(msg)
 	case searchDebouncedMsg:
 		return m.handleSearchDebounced(msg)
 	case searchLoadedMsg:
