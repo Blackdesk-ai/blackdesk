@@ -288,10 +288,10 @@ func TestAIResponseKeepsContextStaleIfAppChangedDuringRun(t *testing.T) {
 	model.aiRunning = true
 
 	updated, _ := model.handleAIResponseLoaded(aiResponseLoadedMsg{
-		output:           "done",
-		contextSent:      "{\"symbol\":\"AAPL\"}",
-		contextRevision:  5,
-		symbol:           model.activeSymbol(),
+		output:          "done",
+		contextSent:     "{\"symbol\":\"AAPL\"}",
+		contextRevision: 5,
+		symbol:          model.activeSymbol(),
 	})
 
 	if status := updated.aiContextStatusLine(); status != "stale" {
@@ -317,29 +317,5 @@ func TestPassiveDataLoadsDoNotInvalidateAIContextStatus(t *testing.T) {
 	updated, _ = updated.handleNewsLoaded(newsLoadedMsg{})
 	if status := updated.aiContextStatusLine(); status != "stable" {
 		t.Fatalf("expected passive news load to keep stable status, got %q", status)
-	}
-}
-
-func TestAITabMouseWheelScrollsTranscript(t *testing.T) {
-	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
-	model.tabIdx = tabAI
-
-	updated, _ := model.Update(tea.MouseMsg{Action: tea.MouseActionPress, Button: tea.MouseButtonWheelUp})
-	m := updated.(Model)
-	if m.aiScroll != 3 {
-		t.Fatalf("expected mouse wheel up to scroll transcript, got %d", m.aiScroll)
-	}
-
-	updated, _ = m.Update(tea.MouseMsg{Action: tea.MouseActionPress, Button: tea.MouseButtonWheelDown})
-	m = updated.(Model)
-	if m.aiScroll != 0 {
-		t.Fatalf("expected mouse wheel down to scroll back toward bottom, got %d", m.aiScroll)
-	}
-
-	model.tabIdx = tabQuote
-	updated, _ = model.Update(tea.MouseMsg{Action: tea.MouseActionPress, Button: tea.MouseButtonWheelUp})
-	m = updated.(Model)
-	if m.aiScroll != 0 {
-		t.Fatal("expected mouse wheel scroll to stay disabled outside AI tab")
 	}
 }

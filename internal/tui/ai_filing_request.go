@@ -38,7 +38,11 @@ func (m Model) buildAIFilingAnalysisRequest(symbol string, snapshot domain.Filin
 	if err != nil {
 		return RequestEnvelope{}, err
 	}
-	payload := truncateRunes(string(ctxPayload), aiFilingContextChars)
+	rawPayload := string(ctxPayload)
+	payload, payloadTruncated := truncateRunesFlag(rawPayload, aiFilingContextChars)
+	truncation := aiRequestTruncation{ContextPayload: payloadTruncated}
+	filingText, filingTextTruncated := truncateRunesFlag(strings.TrimSpace(filing.Text), aiFilingDocumentChars)
+	truncation.FilingText = filingTextTruncated
 	filingPayload, err := json.MarshalIndent(filingAnalysisContext{
 		Symbol:      strings.ToUpper(strings.TrimSpace(symbol)),
 		CompanyName: strings.TrimSpace(snapshot.CompanyName),
@@ -51,8 +55,8 @@ func (m Model) buildAIFilingAnalysisRequest(symbol string, snapshot domain.Filin
 		Description: strings.TrimSpace(filing.Item.PrimaryDocDescription),
 		URL:         strings.TrimSpace(filing.Item.URL),
 		ContentType: strings.TrimSpace(filing.ContentType),
-		Truncated:   filing.Truncated,
-		Text:        truncateRunes(strings.TrimSpace(filing.Text), aiFilingDocumentChars),
+		Truncated:   filing.Truncated || filingTextTruncated,
+		Text:        filingText,
 		Guide: map[string]string{
 			"form":        "SEC form code for the selected filing. Adapt the analysis to the actual filing type.",
 			"text":        "Extracted plain text from the selected SEC filing. This is the primary source to analyze.",
@@ -87,12 +91,16 @@ func (m Model) buildAIFilingAnalysisRequest(symbol string, snapshot domain.Filin
 	b.WriteString("<selected_filing>\n")
 	b.WriteString(string(filingPayload))
 	b.WriteString("\n</selected_filing>\n")
+	systemPrompt, promptTruncated := truncateRunesFlag(b.String(), aiFilingPromptChars)
+	truncation.FinalPrompt = promptTruncated
 
 	return RequestEnvelope{
-		Prompt:         strings.TrimSpace(prompt),
-		SystemPrompt:   truncateRunes(b.String(), aiFilingPromptChars),
-		ContextPayload: payload + "\n\n<selected_filing>\n" + string(filingPayload) + "\n</selected_filing>",
-		ActiveSymbol:   strings.ToUpper(strings.TrimSpace(symbol)),
+		Prompt:          strings.TrimSpace(prompt),
+		SystemPrompt:    systemPrompt,
+		ContextPayload:  payload + "\n\n<selected_filing>\n" + string(filingPayload) + "\n</selected_filing>",
+		ActiveSymbol:    strings.ToUpper(strings.TrimSpace(symbol)),
+		ContextRevision: m.aiContextRevision,
+		Truncation:      truncation,
 	}, nil
 }
 

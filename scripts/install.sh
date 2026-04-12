@@ -42,7 +42,6 @@ Examples:
 
 Installed binary commands:
   blackdesk --help
-  blackdesk ?
   blackdesk --version
   blackdesk upgrade --check
 EOF
@@ -386,7 +385,6 @@ print_next_steps() {
   printf '\n'
   print_message info "${MUTED}Next:${NC}"
   print_message info "  ${APP} --help"
-  print_message info "  ${APP} ?"
   print_message info "  ${APP} --version"
   print_message info "  ${APP} upgrade --check"
   print_message info "  ${APP}"

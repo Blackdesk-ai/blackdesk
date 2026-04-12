@@ -30,7 +30,7 @@ func runCLI(ctx context.Context, args []string, stdout, stderr io.Writer) error 
 		switch args[0] {
 		case "upgrade":
 			return runUpgrade(ctx, args[1:], stdout, stderr)
-		case "help", "?", "-h", "--help":
+		case "help", "-h", "--help":
 			printMainUsage(stdout)
 			return nil
 		}
@@ -97,7 +97,6 @@ func printMainUsage(w io.Writer) {
 	fmt.Fprintln(w, "  blackdesk [flags]")
 	fmt.Fprintln(w, "  blackdesk upgrade [flags]")
 	fmt.Fprintln(w, "  blackdesk help")
-	fmt.Fprintln(w, "  blackdesk ?")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Flags:")
 	fmt.Fprintln(w, "  -v, --version      Print version information and exit")
@@ -109,7 +108,6 @@ func printMainUsage(w io.Writer) {
 	fmt.Fprintln(w, "Examples:")
 	fmt.Fprintln(w, "  blackdesk")
 	fmt.Fprintln(w, "  blackdesk --help")
-	fmt.Fprintln(w, "  blackdesk ?")
 	fmt.Fprintln(w, "  blackdesk --version")
 	fmt.Fprintln(w, "  blackdesk upgrade --check")
 }

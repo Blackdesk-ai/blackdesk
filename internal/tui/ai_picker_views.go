@@ -44,12 +44,15 @@ func (m Model) renderAISetupBlock(section, muted lipgloss.Style, width int) stri
 	}
 	b.WriteString(truncateText(fmt.Sprintf("Symbol    %s", m.activeSymbol()), width) + "\n")
 	b.WriteString(truncateText(fmt.Sprintf("Context   %s", m.aiContextStatusLine()), width) + "\n")
+	if m.aiLastRequestTruncation.hasAny() {
+		b.WriteString(truncateText(fmt.Sprintf("Request   %s", m.aiLastRequestTruncation.summaryLine()), width) + "\n")
+	}
 	if m.aiRunning {
 		b.WriteString(truncateText("Running   yes", width) + "\n")
 	}
 	for _, line := range []string{
 		". focus/send in AI",
-		", load/switch model",
+		"c open config",
 		"↑/↓ scroll chat",
 		"x clear",
 	} {

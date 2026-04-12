@@ -9,13 +9,14 @@ import (
 type tickMsg time.Time
 
 type aiResponseLoadedMsg struct {
-	connectorID string
-	output      string
-	duration    time.Duration
-	contextSent string
+	connectorID     string
+	output          string
+	duration        time.Duration
+	contextSent     string
 	contextRevision int
-	symbol      string
-	err         error
+	truncation      aiRequestTruncation
+	symbol          string
+	err             error
 }
 
 type aiMarketOpinionLoadedMsg struct {

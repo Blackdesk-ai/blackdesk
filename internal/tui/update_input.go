@@ -3,18 +3,7 @@ package tui
 import tea "github.com/charmbracelet/bubbletea"
 
 func (m Model) handleMouseMsg(msg tea.MouseMsg) (Model, tea.Cmd) {
-	if m.commandPaletteOpen || m.tabIdx != tabAI || m.aiPickerOpen || m.searchMode {
-		return m, nil
-	}
-	if msg.Action != tea.MouseActionPress {
-		return m, nil
-	}
-	switch msg.Button {
-	case tea.MouseButtonWheelUp:
-		m.scrollAITranscript(3)
-	case tea.MouseButtonWheelDown:
-		m.scrollAITranscript(-3)
-	}
+	_ = msg
 	return m, nil
 }
 

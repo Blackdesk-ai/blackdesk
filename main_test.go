@@ -8,7 +8,7 @@ import (
 )
 
 func TestRunCLIHelpAliasesPrintUsage(t *testing.T) {
-	for _, args := range [][]string{{"-h"}, {"--help"}, {"?"}, {"help"}} {
+	for _, args := range [][]string{{"-h"}, {"--help"}, {"help"}} {
 		var stdout bytes.Buffer
 		var stderr bytes.Buffer
 
@@ -19,8 +19,8 @@ func TestRunCLIHelpAliasesPrintUsage(t *testing.T) {
 		if !strings.Contains(out, "Usage:") {
 			t.Fatalf("runCLI(%q) should print usage, got %q", args, out)
 		}
-		if !strings.Contains(out, "blackdesk ?") {
-			t.Fatalf("runCLI(%q) should mention question-mark alias, got %q", args, out)
+		if strings.Contains(out, "blackdesk ?") {
+			t.Fatalf("runCLI(%q) should not mention removed question-mark alias, got %q", args, out)
 		}
 	}
 }

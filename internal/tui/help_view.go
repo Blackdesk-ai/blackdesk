@@ -75,7 +75,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{".", "Focus input or send prompt"},
 			{"Type", "Focus input and compose prompt"},
 			{"Enter", "Send prompt when input is focused"},
-			{"c", "Open connector & model picker"},
+			{"c", "Open AI config"},
 			{"↑ / ↓", "Scroll transcript"},
 			{"f", "Toggle fullscreen"},
 			{"r", "Re-run with fresh context"},

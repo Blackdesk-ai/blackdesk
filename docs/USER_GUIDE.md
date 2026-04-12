@@ -20,7 +20,7 @@ blackdesk
 Useful CLI commands:
 
 - `blackdesk -v` or `blackdesk --version` prints the installed version
-- `blackdesk -h`, `blackdesk --help`, or `blackdesk ?` shows CLI help
+- `blackdesk -h` or `blackdesk --help` shows CLI help
 
 Useful maintenance commands:
 

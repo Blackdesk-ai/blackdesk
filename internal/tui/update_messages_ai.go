@@ -13,6 +13,7 @@ func (m Model) handleAIResponseLoaded(msg aiResponseLoadedMsg) (Model, tea.Cmd) 
 	m.aiDuration = msg.duration
 	m.aiErr = msg.err
 	m.aiOutput = strings.TrimSpace(msg.output)
+	m.aiLastRequestTruncation = msg.truncation
 	if msg.contextSent != "" {
 		m.aiLastContext = msg.contextSent
 		m.aiLastSymbol = msg.symbol
@@ -23,6 +24,9 @@ func (m Model) handleAIResponseLoaded(msg aiResponseLoadedMsg) (Model, tea.Cmd) 
 		m.status = fmt.Sprintf("%s failed", m.activeAIConnectorLabel())
 	} else {
 		m.status = fmt.Sprintf("%s replied in %s", m.activeAIConnectorLabel(), msg.duration.Round(time.Millisecond))
+		if msg.truncation.hasAny() {
+			m.status += " • clipped request"
+		}
 	}
 	return m, nil
 }

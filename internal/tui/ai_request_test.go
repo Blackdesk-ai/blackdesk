@@ -136,6 +136,28 @@ func TestAIRequestIncludesContextOnlyOncePerRequest(t *testing.T) {
 	}
 }
 
+func TestAIRequestReportsTruncationWhenPayloadIsClipped(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.aiConversationSummary = strings.Repeat("summary ", aiMaxSummaryChars)
+	for i := 0; i < 32; i++ {
+		model.aiMessages = append(model.aiMessages, aiMessage{
+			Role: aiMessageAssistant,
+			Body: strings.Repeat("history chunk ", aiMaxMessageChars/4),
+		})
+	}
+
+	req, err := model.buildAIRequest("follow-up")
+	if err != nil {
+		t.Fatalf("buildAIRequest failed: %v", err)
+	}
+	if !req.Truncation.ConversationSummary {
+		t.Fatal("expected conversation summary truncation to be tracked")
+	}
+	if !req.Truncation.ConversationHistory {
+		t.Fatal("expected conversation history truncation to be tracked")
+	}
+}
+
 func TestWriteAILastRequestDump(t *testing.T) {
 	root := t.TempDir()
 	envelope := RequestEnvelope{
@@ -212,5 +234,24 @@ func TestAIFilingAnalysisRequestIncludesSelectedFilingBlock(t *testing.T) {
 	}
 	if !strings.Contains(req.SystemPrompt, "What Was Filed") || !strings.Contains(req.SystemPrompt, "Bottom Line") {
 		t.Fatal("expected filing analysis sections in system prompt")
+	}
+	if req.ContextRevision != model.aiContextRevision {
+		t.Fatal("expected filing analysis request to retain context revision")
+	}
+}
+
+func TestAIFilingAnalysisRequestReportsFilingTextTruncation(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	doc := domain.FilingDocument{
+		Item: domain.FilingItem{Form: "10-K"},
+		Text: strings.Repeat("filing text ", aiFilingDocumentChars),
+	}
+
+	req, err := model.buildAIFilingAnalysisRequest("AAPL", domain.FilingsSnapshot{Symbol: "AAPL"}, doc, "Analyze.")
+	if err != nil {
+		t.Fatalf("buildAIFilingAnalysisRequest failed: %v", err)
+	}
+	if !req.Truncation.FilingText {
+		t.Fatal("expected filing analysis request to track filing text truncation")
 	}
 }

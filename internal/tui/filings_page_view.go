@@ -27,15 +27,6 @@ func (m Model) renderQuoteFilingsPage(header, section, label, muted, pos, neg li
 
 func (m Model) renderQuoteFilingsSummary(header, label, muted, pos, neg lipgloss.Style, width int) string {
 	quote := m.quote
-	displayPrice, displayChange, displayChangePercent, _ := displayQuoteLine(quote)
-	changeStyle := pos
-	if displayChange < 0 {
-		changeStyle = neg
-	}
-	priceStyle := pos
-	if displayChange < 0 {
-		priceStyle = neg
-	}
 	snapshot := m.filingsForSymbol(m.activeSymbol())
 	company := snapshot.CompanyName
 	if company == "" {
@@ -45,15 +36,12 @@ func (m Model) renderQuoteFilingsSummary(header, label, muted, pos, neg lipgloss
 	if strings.TrimSpace(company) != "" {
 		title += muted.Render("  " + company)
 	}
-	priceLine := priceStyle.Render(fmt.Sprintf("%.2f", displayPrice))
-	changeLine := changeStyle.Render(fmt.Sprintf("%+.2f (%+.2f%%)", displayChange, displayChangePercent))
-	meta := fmt.Sprintf("%s  %s", priceLine, changeLine)
-	return renderStatusLine(width, title, meta)
+	return renderStatusLine(width, title, "")
 }
 
 func (m Model) renderQuoteFilingsList(section, muted lipgloss.Style, width, height int, snapshot domain.FilingsSnapshot) string {
 	var b strings.Builder
-	b.WriteString(renderStatusLine(width, section.Render("RECENT FILINGS"), m.renderFilingsFilterTabs(muted, max(16, width/2))) + "\n\n")
+	b.WriteString(renderStatusLine(width, section.Render("RECENT FILINGS"), m.renderFilingsFilterTabs(muted, width)) + "\n\n")
 	if len(snapshot.Items) == 0 {
 		if m.errFilings != nil {
 			b.WriteString(m.errFilings.Error())

@@ -38,13 +38,14 @@ func (m Model) runAICmd(prompt string) tea.Cmd {
 		_ = writeAILastRequestDump(m.workspaceRoot, connectorID, request.Model, envelope)
 		resp, err := m.services.RunAI(m.ctx, connectorID, request)
 		return aiResponseLoadedMsg{
-			connectorID: connectorID,
-			output:      resp.Output,
-			duration:    resp.Duration,
-			contextSent: envelope.ContextPayload,
+			connectorID:     connectorID,
+			output:          resp.Output,
+			duration:        resp.Duration,
+			contextSent:     envelope.ContextPayload,
 			contextRevision: envelope.ContextRevision,
-			symbol:      envelope.ActiveSymbol,
-			err:         err,
+			truncation:      envelope.Truncation,
+			symbol:          envelope.ActiveSymbol,
+			err:             err,
 		}
 	}
 }
@@ -163,13 +164,14 @@ func (m Model) runFilingAnalysisCmd(symbol string, snapshot domain.FilingsSnapsh
 		_ = writeAILastRequestDump(m.workspaceRoot, connectorID, request.Model, envelope)
 		resp, err := m.services.RunAI(m.ctx, connectorID, request)
 		return aiResponseLoadedMsg{
-			connectorID: connectorID,
-			output:      resp.Output,
-			duration:    resp.Duration,
-			contextSent: envelope.ContextPayload,
+			connectorID:     connectorID,
+			output:          resp.Output,
+			duration:        resp.Duration,
+			contextSent:     envelope.ContextPayload,
 			contextRevision: envelope.ContextRevision,
-			symbol:      symbol,
-			err:         err,
+			truncation:      envelope.Truncation,
+			symbol:          symbol,
+			err:             err,
 		}
 	}
 }

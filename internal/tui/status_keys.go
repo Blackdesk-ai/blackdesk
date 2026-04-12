@@ -49,7 +49,7 @@ func (m Model) statusText() string {
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint(".", "ask AI"),
-			renderStatusKeyHint("c", "connector/model"),
+			renderStatusKeyHint("c", "config"),
 			renderStatusKeyHint("↑/↓", "scroll"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("f", "fullscreen"),
@@ -65,21 +65,6 @@ func (m Model) statusText() string {
 }
 
 func (m Model) quoteStatusText() string {
-	if m.quoteCenterMode == quoteCenterFilings {
-		parts := []string{
-			"Keys: " + renderStatusKeyHint("/", "search"),
-			renderStatusKeyHint("Ctrl+K", "palette"),
-			renderStatusKeyHint("Tab", "tabs"),
-			renderStatusKeyHint("↑/↓", "filings"),
-			renderStatusKeyHint("←/→", "filters"),
-			renderStatusInlineKeyHint("Enter", "open filing"),
-			renderStatusInlineKeyHint("i", "analyze"),
-			renderStatusInlineKeyHint("r", "refresh"),
-		}
-		parts = append(parts, renderStatusKeyHint("?", "help"))
-		parts = m.appendUpdateStatusKey(parts)
-		return strings.Join(parts, " | ")
-	}
 	parts := []string{
 		"Keys: " + renderStatusKeyHint("/", "search"),
 		renderStatusKeyHint("Ctrl+K", "palette"),
