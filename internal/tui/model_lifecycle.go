@@ -19,6 +19,10 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 	ti.Placeholder = "Search ticker or company"
 	ti.CharLimit = 40
 	ti.Width = 32
+	command := textinput.New()
+	command.Placeholder = "Search functions or symbols"
+	command.CharLimit = 80
+	command.Width = 64
 	ai := textinput.New()
 	ai.Placeholder = "Ask the selected local AI about the market, this symbol, or the current app state (Esc to close)"
 	ai.CharLimit = 1000
@@ -42,7 +46,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 
 	services := deps.Services
 	if services == nil {
-		services = application.NewServices(deps.Registry, deps.AgentRegistry, deps.ConfigStore)
+		services = application.NewServicesWithFilings(deps.Registry, deps.AgentRegistry, deps.ConfigStore, deps.FilingsProvider)
 	}
 	screenerDefs := services.Screeners()
 
@@ -60,12 +64,14 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		lastMarketNews:         now,
 		appVersion:             buildinfo.NormalizedVersion(),
 		searchInput:            ti,
+		commandInput:           command,
 		aiInput:                ai,
 		aiModels:               make(map[string][]string),
 		watchQuotes:            make(map[string]domain.QuoteSnapshot),
 		technicalCache:         make(map[string]domain.PriceSeries),
 		statementCache:         make(map[string]domain.FinancialStatement),
 		insiderCache:           make(map[string]domain.InsiderSnapshot),
+		filingsCache:           make(map[string]domain.FilingsSnapshot),
 		marketOpinionHistory:   make(map[string]domain.PriceSeries),
 		marketOpinionHistoryAt: make(map[string]time.Time),
 		screenerDefs:           append([]domain.ScreenerDefinition(nil), screenerDefs...),
@@ -120,8 +126,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleStatementLoaded(msg)
 	case insidersLoadedMsg:
 		return m.handleInsidersLoaded(msg)
+	case filingsLoadedMsg:
+		return m.handleFilingsLoaded(msg)
+	case searchDebouncedMsg:
+		return m.handleSearchDebounced(msg)
 	case searchLoadedMsg:
 		return m.handleSearchLoaded(msg)
+	case commandPaletteDebouncedMsg:
+		return m.handleCommandPaletteDebounced(msg)
+	case commandPaletteLoadedMsg:
+		return m.handleCommandPaletteLoaded(msg)
 	case tickMsg:
 		return m.handleTick(msg)
 	case aiResponseLoadedMsg:
@@ -136,6 +150,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleAIModelsLoaded(msg)
 	case aiContextPreparedMsg:
 		return m.handleAIContextPrepared(msg)
+	case aiFilingAnalysisPreparedMsg:
+		return m.handleAIFilingAnalysisPrepared(msg)
 	case versionCheckLoadedMsg:
 		return m.handleVersionCheckLoaded(msg)
 	case versionUpgradeLoadedMsg:

@@ -17,6 +17,7 @@ func (m *Model) pushAIUserMessage(prompt string) {
 		Timestamp: time.Now(),
 		Meta:      fmt.Sprintf("%s%s", m.activeAIConnectorLabel(), m.activeAIModelStatus()),
 	})
+	m.maintainAITranscriptBudget()
 	m.aiScroll = 0
 }
 
@@ -40,6 +41,7 @@ func (m *Model) pushAIAssistantMessage(body string, runErr error, duration time.
 		Timestamp: time.Now(),
 		Meta:      meta,
 	})
+	m.maintainAITranscriptBudget()
 	m.aiScroll = 0
 }
 
@@ -47,12 +49,19 @@ func (m *Model) scrollAITranscript(step int) {
 	m.aiScroll = max(0, m.aiScroll+step)
 }
 
+func (m *Model) touchAIContext() {
+	m.aiContextRevision++
+}
+
 func (m Model) aiContextStatusLine() string {
+	if m.aiRunning {
+		return "refreshing"
+	}
 	if m.aiLastContext == "" {
 		return "cold"
 	}
-	if strings.EqualFold(m.aiLastSymbol, m.activeSymbol()) {
+	if m.aiLastContextRevision == m.aiContextRevision && strings.EqualFold(m.aiLastSymbol, m.activeSymbol()) {
 		return "stable"
 	}
-	return "pending update"
+	return "stale"
 }

@@ -41,17 +41,60 @@ func TestAIPickerUsesCenterSetup(t *testing.T) {
 	}
 }
 
-func TestDotFocusesAIComposerWithoutChangingTab(t *testing.T) {
+func TestTypingOnAITabFocusesAIComposer(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
-	model.tabIdx = tabQuote
+	model.tabIdx = tabAI
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	m := updated.(Model)
+	if m.tabIdx != tabAI {
+		t.Fatal("expected typing to stay on AI tab")
+	}
+	if !m.aiFocused {
+		t.Fatal("expected typing to focus AI composer")
+	}
+	if m.aiInput.Value() != "h" {
+		t.Fatalf("expected typed key to enter AI composer, got %q", m.aiInput.Value())
+	}
+}
+
+func TestDotFocusesAIComposerOnAITab(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabAI
 
 	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'.'}})
 	m := updated.(Model)
-	if m.tabIdx != tabQuote {
-		t.Fatal("expected dot to keep current tab")
-	}
 	if !m.aiFocused {
-		t.Fatal("expected dot to focus AI composer")
+		t.Fatal("expected dot to focus AI composer on AI tab")
+	}
+	if m.aiInput.Value() != "" {
+		t.Fatalf("expected dot shortcut not to be inserted in AI input, got %q", m.aiInput.Value())
+	}
+}
+
+func TestDotSubmitsFocusedAIComposerWithoutTypingDot(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabAI
+	model.aiFocused = true
+	model.aiInput.Focus()
+	model.aiInput.SetValue("summarize aapl")
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'.'}})
+	m := updated.(Model)
+	if m.aiFocused {
+		t.Fatal("expected dot to blur AI composer after submit")
+	}
+	if m.aiInput.Value() != "" {
+		t.Fatalf("expected prompt to clear after dot submit, got %q", m.aiInput.Value())
+	}
+	if !m.aiRunning {
+		t.Fatal("expected dot to start AI run when composer is focused")
+	}
+	if len(m.aiMessages) == 0 || m.aiMessages[len(m.aiMessages)-1].Body != "summarize aapl" {
+		t.Fatal("expected dot submit to append user message")
+	}
+	if cmd == nil {
+		t.Fatal("expected dot submit to prepare AI context")
 	}
 }
 

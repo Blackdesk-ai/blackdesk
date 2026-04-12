@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"blackdesk/internal/domain"
 	"blackdesk/internal/storage"
 )
 
@@ -67,6 +68,62 @@ func TestAIRequestIncludesFullHistoryWithinBudget(t *testing.T) {
 	}
 }
 
+func TestAIRequestIncludesConversationSummaryBeforeRecentHistory(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.aiConversationSummary = "- User: asked for prior filing context\n- AI: highlighted debt rollover risk"
+	model.aiMessages = []aiMessage{
+		{Role: aiMessageUser, Body: "latest follow-up"},
+		{Role: aiMessageAssistant, Body: "recent answer"},
+	}
+
+	req, err := model.buildAIRequest("follow-up")
+	if err != nil {
+		t.Fatalf("buildAIRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<conversation_summary>") {
+		t.Fatal("expected conversation summary block to be included")
+	}
+	if !strings.Contains(req.SystemPrompt, "debt rollover risk") {
+		t.Fatal("expected compacted summary content to be included")
+	}
+	if strings.Index(req.SystemPrompt, "<conversation_summary>") > strings.Index(req.SystemPrompt, "<conversation>") {
+		t.Fatal("expected conversation summary to appear before recent conversation")
+	}
+}
+
+func TestAITranscriptCompactionRollsOldMessagesIntoSummary(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	chunk := strings.Repeat("AAPL filing context and management commentary. ", 700)
+	for i := 0; i < 18; i++ {
+		role := aiMessageUser
+		if i%2 == 1 {
+			role = aiMessageAssistant
+		}
+		model.aiMessages = append(model.aiMessages, aiMessage{
+			Role: role,
+			Body: fmt.Sprintf("msg-%02d %s", i, chunk),
+		})
+	}
+
+	model.maintainAITranscriptBudget()
+
+	if model.aiConversationSummary == "" {
+		t.Fatal("expected old transcript to be compacted into a summary")
+	}
+	if model.aiCompactedMessages == 0 {
+		t.Fatal("expected compacted message count to be tracked")
+	}
+	if len(model.aiMessages) >= 18 {
+		t.Fatal("expected only recent raw messages to remain after compaction")
+	}
+	if !strings.Contains(model.aiConversationSummary, "msg-00") {
+		t.Fatal("expected oldest content to survive in compacted summary")
+	}
+	if strings.Contains(model.aiConversationSummary, "msg-17") {
+		t.Fatal("expected newest content to remain in raw conversation, not summary")
+	}
+}
+
 func TestAIRequestIncludesContextOnlyOncePerRequest(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 
@@ -76,6 +133,28 @@ func TestAIRequestIncludesContextOnlyOncePerRequest(t *testing.T) {
 	}
 	if strings.Count(req.SystemPrompt, "<blackdesk_context_update>") != 1 {
 		t.Fatal("expected exactly one context block per request")
+	}
+}
+
+func TestAIRequestReportsTruncationWhenPayloadIsClipped(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.aiConversationSummary = strings.Repeat("summary ", aiMaxSummaryChars)
+	for i := 0; i < 32; i++ {
+		model.aiMessages = append(model.aiMessages, aiMessage{
+			Role: aiMessageAssistant,
+			Body: strings.Repeat("history chunk ", aiMaxMessageChars/4),
+		})
+	}
+
+	req, err := model.buildAIRequest("follow-up")
+	if err != nil {
+		t.Fatalf("buildAIRequest failed: %v", err)
+	}
+	if !req.Truncation.ConversationSummary {
+		t.Fatal("expected conversation summary truncation to be tracked")
+	}
+	if !req.Truncation.ConversationHistory {
+		t.Fatal("expected conversation history truncation to be tracked")
 	}
 }
 
@@ -114,5 +193,65 @@ func TestWriteAILastRequestDump(t *testing.T) {
 	}
 	if !strings.Contains(dump.ContextPayload, `"HV21":"23.4%"`) {
 		t.Fatal("expected context payload in AI dump")
+	}
+}
+
+func TestAIFilingAnalysisRequestIncludesSelectedFilingBlock(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.config.AIConnector = "codex"
+	model.config.AIModel = "gpt-5.4"
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.quote.Symbol = "AAPL"
+	model.fundamentals.Symbol = "AAPL"
+
+	snapshot := domain.FilingsSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		CIK:         "0000320193",
+	}
+	doc := domain.FilingDocument{
+		Item: domain.FilingItem{
+			Form:                  "10-K",
+			FilingDate:            model.clock,
+			PrimaryDocument:       "aapl-10k.htm",
+			PrimaryDocDescription: "Annual report",
+			URL:                   "https://www.sec.gov/Archives/example",
+		},
+		ContentType: "text/html",
+		Text:        "Revenue grew 12%. Services margin expanded. Risk factors include China concentration.",
+	}
+
+	req, err := model.buildAIFilingAnalysisRequest("AAPL", snapshot, doc, "Analyze the selected 10-K filing for AAPL.")
+	if err != nil {
+		t.Fatalf("buildAIFilingAnalysisRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<selected_filing>") {
+		t.Fatal("expected filing analysis request to include selected filing block")
+	}
+	if !strings.Contains(req.SystemPrompt, "Revenue grew 12%.") {
+		t.Fatal("expected filing text to be included in filing analysis request")
+	}
+	if !strings.Contains(req.SystemPrompt, "What Was Filed") || !strings.Contains(req.SystemPrompt, "Bottom Line") {
+		t.Fatal("expected filing analysis sections in system prompt")
+	}
+	if req.ContextRevision != model.aiContextRevision {
+		t.Fatal("expected filing analysis request to retain context revision")
+	}
+}
+
+func TestAIFilingAnalysisRequestReportsFilingTextTruncation(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	doc := domain.FilingDocument{
+		Item: domain.FilingItem{Form: "10-K"},
+		Text: strings.Repeat("filing text ", aiFilingDocumentChars),
+	}
+
+	req, err := model.buildAIFilingAnalysisRequest("AAPL", domain.FilingsSnapshot{Symbol: "AAPL"}, doc, "Analyze.")
+	if err != nil {
+		t.Fatalf("buildAIFilingAnalysisRequest failed: %v", err)
+	}
+	if !req.Truncation.FilingText {
+		t.Fatal("expected filing analysis request to track filing text truncation")
 	}
 }

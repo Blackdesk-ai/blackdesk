@@ -56,6 +56,8 @@ func (m Model) renderOverviewCenter(header, section, label, muted, pos, neg lipg
 		return m.renderOverviewStatements(section, label, muted, neg, chartWidth, height, &b)
 	case quoteCenterInsiders:
 		return m.renderOverviewInsiders(section, label, muted, neg, chartWidth, height, &b)
+	case quoteCenterFilings:
+		return m.renderOverviewFilings(section, label, muted, neg, chartWidth, height, &b)
 	default:
 		return m.renderOverviewChart(section, label, muted, neg, chartWidth, height, displaySeries, &b)
 	}
@@ -93,6 +95,45 @@ func (m Model) renderOverviewInsiders(section, label, muted, neg lipgloss.Style,
 	b.WriteString(renderQuoteInsidersBoard(section, label, muted, m.insidersForSymbol(m.activeSymbol()), chartWidth, boardHeight))
 	if m.errInsiders != nil {
 		b.WriteString("\n\n" + neg.Render("Insiders may be stale: "+m.errInsiders.Error()))
+	}
+	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) renderOverviewFilings(section, label, muted, neg lipgloss.Style, chartWidth, height int, b *strings.Builder) string {
+	snapshot := m.filingsForSymbol(m.activeSymbol())
+	b.WriteString(section.Render("FILINGS") + " " + muted.Render("(palette)") + "\n\n")
+	if len(snapshot.Items) == 0 {
+		if m.errFilings != nil {
+			b.WriteString(neg.Render(m.errFilings.Error()))
+		} else {
+			b.WriteString(muted.Render("No recent SEC filings loaded for the active symbol"))
+		}
+		return clipLines(strings.TrimRight(b.String(), "\n"), height)
+	}
+
+	selectedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#14110D")).Background(lipgloss.Color("#E7B66B")).Bold(true)
+	visibleRows := max(4, height-7)
+	start := 0
+	if m.filingsSel >= visibleRows {
+		start = m.filingsSel - visibleRows + 1
+	}
+	end := min(len(snapshot.Items), start+visibleRows)
+	for i := start; i < end; i++ {
+		item := snapshot.Items[i]
+		left := fmt.Sprintf("%s  %s", item.Form, filingDateLabel(item))
+		right := strings.TrimSpace(item.PrimaryDocDescription)
+		if right == "" {
+			right = strings.TrimSpace(item.PrimaryDocument)
+		}
+		line := renderStatusLine(chartWidth, left, right)
+		if i == m.filingsSel {
+			b.WriteString(selectedStyle.Width(chartWidth).Render(line) + "\n")
+			continue
+		}
+		b.WriteString(line + "\n")
+	}
+	if m.errFilings != nil {
+		b.WriteString("\n" + neg.Render("Filings may be stale: "+m.errFilings.Error()))
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }

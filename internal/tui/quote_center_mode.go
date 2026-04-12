@@ -8,5 +8,6 @@ const (
 	quoteCenterTechnicals
 	quoteCenterStatements
 	quoteCenterInsiders
+	quoteCenterFilings
 	quoteCenterNews
 )

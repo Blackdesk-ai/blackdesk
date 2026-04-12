@@ -56,7 +56,6 @@ Use any of these:
 ```bash
 blackdesk -h
 blackdesk --help
-blackdesk ?
 ```
 
 Print the installed version:

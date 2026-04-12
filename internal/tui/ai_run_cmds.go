@@ -38,12 +38,14 @@ func (m Model) runAICmd(prompt string) tea.Cmd {
 		_ = writeAILastRequestDump(m.workspaceRoot, connectorID, request.Model, envelope)
 		resp, err := m.services.RunAI(m.ctx, connectorID, request)
 		return aiResponseLoadedMsg{
-			connectorID: connectorID,
-			output:      resp.Output,
-			duration:    resp.Duration,
-			contextSent: envelope.ContextPayload,
-			symbol:      envelope.ActiveSymbol,
-			err:         err,
+			connectorID:     connectorID,
+			output:          resp.Output,
+			duration:        resp.Duration,
+			contextSent:     envelope.ContextPayload,
+			contextRevision: envelope.ContextRevision,
+			truncation:      envelope.Truncation,
+			symbol:          envelope.ActiveSymbol,
+			err:             err,
 		}
 	}
 }
@@ -130,6 +132,46 @@ func (m Model) runQuoteInsightCmd(symbol string) tea.Cmd {
 			contextSent: envelope.ContextPayload,
 			symbol:      symbol,
 			err:         err,
+		}
+	}
+}
+
+func (m Model) runFilingAnalysisCmd(symbol string, snapshot domain.FilingsSnapshot, filing domain.FilingDocument, prompt string) tea.Cmd {
+	connectorID := m.activeAIConnectorID()
+	if strings.TrimSpace(connectorID) == "" {
+		return func() tea.Msg {
+			return aiResponseLoadedMsg{connectorID: "", symbol: symbol, err: fmt.Errorf("no AI connector selected")}
+		}
+	}
+	if m.services == nil {
+		return func() tea.Msg {
+			return aiResponseLoadedMsg{connectorID: connectorID, symbol: symbol, err: fmt.Errorf("AI registry unavailable")}
+		}
+	}
+	envelope, err := m.buildAIFilingAnalysisRequest(symbol, snapshot, filing, prompt)
+	if err != nil {
+		return func() tea.Msg {
+			return aiResponseLoadedMsg{connectorID: connectorID, symbol: symbol, err: err}
+		}
+	}
+	request := agents.Request{
+		Workspace:    m.workspaceRoot,
+		Prompt:       envelope.Prompt,
+		Model:        strings.TrimSpace(m.config.AIModel),
+		SystemPrompt: envelope.SystemPrompt,
+	}
+	return func() tea.Msg {
+		_ = writeAILastRequestDump(m.workspaceRoot, connectorID, request.Model, envelope)
+		resp, err := m.services.RunAI(m.ctx, connectorID, request)
+		return aiResponseLoadedMsg{
+			connectorID:     connectorID,
+			output:          resp.Output,
+			duration:        resp.Duration,
+			contextSent:     envelope.ContextPayload,
+			contextRevision: envelope.ContextRevision,
+			truncation:      envelope.Truncation,
+			symbol:          symbol,
+			err:             err,
 		}
 	}
 }

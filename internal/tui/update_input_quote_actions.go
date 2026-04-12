@@ -18,7 +18,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			Target: application.QuoteCenterChart,
 		})
 		if plan.Allowed {
-			m.quoteCenterMode = quoteCenterChart
+			m.setQuoteCenterMode(quoteCenterChart)
 		}
 		m.status = plan.Status
 		return m, nil, true
@@ -27,7 +27,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			Target: application.QuoteCenterFundamentals,
 		})
 		if plan.Allowed {
-			m.quoteCenterMode = quoteCenterFundamentals
+			m.setQuoteCenterMode(quoteCenterFundamentals)
 		}
 		m.status = plan.Status
 		return m, nil, true
@@ -36,7 +36,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			Target: application.QuoteCenterTechnicals,
 		})
 		if plan.Allowed {
-			m.quoteCenterMode = quoteCenterTechnicals
+			m.setQuoteCenterMode(quoteCenterTechnicals)
 		}
 		m.status = plan.Status
 		if plan.LoadTechnical && m.needsTechnicalHistory(m.activeSymbol()) {
@@ -52,7 +52,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			m.status = plan.Status
 			return m, nil, true
 		}
-		m.quoteCenterMode = quoteCenterStatements
+		m.setQuoteCenterMode(quoteCenterStatements)
 		m.status = plan.Status
 		if plan.LoadStatement {
 			return m, m.loadStatementCmd(m.activeSymbol()), true
@@ -67,13 +67,38 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			m.status = plan.Status
 			return m, nil, true
 		}
-		m.quoteCenterMode = quoteCenterInsiders
+		m.setQuoteCenterMode(quoteCenterInsiders)
 		m.status = plan.Status
 		if plan.LoadInsiders {
 			return m, m.loadInsidersCmd(m.activeSymbol()), true
 		}
 		return m, nil, true
 	case "i":
+		if m.quoteCenterMode == quoteCenterFilings {
+			if m.aiRunning {
+				return m, nil, true
+			}
+			item, ok := m.currentFiling()
+			if !ok {
+				return m, nil, true
+			}
+			prompt := filingAnalysisPrompt(m.activeSymbol(), item)
+			_ = m.setActiveTab(tabAI)
+			m.helpOpen = false
+			m.searchMode = false
+			m.commandPaletteOpen = false
+			m.aiPickerOpen = false
+			m.aiFocused = false
+			m.aiInput.Blur()
+			m.pushAIUserMessage(prompt)
+			m.aiRunning = true
+			m.aiErr = nil
+			m.status = "Loading selected filing for AI analysis…"
+			return m, m.prepareFilingAnalysisCmd(m.activeSymbol(), item), true
+		}
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		if !m.aiQuoteInsightRunning {
 			m.aiQuoteInsightSymbol = strings.ToUpper(m.activeSymbol())
 			m.aiQuoteInsightErr = nil
@@ -83,18 +108,30 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 		}
 		return m, nil, true
 	case "d":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		if len(m.config.Watchlist) > 1 {
 			m.removeSelectedWatchlistSymbol()
 			return m, tea.Batch(m.persistCmd(), m.loadAllCmd(m.activeSymbol())), true
 		}
 		return m, nil, true
 	case "n":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		m.cycleNewsSelection()
 		return m, nil, true
 	case "p":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		m.cycleProfileScroll()
 		return m, nil, true
 	case "o":
+		if !m.quoteBottomPanelsVisible() {
+			return m, nil, false
+		}
 		if len(m.news) > 0 {
 			_ = openURLFunc(m.news[m.newsSelected].URL)
 			m.status = "Opened news item in browser"

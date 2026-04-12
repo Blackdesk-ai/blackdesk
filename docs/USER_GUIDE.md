@@ -20,7 +20,7 @@ blackdesk
 Useful CLI commands:
 
 - `blackdesk -v` or `blackdesk --version` prints the installed version
-- `blackdesk -h`, `blackdesk --help`, or `blackdesk ?` shows CLI help
+- `blackdesk -h` or `blackdesk --help` shows CLI help
 
 Useful maintenance commands:
 
@@ -51,8 +51,8 @@ Use these global controls everywhere:
 
 - `Tab` cycles workspaces
 - `1-5` jumps directly to a workspace
+- `Ctrl+K` opens the command palette
 - `/` opens symbol search
-- `.` focuses AI input
 - `?` opens help
 - `q` quits the app
 
@@ -73,13 +73,27 @@ Search is the fastest way to load a symbol into the desk.
 
 - `/` opens search
 - type a ticker or company name
-- `Enter` submits a query when there are no results yet
+- results appear after a short pause while typing
+- `Enter` on a ticker-like query loads that symbol immediately
 - `↑ / ↓` moves through results
 - `Enter` on a selected result loads that symbol into the desk
 - `Ctrl+A` adds the selected result to the watchlist
 - `Esc` closes search
 
 Selecting a result updates the active symbol and refreshes the quote workspace.
+
+## Command Palette
+
+The command palette is the global launcher for functions and symbols.
+
+- `Ctrl+K` opens the palette
+- type a function name or symbol
+- `↑ / ↓` moves through matches
+- `Enter` opens the selected function or symbol
+- `Esc` closes the palette
+
+Use `/` when you want the fastest path to a symbol.
+Use `Ctrl+K` when you want a broader launcher across workspaces and symbol results.
 
 ## Workspaces
 
@@ -182,6 +196,8 @@ What it is for:
 Main controls:
 
 - `.` focuses the AI input and sends the prompt when already focused
+- start typing to focus the AI input
+- `Enter` sends the prompt when the input is focused
 - `c` opens connector and model selection from the AI workspace
 - `↑ / ↓` scrolls the transcript
 - `f` toggles AI fullscreen

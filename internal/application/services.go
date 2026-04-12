@@ -20,15 +20,21 @@ type Services struct {
 	registry    *providers.Registry
 	agents      *agents.Registry
 	configStore *storage.ConfigStore
+	filings     FilingsProvider
 }
 
 var errServiceUnavailable = errors.New("service unavailable")
 
 func NewServices(registry *providers.Registry, agentsRegistry *agents.Registry, configStore *storage.ConfigStore) *Services {
+	return NewServicesWithFilings(registry, agentsRegistry, configStore, nil)
+}
+
+func NewServicesWithFilings(registry *providers.Registry, agentsRegistry *agents.Registry, configStore *storage.ConfigStore, filingsProvider FilingsProvider) *Services {
 	return &Services{
 		registry:    registry,
 		agents:      agentsRegistry,
 		configStore: configStore,
+		filings:     filingsProvider,
 	}
 }
 
@@ -163,6 +169,24 @@ func (s *Services) GetScreener(ctx context.Context, id string, count int) (domai
 		return domain.ScreenerResult{}, errServiceUnavailable
 	}
 	return provider.GetScreener(ctx, id, count)
+}
+
+func (s *Services) HasFilings() bool {
+	return s != nil && s.filings != nil
+}
+
+func (s *Services) GetFilings(ctx context.Context, symbol string) (domain.FilingsSnapshot, error) {
+	if s == nil || s.filings == nil {
+		return domain.FilingsSnapshot{}, errServiceUnavailable
+	}
+	return s.filings.GetFilings(ctx, symbol)
+}
+
+func (s *Services) GetFilingDocument(ctx context.Context, item domain.FilingItem) (domain.FilingDocument, error) {
+	if s == nil || s.filings == nil {
+		return domain.FilingDocument{}, errServiceUnavailable
+	}
+	return s.filings.GetFilingDocument(ctx, item)
 }
 
 func (s *Services) SaveConfig(cfg storage.Config) error {

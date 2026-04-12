@@ -20,7 +20,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 		{"GLOBAL", []helpEntry{
 			{"?", "Toggle this help page"},
 			{"/", "Open symbol search"},
-			{".", "Focus AI composer"},
+			{"Ctrl+K", "Open command palette"},
 			{"Tab", "Cycle tabs"},
 			{"1-5", "Jump to tab"},
 			{"q", "Quit"},
@@ -39,6 +39,12 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"Ctrl+A", "Add symbol to watchlist"},
 			{"Esc", "Close search"},
 		}},
+		{"COMMANDS", []helpEntry{
+			{"Ctrl+K", "Open command palette"},
+			{"↑ / ↓", "Navigate matches"},
+			{"Enter", "Open selected function or symbol"},
+			{"Esc", "Close command palette"},
+		}},
 		{"MARKETS", []helpEntry{
 			{"i", "Generate AI market insight"},
 			{"r", "Refresh market data"},
@@ -50,7 +56,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"t", "Technicals view"},
 			{"s", "Statements view"},
 			{"h", "Insiders view"},
-			{"← / →", "Change timeframe / statement kind"},
+			{"← / →", "Chart timeframe / statement kind / Filings filter"},
 			{"[ / ]", "Change statement frequency"},
 			{"n", "Next news story"},
 			{"p", "Scroll company description"},
@@ -66,8 +72,10 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"r", "Refresh news feed"},
 		}},
 		{"AI", []helpEntry{
-			{".", "Focus input / send prompt"},
-			{"c", "Open connector & model picker"},
+			{".", "Focus input or send prompt"},
+			{"Type", "Focus input and compose prompt"},
+			{"Enter", "Send prompt when input is focused"},
+			{"c", "Open AI config"},
 			{"↑ / ↓", "Scroll transcript"},
 			{"f", "Toggle fullscreen"},
 			{"r", "Re-run with fresh context"},

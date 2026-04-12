@@ -8,10 +8,12 @@ import (
 )
 
 type RequestEnvelope struct {
-	Prompt         string
-	SystemPrompt   string
-	ContextPayload string
-	ActiveSymbol   string
+	Prompt          string
+	SystemPrompt    string
+	ContextPayload  string
+	ActiveSymbol    string
+	ContextRevision int
+	Truncation      aiRequestTruncation
 }
 
 func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
@@ -19,8 +21,10 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 	if err != nil {
 		return RequestEnvelope{}, err
 	}
-	payload := truncateRunes(string(ctxPayload), aiMaxContextChars)
+	rawPayload := string(ctxPayload)
+	payload, payloadTruncated := truncateRunesFlag(rawPayload, aiMaxContextChars)
 	activeSymbol := m.activeSymbol()
+	truncation := aiRequestTruncation{ContextPayload: payloadTruncated}
 
 	var b strings.Builder
 	b.WriteString(strings.TrimSpace(aiSystemPromptTemplate))
@@ -28,6 +32,13 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 	b.WriteString("<blackdesk_context_update>\n")
 	b.WriteString(payload)
 	b.WriteString("\n</blackdesk_context_update>\n\n")
+	if summary := strings.TrimSpace(m.aiConversationSummary); summary != "" {
+		summaryText, summaryTruncated := truncateRunesFlag(summary, aiMaxSummaryChars)
+		truncation.ConversationSummary = summaryTruncated
+		b.WriteString("<conversation_summary>\n")
+		b.WriteString(summaryText)
+		b.WriteString("\n</conversation_summary>\n\n")
+	}
 	b.WriteString("<conversation>\n")
 	history := m.aiMessages
 	if len(history) > 0 {
@@ -46,7 +57,8 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 		}
 		entry := "[" + role + "] " + truncateRunes(strings.TrimSpace(msg.Body), aiMaxMessageChars)
 		entry += "\n\n"
-		if historyChars+len([]rune(entry)) > aiMaxHistoryChars {
+		if historyChars+len([]rune(entry)) > aiMaxRecentHistoryChars {
+			truncation.ConversationHistory = true
 			break
 		}
 		historyBlock = append([]string{entry}, historyBlock...)
@@ -56,27 +68,36 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 		b.WriteString(entry)
 	}
 	b.WriteString("</conversation>")
+	systemPrompt, promptTruncated := truncateRunesFlag(b.String(), aiMaxPromptChars)
+	truncation.FinalPrompt = promptTruncated
 
 	return RequestEnvelope{
-		Prompt:         prompt,
-		SystemPrompt:   truncateRunes(b.String(), aiMaxPromptChars),
-		ContextPayload: payload,
-		ActiveSymbol:   activeSymbol,
+		Prompt:          prompt,
+		SystemPrompt:    systemPrompt,
+		ContextPayload:  payload,
+		ActiveSymbol:    activeSymbol,
+		ContextRevision: m.aiContextRevision,
+		Truncation:      truncation,
 	}, nil
 }
 
 func truncateRunes(input string, limit int) string {
+	out, _ := truncateRunesFlag(input, limit)
+	return out
+}
+
+func truncateRunesFlag(input string, limit int) (string, bool) {
 	if limit <= 0 {
-		return ""
+		return "", strings.TrimSpace(input) != ""
 	}
 	runes := []rune(input)
 	if len(runes) <= limit {
-		return input
+		return input, false
 	}
 	if limit <= 3 {
-		return string(runes[:limit])
+		return string(runes[:limit]), true
 	}
-	return string(runes[:limit-3]) + "..."
+	return string(runes[:limit-3]) + "...", true
 }
 
 func compactAINews(items []domain.NewsItem, limit int) []domain.NewsItem {

@@ -36,6 +36,10 @@ func (m Model) handleWorkspaceVerticalNavigation(step int) (Model, tea.Cmd, bool
 		m.cycleMarketNewsSelection(step)
 		return m, nil, true
 	default:
+		if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings {
+			m.cycleFilingsSelection(step)
+			return m, nil, true
+		}
 		return m.handleWatchlistNavigation(step)
 	}
 }

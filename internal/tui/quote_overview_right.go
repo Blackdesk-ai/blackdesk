@@ -9,6 +9,9 @@ import (
 )
 
 func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, height int) string {
+	if m.quoteCenterMode == quoteCenterFilings {
+		return m.renderOverviewFilingsRight(section, label, muted, width, height)
+	}
 	var b strings.Builder
 	upside := analystUpsideValue(m.fundamentals, m.quote.Price)
 	upsideLine := analystUpsideLine(m.fundamentals, m.quote.Price)
@@ -28,5 +31,57 @@ func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, 
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Beta"), formatMetricFloat(m.fundamentals.Beta)))
 	b.WriteString("\n" + section.Render("AI INSIGHT") + " " + muted.Render("(i)") + "\n\n")
 	b.WriteString(m.renderQuoteInsightBlock(muted, width))
+	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) renderOverviewFilingsRight(section, label, muted lipgloss.Style, width, height int) string {
+	var b strings.Builder
+	b.WriteString(section.Render("FILING PREVIEW") + "\n\n")
+	snapshot := m.filingsForSymbol(m.activeSymbol())
+	item, ok := m.currentFiling()
+	if !ok {
+		if m.errFilings != nil {
+			b.WriteString(m.errFilings.Error())
+		} else {
+			b.WriteString(muted.Render("No filing selected"))
+		}
+		return clipLines(strings.TrimRight(b.String(), "\n"), height)
+	}
+
+	b.WriteString(label.Render(item.Form) + "\n")
+	if snapshot.CompanyName != "" {
+		b.WriteString(muted.Render(truncateText(snapshot.CompanyName, width)) + "\n")
+	}
+	if snapshot.CIK != "" {
+		b.WriteString(muted.Render("CIK "+snapshot.CIK) + "\n")
+	}
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Filed"), filingDateLabel(item)))
+	if !item.ReportDate.IsZero() {
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Period"), item.ReportDate.Format("2006-01-02")))
+	}
+	if !item.AcceptedAt.IsZero() {
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Accepted"), item.AcceptedAt.Format("2006-01-02 15:04:05")))
+	}
+	if item.PrimaryDocDescription != "" {
+		b.WriteString("\n" + muted.Render("Document") + "\n")
+		b.WriteString(renderWrappedTextBlock(muted, item.PrimaryDocDescription, width))
+	}
+	if item.PrimaryDocument != "" {
+		b.WriteString("\n\n" + muted.Render("File") + "\n")
+		b.WriteString(renderWrappedTextBlock(muted, item.PrimaryDocument, width))
+	}
+	flags := make([]string, 0, 2)
+	if item.IsInlineXBRL {
+		flags = append(flags, "inline xbrl")
+	}
+	if item.IsXBRL {
+		flags = append(flags, "xbrl")
+	}
+	if len(flags) > 0 {
+		b.WriteString("\n\n" + muted.Render("Flags") + "\n")
+		b.WriteString(renderWrappedTextBlock(muted, strings.Join(flags, " • "), width))
+	}
+	b.WriteString("\n\n" + muted.Render("n/p move • o open filing"))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }

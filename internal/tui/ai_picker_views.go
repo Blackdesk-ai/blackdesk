@@ -39,14 +39,20 @@ func (m Model) renderAISetupBlock(section, muted lipgloss.Style, width int) stri
 	b.WriteString(muted.Render(truncateText(valueOrDash(strings.TrimSpace(m.config.AIModel)), width)) + "\n\n")
 	b.WriteString(section.Render("STATE") + "\n\n")
 	b.WriteString(truncateText(fmt.Sprintf("Messages  %d", len(m.aiMessages)), width) + "\n")
+	if m.aiCompactedMessages > 0 {
+		b.WriteString(truncateText(fmt.Sprintf("Summary   %d compacted", m.aiCompactedMessages), width) + "\n")
+	}
 	b.WriteString(truncateText(fmt.Sprintf("Symbol    %s", m.activeSymbol()), width) + "\n")
 	b.WriteString(truncateText(fmt.Sprintf("Context   %s", m.aiContextStatusLine()), width) + "\n")
+	if m.aiLastRequestTruncation.hasAny() {
+		b.WriteString(truncateText(fmt.Sprintf("Request   %s", m.aiLastRequestTruncation.summaryLine()), width) + "\n")
+	}
 	if m.aiRunning {
 		b.WriteString(truncateText("Running   yes", width) + "\n")
 	}
 	for _, line := range []string{
-		". ask from anywhere",
-		", load/switch model",
+		". focus/send in AI",
+		"c open config",
 		"↑/↓ scroll chat",
 		"x clear",
 	} {

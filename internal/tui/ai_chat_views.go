@@ -16,7 +16,7 @@ func (m Model) renderAICenter(section, muted lipgloss.Style, width, height int) 
 		lines = append(lines, assistantStyle.Render("AI")+" "+muted.Render(aiTypingFrame(m.clock)), "")
 	}
 	if len(lines) == 0 {
-		b.WriteString(renderWrappedTextBlock(muted, "No messages yet. Press . from anywhere to send a message without leaving your current view.", width))
+		b.WriteString(renderWrappedTextBlock(muted, "No messages yet. Press . or start typing to ask the selected local AI about the current desk context.", width))
 		if m.aiErr != nil {
 			b.WriteString("\n\n" + renderWrappedTextBlock(muted, "Last error: "+m.aiErr.Error(), width))
 		}

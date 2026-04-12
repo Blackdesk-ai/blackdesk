@@ -15,20 +15,15 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 	case "?":
 		m.helpOpen = true
 		return m, nil, true
+	case "ctrl+k":
+		return m, m.openCommandPalette(), true
 	case "/":
 		m.searchMode = true
 		m.searchInput.SetValue("")
 		m.searchItems = nil
 		m.searchIdx = 0
+		m.helpOpen = false
 		m.searchInput.Focus()
-		return m, nil, true
-	case ".":
-		m.searchMode = false
-		m.searchInput.Blur()
-		m.aiPickerOpen = false
-		m.aiFocused = true
-		m.aiInput.Focus()
-		m.status = "AI composer focused"
 		return m, nil, true
 	case "c":
 		if m.tabIdx != tabAI {
@@ -48,6 +43,13 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 	case "1", "2", "3", "4", "5":
 		return m, m.setActiveTab(int(key[0] - '1')), true
 	case "enter":
+		if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings {
+			if item, ok := m.currentFiling(); ok && item.URL != "" {
+				_ = openURLFunc(item.URL)
+				m.status = "Opened SEC filing in browser"
+			}
+			return m, nil, true
+		}
 		if m.tabIdx != tabScreener {
 			return m, nil, true
 		}
@@ -66,11 +68,12 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 		if plan.SelectSymbol {
 			m.selectSymbol(item.Symbol)
 		}
+		var tabCmd tea.Cmd
 		if plan.OpenQuote {
-			m.tabIdx = tabQuote
+			tabCmd = m.setActiveTab(tabQuote)
 		}
 		m.status = plan.Status
-		return m, tea.Batch(m.persistCmd(), m.loadAllCmd(item.Symbol)), true
+		return m, tea.Batch(tabCmd, m.persistCmd(), m.loadAllCmd(item.Symbol)), true
 	default:
 		return m, nil, false
 	}

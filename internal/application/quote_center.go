@@ -4,6 +4,7 @@ type QuoteCenterSelectionInput struct {
 	Target        QuoteCenterMode
 	HasStatements bool
 	HasInsiders   bool
+	HasFilings    bool
 }
 
 type QuoteCenterSelectionResult struct {
@@ -39,6 +40,14 @@ func PlanQuoteCenterSelection(input QuoteCenterSelectionInput) QuoteCenterSelect
 			Allowed:       true,
 			Status:        "Quote center: technicals",
 			LoadTechnical: true,
+		}
+	case QuoteCenterFilings:
+		if !input.HasFilings {
+			return QuoteCenterSelectionResult{Status: "Filings unavailable"}
+		}
+		return QuoteCenterSelectionResult{
+			Allowed: true,
+			Status:  "Quote center: filings",
 		}
 	case QuoteCenterFundamentals:
 		return QuoteCenterSelectionResult{

@@ -60,7 +60,31 @@ type insidersLoadedMsg struct {
 	err  error
 }
 
+type filingsLoadedMsg struct {
+	data domain.FilingsSnapshot
+	err  error
+}
+
+type searchDebouncedMsg struct {
+	id    int
+	query string
+}
+
 type searchLoadedMsg struct {
+	id      int
+	query   string
+	results []domain.SymbolRef
+	err     error
+}
+
+type commandPaletteDebouncedMsg struct {
+	id    int
+	query string
+}
+
+type commandPaletteLoadedMsg struct {
+	id      int
+	query   string
 	results []domain.SymbolRef
 	err     error
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 
 	"blackdesk/internal/domain"
@@ -229,5 +230,18 @@ func TestOverviewDeskSparkUsesRightPanelWidth(t *testing.T) {
 	spark := sparklineBlock(series, 24)
 	if got := len([]rune(spark)); got != 24 {
 		t.Fatalf("expected desk sparkline width 24, got %d", got)
+	}
+}
+
+func TestRenderStatusLineKeepsRightMetaSeparatedForANSILeftContent(t *testing.T) {
+	left := lipgloss.NewStyle().Foreground(lipgloss.Color("#E7B66B")).Render("> Ask the selected local AI about the market, this symbol, or the current app state (Esc to close)")
+	right := "Source: test | AI: gpt-5.4-mini"
+
+	line := ansi.Strip(renderStatusLine(90, left, right))
+	if !strings.Contains(line, right) {
+		t.Fatalf("expected right meta in status line, got %q", line)
+	}
+	if strings.Contains(line, "close)Source:") {
+		t.Fatalf("expected right meta to stay separated from left content, got %q", line)
 	}
 }

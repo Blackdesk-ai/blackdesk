@@ -383,3 +383,100 @@ func TestQuoteOnlyKeysAreIgnoredOutsideQuoteTab(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenNewsKeyWorksOnlyWhenQuoteNewsPanelIsVisible(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterChart
+	model.news = []domain.NewsItem{{Title: "News", URL: "https://example.com/story"}}
+	model.newsSelected = 0
+
+	calledURL := ""
+	prevOpenURL := openURLFunc
+	openURLFunc = func(raw string) error {
+		calledURL = raw
+		return nil
+	}
+	defer func() {
+		openURLFunc = prevOpenURL
+	}()
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o'}})
+	model = updated.(Model)
+	if calledURL != "https://example.com/story" {
+		t.Fatalf("expected open news key to open visible quote news story, got %q", calledURL)
+	}
+
+	model.quoteCenterMode = quoteCenterStatements
+	model.status = ""
+	calledURL = ""
+
+	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o'}})
+	model = updated.(Model)
+	if calledURL != "" {
+		t.Fatal("expected open news key to be ignored when quote news panel is hidden")
+	}
+	if strings.Contains(model.status, "Opened news item") {
+		t.Fatalf("expected no news-open status when quote news panel is hidden, got %q", model.status)
+	}
+}
+
+func TestQuoteLocalPanelKeysAreIgnoredWhenPanelsAreHidden(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+	model.config.Watchlist = []string{"AAPL", "MSFT"}
+	model.selectedIdx = 0
+	model.config.ActiveSymbol = "AAPL"
+	model.news = []domain.NewsItem{{Title: "Story", URL: "https://example.com/story"}, {Title: "Story 2", URL: "https://example.com/story-2"}}
+	model.newsSelected = 0
+	model.fundamentals.Description = strings.Repeat("profile text ", 50)
+	model.profileScroll = 0
+
+	calledURL := ""
+	prevOpenURL := openURLFunc
+	openURLFunc = func(raw string) error {
+		calledURL = raw
+		return nil
+	}
+	defer func() {
+		openURLFunc = prevOpenURL
+	}()
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+	model = updated.(Model)
+	if model.aiQuoteInsightRunning {
+		t.Fatal("expected insight key to be ignored when quote panels are hidden")
+	}
+
+	beforeWatchlist := append([]string(nil), model.config.Watchlist...)
+	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+	model = updated.(Model)
+	if len(model.config.Watchlist) != len(beforeWatchlist) {
+		t.Fatal("expected delete key to be ignored when quote panels are hidden")
+	}
+
+	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+	model = updated.(Model)
+	if model.newsSelected != 0 {
+		t.Fatal("expected news navigation key to be ignored when quote panels are hidden")
+	}
+
+	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+	model = updated.(Model)
+	if model.profileScroll != 0 {
+		t.Fatal("expected profile key to be ignored when quote panels are hidden")
+	}
+
+	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o'}})
+	model = updated.(Model)
+	if calledURL != "" {
+		t.Fatal("expected open news key to be ignored when quote panels are hidden")
+	}
+}

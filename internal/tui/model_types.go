@@ -54,6 +54,17 @@ type Model struct {
 	searchMode                  bool
 	searchItems                 []domain.SymbolRef
 	searchIdx                   int
+	searchDebounceID            int
+	searchRequestID             int
+	searchRequestQuery          string
+	commandInput                textinput.Model
+	commandPaletteOpen          bool
+	commandPaletteItems         []commandPaletteItem
+	commandPaletteIdx           int
+	commandPaletteSymbolItems   []domain.SymbolRef
+	commandPaletteDebounceID    int
+	commandPaletteRequestID     int
+	commandPaletteRequestQuery  string
 	aiInput                     textinput.Model
 	aiFocused                   bool
 	aiRunning                   bool
@@ -61,6 +72,11 @@ type Model struct {
 	aiErr                       error
 	aiDuration                  time.Duration
 	aiMessages                  []aiMessage
+	aiConversationSummary       string
+	aiCompactedMessages         int
+	aiLastRequestTruncation     aiRequestTruncation
+	aiContextRevision           int
+	aiLastContextRevision       int
 	aiScroll                    int
 	aiLastContext               string
 	aiLastSymbol                string
@@ -91,6 +107,7 @@ type Model struct {
 	technicalCache    map[string]domain.PriceSeries
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot
+	filingsCache      map[string]domain.FilingsSnapshot
 	news              []domain.NewsItem
 	newsSelected      int
 	marketNews        []domain.NewsItem
@@ -113,6 +130,9 @@ type Model struct {
 	insiders          domain.InsiderSnapshot
 	statementKind     domain.StatementKind
 	statementFreq     domain.StatementFrequency
+	filings           domain.FilingsSnapshot
+	filingsSel        int
+	filingsFilter     filingsFilterMode
 
 	errQuote            error
 	errHistory          error
@@ -122,5 +142,6 @@ type Model struct {
 	errFundamentals     error
 	errStatement        error
 	errInsiders         error
+	errFilings          error
 	errScreener         error
 }

@@ -11,7 +11,7 @@ func (m Model) statusText() string {
 	case tabMarkets:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
-			renderStatusKeyHint(".", "ask AI"),
+			renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("i", "insight"),
 			renderStatusInlineKeyHint("r", "refresh"),
@@ -22,7 +22,7 @@ func (m Model) statusText() string {
 	case tabScreener:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
-			renderStatusKeyHint(".", "ask AI"),
+			renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint("↑/↓", "results"),
 			renderStatusKeyHint("←/→", "screeners"),
 			renderStatusKeyHint("Tab", "tabs"),
@@ -36,7 +36,7 @@ func (m Model) statusText() string {
 	case tabNews:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
-			renderStatusKeyHint(".", "ask AI"),
+			renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint("↑/↓", "stories"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("r", "refresh"),
@@ -47,8 +47,9 @@ func (m Model) statusText() string {
 		return strings.Join(parts, " | ")
 	case tabAI:
 		parts := []string{
-			"Keys: " + renderStatusKeyHint(".", "ask AI"),
-			renderStatusKeyHint("c", "connector/model"),
+			"Keys: " + renderStatusKeyHint("Ctrl+K", "palette"),
+			renderStatusKeyHint(".", "ask AI"),
+			renderStatusKeyHint("c", "config"),
 			renderStatusKeyHint("↑/↓", "scroll"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("f", "fullscreen"),
@@ -66,7 +67,7 @@ func (m Model) statusText() string {
 func (m Model) quoteStatusText() string {
 	parts := []string{
 		"Keys: " + renderStatusKeyHint("/", "search"),
-		renderStatusKeyHint(".", "ask AI"),
+		renderStatusKeyHint("Ctrl+K", "palette"),
 		renderStatusKeyHint("Tab", "tabs"),
 	}
 	if m.quoteCenterMode != quoteCenterChart {

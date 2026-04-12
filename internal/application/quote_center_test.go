@@ -18,4 +18,12 @@ func TestPlanQuoteCenterSelectionHonorsCapabilities(t *testing.T) {
 	if insiders.Allowed || insiders.Status != "Insiders unavailable for active provider" {
 		t.Fatalf("unexpected insiders center result: %+v", insiders)
 	}
+
+	filings := PlanQuoteCenterSelection(QuoteCenterSelectionInput{
+		Target:     QuoteCenterFilings,
+		HasFilings: true,
+	})
+	if !filings.Allowed || filings.Status != "Quote center: filings" {
+		t.Fatalf("unexpected filings center result: %+v", filings)
+	}
 }
