@@ -94,6 +94,43 @@ func (m Model) handleAIContextPrepared(msg aiContextPreparedMsg) (Model, tea.Cmd
 	return m, m.runAICmd(msg.prompt)
 }
 
+func (m Model) handleAIFilingAnalysisPrepared(msg aiFilingAnalysisPreparedMsg) (Model, tea.Cmd) {
+	m.applyAIPreparedData(aiPreparedLoadInput{
+		prompt:          msg.prompt,
+		symbol:          msg.symbol,
+		marketRisk:      msg.marketRisk,
+		marketRiskErr:   msg.marketRiskErr,
+		quote:           msg.quote,
+		quoteErr:        msg.quoteErr,
+		history:         msg.history,
+		historyErr:      msg.historyErr,
+		technical:       msg.technical,
+		technicalErr:    msg.technicalErr,
+		statementBundle: msg.statementBundle,
+		statement:       msg.statement,
+		statementLoaded: msg.statementLoaded,
+		statementErr:    msg.statementErr,
+		insiders:        msg.insiders,
+		insidersLoaded:  msg.insidersLoaded,
+		insidersErr:     msg.insidersErr,
+		news:            msg.news,
+		newsLoaded:      msg.newsLoaded,
+		newsErr:         msg.newsErr,
+		fundamentals:    msg.fundamentals,
+		fundErr:         msg.fundErr,
+	})
+	if msg.filingErr != nil {
+		m.aiRunning = false
+		m.aiErr = msg.filingErr
+		m.pushAIAssistantMessage("", msg.filingErr, 0)
+		m.status = msg.filingErr.Error()
+		return m, nil
+	}
+	snapshot := m.filingsForSymbol(msg.symbol)
+	m.status = "Running " + m.activeAIConnectorLabel() + " filing analysis…"
+	return m, m.runFilingAnalysisCmd(msg.symbol, snapshot, msg.filing, msg.prompt)
+}
+
 func (m *Model) applyAIPreparedData(input aiPreparedLoadInput) {
 	for _, stmt := range input.statementBundle {
 		m.cacheStatement(stmt)

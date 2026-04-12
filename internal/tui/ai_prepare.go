@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"blackdesk/internal/application"
+	"blackdesk/internal/domain"
 )
 
 func (m Model) buildPrepareAIContextRequest(symbol string, missingQuotes []string) application.PrepareAIContextRequest {
@@ -78,6 +79,33 @@ func aiContextPreparedMsgFromResult(prompt, symbol string, result application.Pr
 func aiQuoteInsightPreparedMsgFromResult(symbol string, result application.PreparedAIContext) aiQuoteInsightPreparedMsg {
 	return aiQuoteInsightPreparedMsg{
 		symbol:          symbol,
+		quote:           result.Quote,
+		quoteErr:        result.QuoteErr,
+		history:         result.History,
+		historyErr:      result.HistoryErr,
+		technical:       result.Technical,
+		technicalErr:    result.TechnicalErr,
+		statementBundle: result.StatementBundle,
+		statement:       result.Statement,
+		statementLoaded: result.StatementLoaded,
+		statementErr:    result.StatementErr,
+		insiders:        result.Insiders,
+		insidersLoaded:  result.InsidersLoaded,
+		insidersErr:     result.InsidersErr,
+		news:            result.News,
+		newsLoaded:      result.NewsLoaded,
+		newsErr:         result.NewsErr,
+		fundamentals:    result.Fundamentals,
+		fundErr:         result.FundErr,
+	}
+}
+
+func aiFilingAnalysisPreparedMsgFromResult(prompt, symbol string, filing domain.FilingDocument, filingErr error, result application.PreparedAIContext) aiFilingAnalysisPreparedMsg {
+	return aiFilingAnalysisPreparedMsg{
+		prompt:          prompt,
+		symbol:          symbol,
+		filing:          filing,
+		filingErr:       filingErr,
 		quote:           result.Quote,
 		quoteErr:        result.QuoteErr,
 		history:         result.History,

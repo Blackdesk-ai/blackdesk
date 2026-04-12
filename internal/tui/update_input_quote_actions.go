@@ -74,6 +74,28 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 		}
 		return m, nil, true
 	case "i":
+		if m.quoteCenterMode == quoteCenterFilings {
+			if m.aiRunning {
+				return m, nil, true
+			}
+			item, ok := m.currentFiling()
+			if !ok {
+				return m, nil, true
+			}
+			prompt := filingAnalysisPrompt(m.activeSymbol(), item)
+			m.tabIdx = tabAI
+			m.helpOpen = false
+			m.searchMode = false
+			m.commandPaletteOpen = false
+			m.aiPickerOpen = false
+			m.aiFocused = false
+			m.aiInput.Blur()
+			m.pushAIUserMessage(prompt)
+			m.aiRunning = true
+			m.aiErr = nil
+			m.status = "Loading selected filing for AI analysis…"
+			return m, m.prepareFilingAnalysisCmd(m.activeSymbol(), item), true
+		}
 		if !m.quoteBottomPanelsVisible() {
 			return m, nil, false
 		}

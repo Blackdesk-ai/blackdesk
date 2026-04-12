@@ -5,7 +5,6 @@
 - `?`: toggle help
 - `Ctrl+K`: open command palette
 - `/`: open symbol search
-- `.`: focus AI input
 - `Tab`: cycle workspaces
 - `1-5`: jump to workspace
 - `q`: quit
@@ -64,7 +63,8 @@
 
 ## AI
 
-- `.`: focus input or send prompt
+- `Type`: focus input and compose prompt
+- `Enter`: send prompt when input is focused
 - `c`: open connector and model picker
 - `↑ / ↓`: scroll transcript
 - `f`: toggle fullscreen
@@ -76,4 +76,4 @@
 - `↑ / ↓`: cycle connectors or models
 - `← / →`: switch picker step
 - `Enter`: confirm selection
-- `Esc` or `.`: close picker
+- `Esc`: close picker

@@ -58,6 +58,33 @@ type aiQuoteInsightLoadedMsg struct {
 	err         error
 }
 
+type aiFilingAnalysisPreparedMsg struct {
+	prompt          string
+	symbol          string
+	filing          domain.FilingDocument
+	filingErr       error
+	marketRisk      domain.MarketRiskSnapshot
+	marketRiskErr   error
+	quote           *domain.QuoteSnapshot
+	quoteErr        error
+	history         *domain.PriceSeries
+	historyErr      error
+	technical       *domain.PriceSeries
+	technicalErr    error
+	statementBundle []domain.FinancialStatement
+	statement       *domain.FinancialStatement
+	statementLoaded bool
+	statementErr    error
+	insiders        *domain.InsiderSnapshot
+	insidersLoaded  bool
+	insidersErr     error
+	news            []domain.NewsItem
+	newsLoaded      bool
+	newsErr         error
+	fundamentals    *domain.FundamentalsSnapshot
+	fundErr         error
+}
+
 type aiModelsLoadedMsg struct {
 	connectorID string
 	models      []string

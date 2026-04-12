@@ -41,17 +41,20 @@ func TestAIPickerUsesCenterSetup(t *testing.T) {
 	}
 }
 
-func TestDotFocusesAIComposerWithoutChangingTab(t *testing.T) {
+func TestTypingOnAITabFocusesAIComposer(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
-	model.tabIdx = tabQuote
+	model.tabIdx = tabAI
 
-	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'.'}})
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
 	m := updated.(Model)
-	if m.tabIdx != tabQuote {
-		t.Fatal("expected dot to keep current tab")
+	if m.tabIdx != tabAI {
+		t.Fatal("expected typing to stay on AI tab")
 	}
 	if !m.aiFocused {
-		t.Fatal("expected dot to focus AI composer")
+		t.Fatal("expected typing to focus AI composer")
+	}
+	if m.aiInput.Value() != "h" {
+		t.Fatalf("expected typed key to enter AI composer, got %q", m.aiInput.Value())
 	}
 }
 

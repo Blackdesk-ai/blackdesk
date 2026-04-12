@@ -103,7 +103,7 @@ func (m Model) renderQuoteFilingsList(section, muted lipgloss.Style, width, heig
 		}
 		b.WriteString(line + "\n")
 	}
-	b.WriteString("\n" + muted.Render("↑/↓ move • Enter open filing"))
+	b.WriteString("\n" + muted.Render("↑/↓ move • Enter open filing • i analyze in AI"))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -133,5 +133,7 @@ func (m Model) renderQuoteFilingsPreview(section, label, muted lipgloss.Style, w
 		b.WriteString("\n\n" + muted.Render("Open") + "\n")
 		b.WriteString(renderWrappedTextBlock(muted, "Press Enter to open the original SEC filing in your browser.", width))
 	}
+	b.WriteString("\n\n" + muted.Render("AI Analysis") + "\n")
+	b.WriteString(renderWrappedTextBlock(muted, "Press i to open AI and generate a structured analysis of this selected filing.", width))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }

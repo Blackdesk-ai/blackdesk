@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"blackdesk/internal/domain"
 	"blackdesk/internal/storage"
 )
 
@@ -75,6 +76,38 @@ func TestGetFilingsBuildsRecentItems(t *testing.T) {
 	}
 	if got.Items[0].URL == "" {
 		t.Fatal("expected filing URL")
+	}
+}
+
+func TestGetFilingDocumentExtractsReadableText(t *testing.T) {
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			body := `<html><body><h1>Annual Report</h1><p>Revenue increased 12%.</p><script>ignored()</script></body></html>`
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Body:       io.NopCloser(strings.NewReader(body)),
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+				Request:    req,
+			}, nil
+		}),
+	}
+
+	provider := New(Config{
+		Client: client,
+		Cache:  storage.NewMemoryCache(),
+	})
+	doc, err := provider.GetFilingDocument(context.Background(), domain.FilingItem{
+		URL: "https://example.test/filing.htm",
+	})
+	if err != nil {
+		t.Fatalf("GetFilingDocument error: %v", err)
+	}
+	if !strings.Contains(doc.Text, "Annual Report") || !strings.Contains(doc.Text, "Revenue increased 12%.") {
+		t.Fatalf("unexpected filing text %q", doc.Text)
+	}
+	if strings.Contains(doc.Text, "ignored()") {
+		t.Fatalf("expected script tags to be removed, got %q", doc.Text)
 	}
 }
 

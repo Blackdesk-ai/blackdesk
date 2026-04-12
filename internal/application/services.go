@@ -182,6 +182,13 @@ func (s *Services) GetFilings(ctx context.Context, symbol string) (domain.Filing
 	return s.filings.GetFilings(ctx, symbol)
 }
 
+func (s *Services) GetFilingDocument(ctx context.Context, item domain.FilingItem) (domain.FilingDocument, error) {
+	if s == nil || s.filings == nil {
+		return domain.FilingDocument{}, errServiceUnavailable
+	}
+	return s.filings.GetFilingDocument(ctx, item)
+}
+
 func (s *Services) SaveConfig(cfg storage.Config) error {
 	if s == nil || s.configStore == nil {
 		return nil

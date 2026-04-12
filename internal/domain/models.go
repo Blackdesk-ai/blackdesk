@@ -284,6 +284,15 @@ type FilingsSnapshot struct {
 	UpdatedAt   time.Time
 }
 
+type FilingDocument struct {
+	Item        FilingItem
+	ContentType string
+	Text        string
+	Truncated   bool
+	Provider    string
+	RetrievedAt time.Time
+}
+
 type InsiderTransaction struct {
 	Insider   string
 	Relation  string

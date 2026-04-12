@@ -128,6 +128,16 @@ func (filingsProvider) GetFilings(context.Context, string) (domain.FilingsSnapsh
 	}, nil
 }
 
+func (filingsProvider) GetFilingDocument(_ context.Context, item domain.FilingItem) (domain.FilingDocument, error) {
+	return domain.FilingDocument{
+		Item:        item,
+		ContentType: "text/html",
+		Text:        "Item 1. Business\nRevenue grew 12% year over year.\nRisk factors include supply chain concentration.\nManagement highlighted services margin expansion.",
+		Provider:    "sec",
+		RetrievedAt: time.Now(),
+	}, nil
+}
+
 func (p *countingHistoryProvider) Name() string { return "test" }
 
 func (p *countingHistoryProvider) Capabilities() domain.ProviderCapabilities {

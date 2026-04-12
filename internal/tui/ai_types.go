@@ -13,6 +13,9 @@ const (
 	aiMaxContextChars         = 24000
 	aiMaxHistoryChars         = 36000
 	aiMaxMessageChars         = 8000
+	aiFilingPromptChars       = 1200000
+	aiFilingContextChars      = 200000
+	aiFilingDocumentChars     = 800000
 	aiContextNewsItems        = 20
 	aiContextMarketNewsItems  = 24
 	aiContextSearchResults    = 20

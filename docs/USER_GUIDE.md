@@ -53,7 +53,6 @@ Use these global controls everywhere:
 - `1-5` jumps directly to a workspace
 - `Ctrl+K` opens the command palette
 - `/` opens symbol search
-- `.` focuses AI input
 - `?` opens help
 - `q` quits the app
 
@@ -196,7 +195,8 @@ What it is for:
 
 Main controls:
 
-- `.` focuses the AI input and sends the prompt when already focused
+- start typing to focus the AI input
+- `Enter` sends the prompt when the input is focused
 - `c` opens connector and model selection from the AI workspace
 - `↑ / ↓` scrolls the transcript
 - `f` toggles AI fullscreen
@@ -212,7 +212,7 @@ Controls:
 - `↑ / ↓` cycles connectors or models
 - `← / →` switches between connector and model steps
 - `Enter` confirms the current selection
-- `Esc` or `.` closes the picker
+- `Esc` closes the picker
 
 ## Watchlist Workflow
 

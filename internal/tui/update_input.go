@@ -48,5 +48,8 @@ func (m Model) handleGlobalKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if next, cmd, handled := m.handleGlobalWorkspaceActionKey(key); handled {
 		return next, cmd
 	}
+	if next, cmd, handled := m.handleAIComposerEntryKey(msg); handled {
+		return next, cmd
+	}
 	return m, nil
 }

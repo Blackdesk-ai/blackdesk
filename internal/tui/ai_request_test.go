@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"blackdesk/internal/domain"
 	"blackdesk/internal/storage"
 )
 
@@ -114,5 +115,46 @@ func TestWriteAILastRequestDump(t *testing.T) {
 	}
 	if !strings.Contains(dump.ContextPayload, `"HV21":"23.4%"`) {
 		t.Fatal("expected context payload in AI dump")
+	}
+}
+
+func TestAIFilingAnalysisRequestIncludesSelectedFilingBlock(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.config.AIConnector = "codex"
+	model.config.AIModel = "gpt-5.4"
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.quote.Symbol = "AAPL"
+	model.fundamentals.Symbol = "AAPL"
+
+	snapshot := domain.FilingsSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		CIK:         "0000320193",
+	}
+	doc := domain.FilingDocument{
+		Item: domain.FilingItem{
+			Form:                  "10-K",
+			FilingDate:            model.clock,
+			PrimaryDocument:       "aapl-10k.htm",
+			PrimaryDocDescription: "Annual report",
+			URL:                   "https://www.sec.gov/Archives/example",
+		},
+		ContentType: "text/html",
+		Text:        "Revenue grew 12%. Services margin expanded. Risk factors include China concentration.",
+	}
+
+	req, err := model.buildAIFilingAnalysisRequest("AAPL", snapshot, doc, "Analyze the selected 10-K filing for AAPL.")
+	if err != nil {
+		t.Fatalf("buildAIFilingAnalysisRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<selected_filing>") {
+		t.Fatal("expected filing analysis request to include selected filing block")
+	}
+	if !strings.Contains(req.SystemPrompt, "Revenue grew 12%.") {
+		t.Fatal("expected filing text to be included in filing analysis request")
+	}
+	if !strings.Contains(req.SystemPrompt, "What Was Filed") || !strings.Contains(req.SystemPrompt, "Bottom Line") {
+		t.Fatal("expected filing analysis sections in system prompt")
 	}
 }

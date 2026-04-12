@@ -191,3 +191,43 @@ func TestQuoteFilingsViewKeepsLongFormInsideFormColumn(t *testing.T) {
 		t.Fatal("expected meaning column to remain visible next to long SEC form code")
 	}
 }
+
+func TestQuoteFilingsModeIStartsAIAnalysisFlow(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		Registry:        providers.NewRegistry(testProvider{}),
+		FilingsProvider: filingsProvider{},
+	})
+	model.width = 140
+	model.height = 40
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.filings, _ = filingsProvider{}.GetFilings(context.Background(), "AAPL")
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+	m := updated.(Model)
+	if m.tabIdx != tabAI {
+		t.Fatalf("expected filings analysis key to switch to AI tab, got %d", m.tabIdx)
+	}
+	if !m.aiRunning {
+		t.Fatal("expected filings analysis key to start AI thinking state immediately")
+	}
+	if len(m.aiMessages) == 0 || m.aiMessages[len(m.aiMessages)-1].Role != aiMessageUser {
+		t.Fatal("expected filings analysis key to append an AI user prompt")
+	}
+	if cmd == nil {
+		t.Fatal("expected filings analysis key to start preparation command")
+	}
+
+	nextMsg := cmd()
+	prepared, ok := nextMsg.(aiFilingAnalysisPreparedMsg)
+	if !ok {
+		t.Fatalf("expected filing analysis prepared message, got %T", nextMsg)
+	}
+	if !strings.Contains(prepared.filing.Text, "Revenue grew 12%") {
+		t.Fatalf("expected filing document text in prepared message, got %q", prepared.filing.Text)
+	}
+}
