@@ -71,3 +71,15 @@ type searchLoadedMsg struct {
 	results []domain.SymbolRef
 	err     error
 }
+
+type commandPaletteDebouncedMsg struct {
+	id    int
+	query string
+}
+
+type commandPaletteLoadedMsg struct {
+	id      int
+	query   string
+	results []domain.SymbolRef
+	err     error
+}

@@ -3,11 +3,19 @@
 ## Global
 
 - `?`: toggle help
+- `Ctrl+K`: open command palette
 - `/`: open symbol search
 - `.`: focus AI input
 - `Tab`: cycle workspaces
 - `1-5`: jump to workspace
 - `q`: quit
+
+## Command Palette
+
+- `Ctrl+K`: open or close command palette
+- `↑ / ↓`: navigate matches
+- `Enter`: open selected function or symbol
+- `Esc`: close command palette
 
 ## Search
 

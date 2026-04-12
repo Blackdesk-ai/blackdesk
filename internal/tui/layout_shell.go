@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func (m Model) View() string {
@@ -54,7 +55,7 @@ func (m Model) View() string {
 	bottomTotalHeight := max(4, availableH-mainTotalHeight)
 	fullHeightQuoteCenter := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterStatements || m.quoteCenterMode == quoteCenterInsiders)
 	fullHeightNews := m.tabIdx == tabNews || m.tabIdx == tabScreener
-	if m.tabIdx == tabAI || fullHeightQuoteCenter || fullHeightNews {
+	if m.commandPaletteOpen || m.tabIdx == tabAI || fullHeightQuoteCenter || fullHeightNews {
 		mainTotalHeight = availableH
 		bottomTotalHeight = 0
 	}
@@ -64,13 +65,17 @@ func (m Model) View() string {
 	mainRow := ""
 	if m.helpOpen {
 		helpH := mainHeight + bottomTotalHeight
-		if m.tabIdx == tabAI || fullHeightQuoteCenter || fullHeightNews {
+		if m.commandPaletteOpen || m.tabIdx == tabAI || fullHeightQuoteCenter || fullHeightNews {
 			helpH = mainHeight
 		}
 		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(helpH).Render(
 			renderHelpOverlay(sectionStyle, lipgloss.NewStyle().Foreground(lipgloss.Color("245")), muted, viewportWidth-frameX, helpH-2),
 		)
 		mainRow = lipgloss.NewStyle().Width(viewportWidth).MaxWidth(viewportWidth).Render(mainRow)
+	} else if m.commandPaletteOpen {
+		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(
+			m.renderCommandPalette(sectionStyle, labelStyle, muted, viewportWidth-frameX, mainHeight-2),
+		)
 	} else if m.tabIdx == tabAI && m.aiFullscreen && !m.aiPickerOpen {
 		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(
 			m.renderCenterPanel(headerStyle, sectionStyle, labelStyle, muted, pos, neg, viewportWidth-frameX, mainHeight-2),
@@ -84,7 +89,7 @@ func (m Model) View() string {
 	mainRow = lipgloss.NewStyle().Width(viewportWidth).MaxWidth(viewportWidth).Render(mainRow)
 
 	bottom := ""
-	if !m.helpOpen && m.tabIdx != tabAI && !fullHeightQuoteCenter && !fullHeightNews {
+	if !m.helpOpen && !m.commandPaletteOpen && m.tabIdx != tabAI && !fullHeightQuoteCenter && !fullHeightNews {
 		bottom = frameStyle.Width(viewportWidth - frameBX).Height(bottomHeight).Render(m.renderBottomPanel(sectionStyle, labelStyle, muted, viewportWidth-frameX, bottomHeight-2))
 	}
 
@@ -92,6 +97,9 @@ func (m Model) View() string {
 	lineText := m.status
 	if m.helpOpen {
 		lineText = muted.Render("Press ? or Esc to close help")
+		statusText = ""
+	} else if m.commandPaletteOpen {
+		lineText = muted.Render("Command palette: Enter open • ↑/↓ move • Esc close")
 		statusText = ""
 	} else if m.searchMode {
 		lineText = m.searchInput.View()
@@ -106,7 +114,10 @@ func (m Model) View() string {
 		lineText = muted.Render(lineText)
 	}
 
-	status := muted.Width(viewportWidth).Render(statusText)
+	status := lipgloss.NewStyle().
+		Width(viewportWidth).
+		MaxWidth(viewportWidth).
+		Render(ansi.Truncate(statusText, viewportWidth, ""))
 	line := lipgloss.NewStyle().Width(viewportWidth).MaxWidth(viewportWidth).Render(
 		renderStatusLine(viewportWidth, lineText, m.renderStatusMeta(muted, pos.Bold(true))),
 	)

@@ -15,11 +15,14 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 	case "?":
 		m.helpOpen = true
 		return m, nil, true
+	case "ctrl+k":
+		return m, m.openCommandPalette(), true
 	case "/":
 		m.searchMode = true
 		m.searchInput.SetValue("")
 		m.searchItems = nil
 		m.searchIdx = 0
+		m.helpOpen = false
 		m.searchInput.Focus()
 		return m, nil, true
 	case ".":

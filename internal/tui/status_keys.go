@@ -11,6 +11,7 @@ func (m Model) statusText() string {
 	case tabMarkets:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
+			renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("Tab", "tabs"),
 			renderStatusInlineKeyHint("i", "insight"),
@@ -22,6 +23,7 @@ func (m Model) statusText() string {
 	case tabScreener:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
+			renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("↑/↓", "results"),
 			renderStatusKeyHint("←/→", "screeners"),
@@ -36,6 +38,7 @@ func (m Model) statusText() string {
 	case tabNews:
 		parts := []string{
 			"Keys: " + renderStatusKeyHint("/", "search"),
+			renderStatusKeyHint("Ctrl+K", "palette"),
 			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("↑/↓", "stories"),
 			renderStatusKeyHint("Tab", "tabs"),
@@ -47,7 +50,8 @@ func (m Model) statusText() string {
 		return strings.Join(parts, " | ")
 	case tabAI:
 		parts := []string{
-			"Keys: " + renderStatusKeyHint(".", "ask AI"),
+			"Keys: " + renderStatusKeyHint("Ctrl+K", "palette"),
+			renderStatusKeyHint(".", "ask AI"),
 			renderStatusKeyHint("c", "connector/model"),
 			renderStatusKeyHint("↑/↓", "scroll"),
 			renderStatusKeyHint("Tab", "tabs"),
@@ -66,6 +70,7 @@ func (m Model) statusText() string {
 func (m Model) quoteStatusText() string {
 	parts := []string{
 		"Keys: " + renderStatusKeyHint("/", "search"),
+		renderStatusKeyHint("Ctrl+K", "palette"),
 		renderStatusKeyHint(".", "ask AI"),
 		renderStatusKeyHint("Tab", "tabs"),
 	}

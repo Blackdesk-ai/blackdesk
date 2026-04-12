@@ -19,6 +19,10 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 	ti.Placeholder = "Search ticker or company"
 	ti.CharLimit = 40
 	ti.Width = 32
+	command := textinput.New()
+	command.Placeholder = "Search functions or symbols"
+	command.CharLimit = 80
+	command.Width = 64
 	ai := textinput.New()
 	ai.Placeholder = "Ask the selected local AI about the market, this symbol, or the current app state (Esc to close)"
 	ai.CharLimit = 1000
@@ -60,6 +64,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		lastMarketNews:         now,
 		appVersion:             buildinfo.NormalizedVersion(),
 		searchInput:            ti,
+		commandInput:           command,
 		aiInput:                ai,
 		aiModels:               make(map[string][]string),
 		watchQuotes:            make(map[string]domain.QuoteSnapshot),
@@ -124,6 +129,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleSearchDebounced(msg)
 	case searchLoadedMsg:
 		return m.handleSearchLoaded(msg)
+	case commandPaletteDebouncedMsg:
+		return m.handleCommandPaletteDebounced(msg)
+	case commandPaletteLoadedMsg:
+		return m.handleCommandPaletteLoaded(msg)
 	case tickMsg:
 		return m.handleTick(msg)
 	case aiResponseLoadedMsg:

@@ -20,6 +20,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 		{"GLOBAL", []helpEntry{
 			{"?", "Toggle this help page"},
 			{"/", "Open symbol search"},
+			{"Ctrl+K", "Open command palette"},
 			{".", "Focus AI composer"},
 			{"Tab", "Cycle tabs"},
 			{"1-5", "Jump to tab"},
@@ -38,6 +39,12 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"↑ / ↓", "Navigate results"},
 			{"Ctrl+A", "Add symbol to watchlist"},
 			{"Esc", "Close search"},
+		}},
+		{"COMMANDS", []helpEntry{
+			{"Ctrl+K", "Open command palette"},
+			{"↑ / ↓", "Navigate matches"},
+			{"Enter", "Open selected function or symbol"},
+			{"Esc", "Close command palette"},
 		}},
 		{"MARKETS", []helpEntry{
 			{"i", "Generate AI market insight"},

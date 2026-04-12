@@ -51,6 +51,7 @@ Use these global controls everywhere:
 
 - `Tab` cycles workspaces
 - `1-5` jumps directly to a workspace
+- `Ctrl+K` opens the command palette
 - `/` opens symbol search
 - `.` focuses AI input
 - `?` opens help
@@ -81,6 +82,19 @@ Search is the fastest way to load a symbol into the desk.
 - `Esc` closes search
 
 Selecting a result updates the active symbol and refreshes the quote workspace.
+
+## Command Palette
+
+The command palette is the global launcher for functions and symbols.
+
+- `Ctrl+K` opens the palette
+- type a function name or symbol
+- `↑ / ↓` moves through matches
+- `Enter` opens the selected function or symbol
+- `Esc` closes the palette
+
+Use `/` when you want the fastest path to a symbol.
+Use `Ctrl+K` when you want a broader launcher across workspaces and symbol results.
 
 ## Workspaces
 

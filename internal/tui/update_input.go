@@ -3,7 +3,7 @@ package tui
 import tea "github.com/charmbracelet/bubbletea"
 
 func (m Model) handleMouseMsg(msg tea.MouseMsg) (Model, tea.Cmd) {
-	if m.tabIdx != tabAI || m.aiPickerOpen || m.searchMode {
+	if m.commandPaletteOpen || m.tabIdx != tabAI || m.aiPickerOpen || m.searchMode {
 		return m, nil
 	}
 	if msg.Action != tea.MouseActionPress {
@@ -19,6 +19,9 @@ func (m Model) handleMouseMsg(msg tea.MouseMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
+	if next, cmd, handled := m.handleCommandPaletteKey(msg); handled {
+		return next, cmd
+	}
 	if next, cmd, handled := m.handleAIPickerKey(msg); handled {
 		return next, cmd
 	}

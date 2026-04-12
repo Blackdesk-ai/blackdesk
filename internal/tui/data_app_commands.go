@@ -62,6 +62,19 @@ func (m Model) searchCmd(query string, id int) tea.Cmd {
 	}
 }
 
+func (m Model) commandPaletteDebounceCmd(query string, id int) tea.Cmd {
+	return tea.Tick(searchDebounceDelay, func(time.Time) tea.Msg {
+		return commandPaletteDebouncedMsg{id: id, query: query}
+	})
+}
+
+func (m Model) commandPaletteSearchCmd(query string, id int) tea.Cmd {
+	return func() tea.Msg {
+		results, err := m.services.SearchSymbols(m.ctx, query)
+		return commandPaletteLoadedMsg{id: id, query: query, results: results, err: err}
+	}
+}
+
 func (m Model) persistCmd() tea.Cmd {
 	cfg := m.config
 	return func() tea.Msg {

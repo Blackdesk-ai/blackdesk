@@ -57,6 +57,14 @@ type Model struct {
 	searchDebounceID            int
 	searchRequestID             int
 	searchRequestQuery          string
+	commandInput                textinput.Model
+	commandPaletteOpen          bool
+	commandPaletteItems         []commandPaletteItem
+	commandPaletteIdx           int
+	commandPaletteSymbolItems   []domain.SymbolRef
+	commandPaletteDebounceID    int
+	commandPaletteRequestID     int
+	commandPaletteRequestQuery  string
 	aiInput                     textinput.Model
 	aiFocused                   bool
 	aiRunning                   bool
