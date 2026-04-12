@@ -67,7 +67,7 @@ func runCLI(ctx context.Context, args []string, stdout, stderr io.Writer) error 
 	}
 	model := tui.NewModel(ctx, deps)
 
-	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(model, tea.WithAltScreen())
 	finalModel, err := p.Run()
 	if err != nil {
 		return err
