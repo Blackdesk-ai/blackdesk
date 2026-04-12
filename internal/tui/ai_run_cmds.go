@@ -42,6 +42,7 @@ func (m Model) runAICmd(prompt string) tea.Cmd {
 			output:      resp.Output,
 			duration:    resp.Duration,
 			contextSent: envelope.ContextPayload,
+			contextRevision: envelope.ContextRevision,
 			symbol:      envelope.ActiveSymbol,
 			err:         err,
 		}
@@ -166,6 +167,7 @@ func (m Model) runFilingAnalysisCmd(symbol string, snapshot domain.FilingsSnapsh
 			output:      resp.Output,
 			duration:    resp.Duration,
 			contextSent: envelope.ContextPayload,
+			contextRevision: envelope.ContextRevision,
 			symbol:      symbol,
 			err:         err,
 		}

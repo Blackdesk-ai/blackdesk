@@ -74,6 +74,8 @@ type Model struct {
 	aiMessages                  []aiMessage
 	aiConversationSummary       string
 	aiCompactedMessages         int
+	aiContextRevision           int
+	aiLastContextRevision       int
 	aiScroll                    int
 	aiLastContext               string
 	aiLastSymbol                string

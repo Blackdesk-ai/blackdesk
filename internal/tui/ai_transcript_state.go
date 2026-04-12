@@ -49,12 +49,19 @@ func (m *Model) scrollAITranscript(step int) {
 	m.aiScroll = max(0, m.aiScroll+step)
 }
 
+func (m *Model) touchAIContext() {
+	m.aiContextRevision++
+}
+
 func (m Model) aiContextStatusLine() string {
+	if m.aiRunning {
+		return "refreshing"
+	}
 	if m.aiLastContext == "" {
 		return "cold"
 	}
-	if strings.EqualFold(m.aiLastSymbol, m.activeSymbol()) {
+	if m.aiLastContextRevision == m.aiContextRevision && strings.EqualFold(m.aiLastSymbol, m.activeSymbol()) {
 		return "stable"
 	}
-	return "pending update"
+	return "stale"
 }

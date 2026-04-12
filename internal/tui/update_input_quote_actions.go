@@ -18,7 +18,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			Target: application.QuoteCenterChart,
 		})
 		if plan.Allowed {
-			m.quoteCenterMode = quoteCenterChart
+			m.setQuoteCenterMode(quoteCenterChart)
 		}
 		m.status = plan.Status
 		return m, nil, true
@@ -27,7 +27,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			Target: application.QuoteCenterFundamentals,
 		})
 		if plan.Allowed {
-			m.quoteCenterMode = quoteCenterFundamentals
+			m.setQuoteCenterMode(quoteCenterFundamentals)
 		}
 		m.status = plan.Status
 		return m, nil, true
@@ -36,7 +36,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			Target: application.QuoteCenterTechnicals,
 		})
 		if plan.Allowed {
-			m.quoteCenterMode = quoteCenterTechnicals
+			m.setQuoteCenterMode(quoteCenterTechnicals)
 		}
 		m.status = plan.Status
 		if plan.LoadTechnical && m.needsTechnicalHistory(m.activeSymbol()) {
@@ -52,7 +52,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			m.status = plan.Status
 			return m, nil, true
 		}
-		m.quoteCenterMode = quoteCenterStatements
+		m.setQuoteCenterMode(quoteCenterStatements)
 		m.status = plan.Status
 		if plan.LoadStatement {
 			return m, m.loadStatementCmd(m.activeSymbol()), true
@@ -67,7 +67,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			m.status = plan.Status
 			return m, nil, true
 		}
-		m.quoteCenterMode = quoteCenterInsiders
+		m.setQuoteCenterMode(quoteCenterInsiders)
 		m.status = plan.Status
 		if plan.LoadInsiders {
 			return m, m.loadInsidersCmd(m.activeSymbol()), true
@@ -83,7 +83,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 				return m, nil, true
 			}
 			prompt := filingAnalysisPrompt(m.activeSymbol(), item)
-			m.tabIdx = tabAI
+			_ = m.setActiveTab(tabAI)
 			m.helpOpen = false
 			m.searchMode = false
 			m.commandPaletteOpen = false

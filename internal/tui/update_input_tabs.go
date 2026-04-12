@@ -68,11 +68,12 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 		if plan.SelectSymbol {
 			m.selectSymbol(item.Symbol)
 		}
+		var tabCmd tea.Cmd
 		if plan.OpenQuote {
-			m.tabIdx = tabQuote
+			tabCmd = m.setActiveTab(tabQuote)
 		}
 		m.status = plan.Status
-		return m, tea.Batch(m.persistCmd(), m.loadAllCmd(item.Symbol)), true
+		return m, tea.Batch(tabCmd, m.persistCmd(), m.loadAllCmd(item.Symbol)), true
 	default:
 		return m, nil, false
 	}

@@ -20,6 +20,7 @@ func (m Model) handleTimeframeNavigation(step int) (Model, tea.Cmd, bool) {
 	}
 	m.rangeIdx = plan.NextIndex
 	m.updateRangeDefaults()
+	m.touchAIContext()
 	return m, tea.Batch(m.persistCmd(), m.loadHistoryCmd(m.activeSymbol())), true
 }
 
@@ -31,7 +32,10 @@ func (m Model) handleStatementKindNavigation(step int) (Model, tea.Cmd, bool) {
 		return m, nil, true
 	}
 	plan := application.StepStatementKind(m.statementKind, step)
-	m.statementKind = plan.Kind
+	if m.statementKind != plan.Kind {
+		m.statementKind = plan.Kind
+		m.touchAIContext()
+	}
 	m.status = plan.Status
 	return m, m.loadStatementCmd(m.activeSymbol()), true
 }
@@ -44,7 +48,10 @@ func (m Model) handleStatementFrequencyNavigation(step int) (Model, tea.Cmd, boo
 		return m, nil, true
 	}
 	plan := application.StepStatementFrequency(m.statementFreq, step)
-	m.statementFreq = plan.Frequency
+	if m.statementFreq != plan.Frequency {
+		m.statementFreq = plan.Frequency
+		m.touchAIContext()
+	}
 	m.status = plan.Status
 	return m, m.loadStatementCmd(m.activeSymbol()), true
 }

@@ -256,6 +256,70 @@ func TestAITabArrowScrollMovesThroughTranscript(t *testing.T) {
 	}
 }
 
+func TestAIContextStatusTracksRevisionAndRunningState(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+
+	if status := model.aiContextStatusLine(); status != "cold" {
+		t.Fatalf("expected cold status by default, got %q", status)
+	}
+
+	model.aiLastContext = "{\"symbol\":\"AAPL\"}"
+	model.aiLastSymbol = model.activeSymbol()
+	model.aiContextRevision = 3
+	model.aiLastContextRevision = 3
+	if status := model.aiContextStatusLine(); status != "stable" {
+		t.Fatalf("expected stable status for matching revisions, got %q", status)
+	}
+
+	model.touchAIContext()
+	if status := model.aiContextStatusLine(); status != "stale" {
+		t.Fatalf("expected stale status after context revision changes, got %q", status)
+	}
+
+	model.aiRunning = true
+	if status := model.aiContextStatusLine(); status != "refreshing" {
+		t.Fatalf("expected refreshing status while AI is running, got %q", status)
+	}
+}
+
+func TestAIResponseKeepsContextStaleIfAppChangedDuringRun(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.aiContextRevision = 6
+	model.aiRunning = true
+
+	updated, _ := model.handleAIResponseLoaded(aiResponseLoadedMsg{
+		output:           "done",
+		contextSent:      "{\"symbol\":\"AAPL\"}",
+		contextRevision:  5,
+		symbol:           model.activeSymbol(),
+	})
+
+	if status := updated.aiContextStatusLine(); status != "stale" {
+		t.Fatalf("expected stale status when app context advanced during run, got %q", status)
+	}
+}
+
+func TestPassiveDataLoadsDoNotInvalidateAIContextStatus(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.aiLastContext = "{\"symbol\":\"AAPL\"}"
+	model.aiLastSymbol = model.activeSymbol()
+	model.aiContextRevision = 4
+	model.aiLastContextRevision = 4
+
+	updated, _ := model.handleQuoteLoaded(quoteLoadedMsg{
+		symbol: model.activeSymbol(),
+		quote:  model.quote,
+	})
+	if status := updated.aiContextStatusLine(); status != "stable" {
+		t.Fatalf("expected passive quote load to keep stable status, got %q", status)
+	}
+
+	updated, _ = updated.handleNewsLoaded(newsLoadedMsg{})
+	if status := updated.aiContextStatusLine(); status != "stable" {
+		t.Fatalf("expected passive news load to keep stable status, got %q", status)
+	}
+}
+
 func TestAITabMouseWheelScrollsTranscript(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.tabIdx = tabAI

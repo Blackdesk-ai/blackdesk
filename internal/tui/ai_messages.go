@@ -13,6 +13,7 @@ type aiResponseLoadedMsg struct {
 	output      string
 	duration    time.Duration
 	contextSent string
+	contextRevision int
 	symbol      string
 	err         error
 }

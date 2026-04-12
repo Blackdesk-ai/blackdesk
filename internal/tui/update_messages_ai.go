@@ -16,6 +16,7 @@ func (m Model) handleAIResponseLoaded(msg aiResponseLoadedMsg) (Model, tea.Cmd) 
 	if msg.contextSent != "" {
 		m.aiLastContext = msg.contextSent
 		m.aiLastSymbol = msg.symbol
+		m.aiLastContextRevision = msg.contextRevision
 	}
 	m.pushAIAssistantMessage(m.aiOutput, msg.err, msg.duration)
 	if msg.err != nil {

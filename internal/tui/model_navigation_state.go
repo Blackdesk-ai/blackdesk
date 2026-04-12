@@ -16,7 +16,11 @@ func (m *Model) setActiveTab(tab int) tea.Cmd {
 		tab = len(headerTabs) - 1
 	}
 	prev := m.tabIdx
+	prevMode := m.quoteCenterMode
 	m.tabIdx = tab
+	if m.tabIdx != prev || m.quoteCenterMode != prevMode {
+		m.touchAIContext()
+	}
 	switch m.tabIdx {
 	case tabNews:
 		if prev == tabNews {
@@ -49,6 +53,13 @@ func (m *Model) setActiveTab(tab int) tea.Cmd {
 
 func (m Model) canChangeTimeframe() bool {
 	return m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterChart
+}
+
+func (m *Model) setQuoteCenterMode(mode quoteCenterMode) {
+	if m.quoteCenterMode != mode {
+		m.quoteCenterMode = mode
+		m.touchAIContext()
+	}
 }
 
 func (m Model) quoteBottomPanelsVisible() bool {

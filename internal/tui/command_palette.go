@@ -336,9 +336,9 @@ func (m Model) openCommandPaletteSymbol(symbol string) (Model, tea.Cmd) {
 	m.addToWatchlist(symbol)
 	m.selectSymbol(symbol)
 	m.closeCommandPalette("Selected " + strings.ToUpper(strings.TrimSpace(symbol)))
-	m.tabIdx = tabQuote
-	m.quoteCenterMode = quoteCenterChart
-	return m, tea.Batch(m.persistCmd(), m.loadAllCmd(symbol))
+	tabCmd := m.setActiveTab(tabQuote)
+	m.setQuoteCenterMode(quoteCenterChart)
+	return m, tea.Batch(tabCmd, m.persistCmd(), m.loadAllCmd(symbol))
 }
 
 func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
@@ -361,37 +361,37 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		return m, m.setActiveTab(tabAI)
 	case "chart":
 		m.closeCommandPalette("Opened chart view")
-		m.tabIdx = tabQuote
-		m.quoteCenterMode = quoteCenterChart
-		return m, nil
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterChart)
+		return m, tabCmd
 	case "fundamentals":
 		m.closeCommandPalette("Opened fundamentals view")
-		m.tabIdx = tabQuote
-		m.quoteCenterMode = quoteCenterFundamentals
-		return m, nil
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterFundamentals)
+		return m, tabCmd
 	case "technicals":
 		m.closeCommandPalette("Opened technicals view")
-		m.tabIdx = tabQuote
-		m.quoteCenterMode = quoteCenterTechnicals
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterTechnicals)
 		if m.needsTechnicalHistory(activeSymbol) {
-			return m, m.loadTechnicalHistoryCmd(activeSymbol)
+			return m, tea.Batch(tabCmd, m.loadTechnicalHistoryCmd(activeSymbol))
 		}
-		return m, nil
+		return m, tabCmd
 	case "statements":
 		m.closeCommandPalette("Opened statements view")
-		m.tabIdx = tabQuote
-		m.quoteCenterMode = quoteCenterStatements
-		return m, m.loadStatementCmd(activeSymbol)
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterStatements)
+		return m, tea.Batch(tabCmd, m.loadStatementCmd(activeSymbol))
 	case "insiders":
 		m.closeCommandPalette("Opened insiders view")
-		m.tabIdx = tabQuote
-		m.quoteCenterMode = quoteCenterInsiders
-		return m, m.loadInsidersCmd(activeSymbol)
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterInsiders)
+		return m, tea.Batch(tabCmd, m.loadInsidersCmd(activeSymbol))
 	case "filings":
 		m.closeCommandPalette("Opened filings view")
-		m.tabIdx = tabQuote
-		m.quoteCenterMode = quoteCenterFilings
-		return m, m.loadFilingsCmd(activeSymbol)
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterFilings)
+		return m, tea.Batch(tabCmd, m.loadFilingsCmd(activeSymbol))
 	default:
 		return m, nil
 	}

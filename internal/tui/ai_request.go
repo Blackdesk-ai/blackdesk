@@ -12,6 +12,7 @@ type RequestEnvelope struct {
 	SystemPrompt   string
 	ContextPayload string
 	ActiveSymbol   string
+	ContextRevision int
 }
 
 func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
@@ -67,6 +68,7 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 		SystemPrompt:   truncateRunes(b.String(), aiMaxPromptChars),
 		ContextPayload: payload,
 		ActiveSymbol:   activeSymbol,
+		ContextRevision: m.aiContextRevision,
 	}, nil
 }
 
