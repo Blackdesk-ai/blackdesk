@@ -258,6 +258,15 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 			Description: fmt.Sprintf("Open insider activity for %s.", activeSymbol),
 		})
 	}
+	if m.services.HasAnalystRecommendations() {
+		items = append(items, commandPaletteFunction{
+			ID:          "analyst",
+			Title:       "Analyst Recommendations",
+			Aliases:     []string{"anr", "analysts", "recommendations", "ratings", "upgrades", "downgrades"},
+			Category:    "Quote",
+			Description: fmt.Sprintf("Open analyst recommendation history for %s.", activeSymbol),
+		})
+	}
 	if m.services.HasFilings() {
 		items = append(items, commandPaletteFunction{
 			ID:          "filings",
@@ -426,6 +435,11 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterInsiders)
 		return m, tea.Batch(tabCmd, m.loadInsidersCmd(activeSymbol))
+	case "analyst":
+		m.closeCommandPalette("Opened analyst recommendations view")
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterAnalyst)
+		return m, tea.Batch(tabCmd, m.loadAnalystRecommendationsCmd(activeSymbol))
 	case "filings":
 		m.closeCommandPalette("Opened filings view")
 		tabCmd := m.setActiveTab(tabQuote)

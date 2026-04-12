@@ -73,8 +73,9 @@ A simple first-run flow:
 2. Press `/` to search for a symbol.
 3. Press `Enter` to load the selected result.
 4. Use `c`, `f`, `t`, `s`, and `h` in `Quote`.
-5. Use `Tab` or `1-5` to move across workspaces.
-6. Open `AI` and ask for a summary of the active setup.
+5. Press `Ctrl+K` and open `Analyst Recommendations` or type `anr`.
+6. Use `Tab` or `1-5` to move across workspaces.
+7. Open `AI` and ask for a summary of the active setup.
 
 ## Where can I find the keyboard shortcuts?
 
@@ -113,6 +114,13 @@ For example:
 - AI picker opens from the `AI` workspace
 - symbol-focused views live in `Quote`
 - story navigation depends on whether you are in `News` or quote-specific news
+
+Some symbol research pages also open from the command palette instead of a single-letter shortcut.
+Examples include:
+
+- `Analyst Recommendations`
+- `Filings`
+- `Earnings`
 
 ## Why is a symbol not loading correctly?
 

@@ -336,6 +336,39 @@ type EarningsSnapshot struct {
 	UpdatedAt   time.Time
 }
 
+type AnalystRecommendationItem struct {
+	Firm      string
+	Action    string
+	ToGrade   string
+	FromGrade string
+	Date      time.Time
+}
+
+type AnalystRecommendationTrend struct {
+	Period     string
+	StrongBuy  int
+	Buy        int
+	Hold       int
+	Sell       int
+	StrongSell int
+}
+
+type AnalystRecommendationsSnapshot struct {
+	Symbol             string
+	CompanyName        string
+	RecommendationKey  string
+	RecommendationMean float64
+	AnalystOpinions    int
+	TargetLowPrice     float64
+	TargetMeanPrice    float64
+	TargetHighPrice    float64
+	Items              []AnalystRecommendationItem
+	Trends             []AnalystRecommendationTrend
+	Freshness          string
+	Provider           string
+	UpdatedAt          time.Time
+}
+
 type EconomicCalendarEvent struct {
 	Date              time.Time
 	EventAt           time.Time
@@ -401,14 +434,15 @@ type PriceSeries struct {
 }
 
 type ProviderCapabilities struct {
-	Quote            bool
-	History          bool
-	News             bool
-	MarketNews       bool
-	Fundamentals     bool
-	Search           bool
-	Statements       bool
-	Insiders         bool
-	EconomicCalendar bool
-	Screeners        bool
+	Quote                  bool
+	History                bool
+	News                   bool
+	MarketNews             bool
+	Fundamentals           bool
+	Search                 bool
+	Statements             bool
+	Insiders               bool
+	AnalystRecommendations bool
+	EconomicCalendar       bool
+	Screeners              bool
 }

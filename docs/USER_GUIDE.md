@@ -100,6 +100,7 @@ Common palette functions include:
 - `Technicals`
 - `Statements`
 - `Insiders`
+- `Analyst Recommendations` or `anr`
 - `Filings`
 - `Earnings`
 
@@ -153,6 +154,7 @@ What it is for:
 - fundamentals and company context
 - technicals and trend state
 - statements and insiders
+- analyst recommendation review from the command palette
 - filings and earnings review from the command palette
 - symbol-specific news and AI insight
 
@@ -175,6 +177,7 @@ Main controls:
 
 Additional Quote pages:
 
+- `Analyst Recommendations` is opened from the command palette or by typing `anr` and uses a fullscreen research layout for broker rating changes, recommendation trend, and current consensus targets.
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
 

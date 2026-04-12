@@ -73,6 +73,10 @@ func (testProvider) GetFundamentals(context.Context, string) (domain.Fundamental
 	return domain.FundamentalsSnapshot{}, nil
 }
 
+func (testProvider) GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error) {
+	return sampleAnalystRecommendationsSnapshot(), nil
+}
+
 func (testProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
 	return sampleEarningsSnapshot(), nil
 }
@@ -185,6 +189,10 @@ func (p *countingHistoryProvider) GetFundamentals(context.Context, string) (doma
 	return domain.FundamentalsSnapshot{}, nil
 }
 
+func (p *countingHistoryProvider) GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error) {
+	return sampleAnalystRecommendationsSnapshot(), nil
+}
+
 func (p *countingHistoryProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
 	return sampleEarningsSnapshot(), nil
 }
@@ -259,6 +267,10 @@ func (p *aiPrepProvider) GetFundamentals(context.Context, string) (domain.Fundam
 	return domain.FundamentalsSnapshot{Symbol: "AAPL", Description: "Apple", MarketCap: 1}, nil
 }
 
+func (p *aiPrepProvider) GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error) {
+	return sampleAnalystRecommendationsSnapshot(), nil
+}
+
 func (p *aiPrepProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
 	return sampleEarningsSnapshot(), nil
 }
@@ -324,6 +336,50 @@ func sampleEarningsSnapshot() domain.EarningsSnapshot {
 			{Period: "+1q", EPSAverage: 1.77, RevenueAverage: 102_300_000_000},
 			{Period: "0y", EPSAverage: 7.08, RevenueAverage: 403_000_000_000},
 			{Period: "+1y", EPSAverage: 7.44, RevenueAverage: 420_000_000_000},
+		},
+		Freshness: domain.FreshnessLive,
+		Provider:  "test",
+		UpdatedAt: time.Now(),
+	}
+}
+
+func sampleAnalystRecommendationsSnapshot() domain.AnalystRecommendationsSnapshot {
+	return domain.AnalystRecommendationsSnapshot{
+		Symbol:             "AAPL",
+		CompanyName:        "Apple Inc.",
+		RecommendationKey:  "buy",
+		RecommendationMean: 1.90,
+		AnalystOpinions:    42,
+		TargetLowPrice:     190,
+		TargetMeanPrice:    225,
+		TargetHighPrice:    250,
+		Items: []domain.AnalystRecommendationItem{
+			{
+				Firm:      "Morgan Stanley",
+				Action:    "up",
+				ToGrade:   "Overweight",
+				FromGrade: "Equal-Weight",
+				Date:      time.Date(2026, 4, 11, 13, 30, 0, 0, time.UTC),
+			},
+			{
+				Firm:      "Goldman Sachs",
+				Action:    "maintains",
+				ToGrade:   "Buy",
+				FromGrade: "Buy",
+				Date:      time.Date(2026, 4, 9, 12, 0, 0, 0, time.UTC),
+			},
+			{
+				Firm:      "Barclays",
+				Action:    "down",
+				ToGrade:   "Equal Weight",
+				FromGrade: "Overweight",
+				Date:      time.Date(2026, 4, 7, 15, 45, 0, 0, time.UTC),
+			},
+		},
+		Trends: []domain.AnalystRecommendationTrend{
+			{Period: "0m", StrongBuy: 12, Buy: 20, Hold: 8, Sell: 1, StrongSell: 1},
+			{Period: "-1m", StrongBuy: 11, Buy: 20, Hold: 9, Sell: 1, StrongSell: 1},
+			{Period: "-2m", StrongBuy: 10, Buy: 19, Hold: 10, Sell: 2, StrongSell: 1},
 		},
 		Freshness: domain.FreshnessLive,
 		Provider:  "test",

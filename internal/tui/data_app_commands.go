@@ -44,6 +44,9 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	if plan.LoadInsiders {
 		cmds = append(cmds, m.loadInsidersCmd(symbol))
 	}
+	if plan.LoadAnalyst {
+		cmds = append(cmds, m.loadAnalystRecommendationsCmd(symbol))
+	}
 	if plan.LoadFilings {
 		cmds = append(cmds, m.loadFilingsCmd(symbol))
 	}
@@ -97,6 +100,21 @@ func (m Model) loadFilingsCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
 		data, err := m.services.GetFilings(m.ctx, symbol)
 		return filingsLoadedMsg{data: data, err: err}
+	}
+}
+
+func (m Model) loadAnalystRecommendationsCmd(symbol string) tea.Cmd {
+	if m.services == nil || !m.services.HasAnalystRecommendations() {
+		return nil
+	}
+	if data, ok := m.cachedAnalystRecommendations(symbol); ok {
+		return func() tea.Msg {
+			return analystRecommendationsLoadedMsg{data: data, err: nil}
+		}
+	}
+	return func() tea.Msg {
+		data, err := m.services.GetAnalystRecommendations(m.ctx, symbol)
+		return analystRecommendationsLoadedMsg{data: data, err: err}
 	}
 }
 

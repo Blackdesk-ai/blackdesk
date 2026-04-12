@@ -90,15 +90,16 @@ func (p *Provider) Name() string {
 
 func (p *Provider) Capabilities() domain.ProviderCapabilities {
 	return domain.ProviderCapabilities{
-		Quote:            true,
-		History:          true,
-		News:             true,
-		Fundamentals:     true,
-		Search:           true,
-		Statements:       true,
-		Insiders:         true,
-		EconomicCalendar: true,
-		Screeners:        true,
+		Quote:                  true,
+		History:                true,
+		News:                   true,
+		Fundamentals:           true,
+		Search:                 true,
+		Statements:             true,
+		Insiders:               true,
+		AnalystRecommendations: true,
+		EconomicCalendar:       true,
+		Screeners:              true,
 	}
 }
 

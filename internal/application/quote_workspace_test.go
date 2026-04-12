@@ -34,3 +34,14 @@ func TestPlanQuoteWorkspaceLoadEnablesFilingsLoad(t *testing.T) {
 		t.Fatalf("expected unrelated center loads to stay disabled, got %+v", plan)
 	}
 }
+
+func TestPlanQuoteWorkspaceLoadEnablesAnalystLoad(t *testing.T) {
+	plan := PlanQuoteWorkspaceLoad(QuoteCenterAnalyst, false, true, true)
+
+	if !plan.LoadAnalyst {
+		t.Fatalf("expected analyst load for analyst mode, got %+v", plan)
+	}
+	if plan.LoadStatement || plan.LoadInsiders || plan.LoadTechnical {
+		t.Fatalf("expected unrelated center loads to stay disabled, got %+v", plan)
+	}
+}
