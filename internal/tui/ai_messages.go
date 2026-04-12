@@ -87,6 +87,24 @@ type aiFilingAnalysisPreparedMsg struct {
 	fundErr         error
 }
 
+type aiFilingChunkLoadedMsg struct {
+	connectorID string
+	output      string
+	duration    time.Duration
+	truncation  aiRequestTruncation
+	symbol      string
+	err         error
+}
+
+type aiFilingSynthesisLoadedMsg struct {
+	connectorID string
+	output      string
+	duration    time.Duration
+	truncation  aiRequestTruncation
+	symbol      string
+	err         error
+}
+
 type aiModelsLoadedMsg struct {
 	connectorID string
 	models      []string

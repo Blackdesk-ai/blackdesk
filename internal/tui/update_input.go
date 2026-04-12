@@ -23,6 +23,9 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if next, cmd, handled := m.handleHelpKey(msg); handled {
 		return next, cmd
 	}
+	if next, cmd, handled := m.handleGlobalPageKey(msg); handled {
+		return next, cmd
+	}
 	return m.handleGlobalKey(msg)
 }
 

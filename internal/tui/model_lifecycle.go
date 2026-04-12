@@ -72,11 +72,14 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		statementCache:         make(map[string]domain.FinancialStatement),
 		insiderCache:           make(map[string]domain.InsiderSnapshot),
 		filingsCache:           make(map[string]domain.FilingsSnapshot),
+		earningsCache:          make(map[string]domain.EarningsSnapshot),
+		calendarCache:          make(map[calendarFilterMode]domain.EconomicCalendarSnapshot),
 		marketOpinionHistory:   make(map[string]domain.PriceSeries),
 		marketOpinionHistoryAt: make(map[string]time.Time),
 		screenerDefs:           append([]domain.ScreenerDefinition(nil), screenerDefs...),
 		statementKind:          domain.StatementKindIncome,
 		statementFreq:          domain.StatementFrequencyAnnual,
+		calendarFilter:         calendarFilterToday,
 	}
 }
 
@@ -128,6 +131,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleInsidersLoaded(msg)
 	case filingsLoadedMsg:
 		return m.handleFilingsLoaded(msg)
+	case earningsLoadedMsg:
+		return m.handleEarningsLoaded(msg)
+	case calendarLoadedMsg:
+		return m.handleCalendarLoaded(msg)
 	case searchDebouncedMsg:
 		return m.handleSearchDebounced(msg)
 	case searchLoadedMsg:
@@ -152,6 +159,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleAIContextPrepared(msg)
 	case aiFilingAnalysisPreparedMsg:
 		return m.handleAIFilingAnalysisPrepared(msg)
+	case aiFilingChunkLoadedMsg:
+		return m.handleAIFilingChunkLoaded(msg)
+	case aiFilingSynthesisLoadedMsg:
+		return m.handleAIFilingSynthesisLoaded(msg)
 	case versionCheckLoadedMsg:
 		return m.handleVersionCheckLoaded(msg)
 	case versionUpgradeLoadedMsg:

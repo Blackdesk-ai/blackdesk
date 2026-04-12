@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -127,8 +128,84 @@ func (m Model) handleAIFilingAnalysisPrepared(msg aiFilingAnalysisPreparedMsg) (
 		return m, nil
 	}
 	snapshot := m.filingsForSymbol(msg.symbol)
-	m.status = "Running " + m.activeAIConnectorLabel() + " filing analysis…"
-	return m, m.runFilingAnalysisCmd(msg.symbol, snapshot, msg.filing, msg.prompt)
+	chunks := splitFilingTextChunks(msg.filing.Text, aiFilingChunkChars, aiFilingChunkOverlapChars)
+	if len(chunks) <= 1 {
+		m.clearAIFilingRun()
+		m.status = "Running " + m.activeAIConnectorLabel() + " filing analysis…"
+		return m, m.runFilingAnalysisCmd(msg.symbol, snapshot, msg.filing, msg.prompt)
+	}
+	m.aiFilingRun = aiFilingRunState{
+		symbol:       msg.symbol,
+		snapshot:     snapshot,
+		filing:       msg.filing,
+		prompt:       msg.prompt,
+		chunks:       chunks,
+		nextChunkIdx: 0,
+		truncation:   aiRequestTruncation{FilingText: msg.filing.Truncated},
+	}
+	m.aiFilingRunActive = true
+	m.status = fmt.Sprintf("Running %s filing chunk 1/%d…", m.activeAIConnectorLabel(), len(chunks))
+	return m, m.runFilingChunkAnalysisCmd(msg.symbol, snapshot, msg.filing, chunks[0])
+}
+
+func (m Model) handleAIFilingChunkLoaded(msg aiFilingChunkLoadedMsg) (Model, tea.Cmd) {
+	if !m.aiFilingRunActive {
+		return m, nil
+	}
+	m.aiFilingRun.totalDuration += msg.duration
+	m.aiFilingRun.truncation = m.aiFilingRun.truncation.merge(msg.truncation)
+	if msg.err != nil {
+		truncation := m.aiFilingRun.truncation
+		duration := m.aiFilingRun.totalDuration
+		m.clearAIFilingRun()
+		return m.handleAIResponseLoaded(aiResponseLoadedMsg{
+			connectorID: msg.connectorID,
+			output:      msg.output,
+			duration:    duration,
+			truncation:  truncation,
+			symbol:      msg.symbol,
+			err:         msg.err,
+		})
+	}
+	chunk := m.aiFilingRun.chunks[m.aiFilingRun.nextChunkIdx]
+	m.aiFilingRun.analyses = append(m.aiFilingRun.analyses, filingChunkAnalysisSummary{
+		ChunkIndex: chunk.Index,
+		ChunkRange: filingChunkRangeLabel(chunk),
+		Analysis:   strings.TrimSpace(msg.output),
+	})
+	m.aiFilingRun.nextChunkIdx++
+	if m.aiFilingRun.nextChunkIdx < len(m.aiFilingRun.chunks) {
+		next := m.aiFilingRun.chunks[m.aiFilingRun.nextChunkIdx]
+		m.status = fmt.Sprintf("Running %s filing chunk %d/%d…", m.activeAIConnectorLabel(), next.Index, next.Total)
+		return m, m.runFilingChunkAnalysisCmd(m.aiFilingRun.symbol, m.aiFilingRun.snapshot, m.aiFilingRun.filing, next)
+	}
+	m.aiFilingRun.synthesizing = true
+	m.status = fmt.Sprintf("Synthesizing %s filing report from %d chunks…", m.activeAIConnectorLabel(), len(m.aiFilingRun.chunks))
+	return m, m.runFilingSynthesisCmd(m.aiFilingRun.symbol, m.aiFilingRun.snapshot, m.aiFilingRun.filing, m.aiFilingRun.prompt, m.aiFilingRun.analyses)
+}
+
+func (m Model) handleAIFilingSynthesisLoaded(msg aiFilingSynthesisLoadedMsg) (Model, tea.Cmd) {
+	if !m.aiFilingRunActive {
+		return m.handleAIResponseLoaded(aiResponseLoadedMsg{
+			connectorID: msg.connectorID,
+			output:      msg.output,
+			duration:    msg.duration,
+			truncation:  msg.truncation,
+			symbol:      msg.symbol,
+			err:         msg.err,
+		})
+	}
+	totalDuration := m.aiFilingRun.totalDuration + msg.duration
+	truncation := m.aiFilingRun.truncation.merge(msg.truncation)
+	m.clearAIFilingRun()
+	return m.handleAIResponseLoaded(aiResponseLoadedMsg{
+		connectorID: msg.connectorID,
+		output:      msg.output,
+		duration:    totalDuration,
+		truncation:  truncation,
+		symbol:      msg.symbol,
+		err:         msg.err,
+	})
 }
 
 func (m *Model) applyAIPreparedData(input aiPreparedLoadInput) {

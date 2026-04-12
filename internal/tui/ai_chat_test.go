@@ -92,6 +92,26 @@ func TestAITabShowsTypingIndicatorWhileRunning(t *testing.T) {
 	}
 }
 
+func TestAITabShowsFilingChunkProgressWhileRunning(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.width = 120
+	model.height = 30
+	model.tabIdx = tabAI
+	model.aiRunning = true
+	model.clock = time.Date(2026, 4, 3, 12, 0, 3, 0, time.UTC)
+	model.aiFilingRun = aiFilingRunState{
+		chunks:       []filingTextChunk{{Index: 1, Total: 3}, {Index: 2, Total: 3}, {Index: 3, Total: 3}},
+		nextChunkIdx: 1,
+	}
+	model.aiFilingRunActive = true
+	model.aiMessages = []aiMessage{{Role: aiMessageUser, Body: "analyze filing", Timestamp: time.Now()}}
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "chunk 2/3...") {
+		t.Fatalf("expected filing chunk progress in AI view, got %q", view)
+	}
+}
+
 func TestAITabUsesSameMainFrameGridAsQuote(t *testing.T) {
 	quoteModel := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),
@@ -171,6 +191,24 @@ func TestAITabFTogglesFullscreen(t *testing.T) {
 	m = updated.(Model)
 	if m.aiFullscreen {
 		t.Fatal("expected f to disable AI fullscreen on second press")
+	}
+}
+
+func TestAITabRIgnored(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.tabIdx = tabAI
+	model.aiInput.SetValue("Summarize")
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	m := updated.(Model)
+	if cmd != nil {
+		t.Fatal("expected no AI rerun command on r")
+	}
+	if len(m.aiMessages) != 0 {
+		t.Fatal("expected r to leave transcript unchanged on AI tab")
+	}
+	if m.aiRunning {
+		t.Fatal("expected r not to start an AI run")
 	}
 }
 

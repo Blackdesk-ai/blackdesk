@@ -65,6 +65,17 @@ type filingsLoadedMsg struct {
 	err  error
 }
 
+type earningsLoadedMsg struct {
+	data domain.EarningsSnapshot
+	err  error
+}
+
+type calendarLoadedMsg struct {
+	filter calendarFilterMode
+	data   domain.EconomicCalendarSnapshot
+	err    error
+}
+
 type searchDebouncedMsg struct {
 	id    int
 	query string

@@ -253,6 +253,33 @@ func TestQuoteFilingsModeIStartsAIAnalysisFlow(t *testing.T) {
 	}
 }
 
+func TestQuoteFilingsModeIDoesNotPreloadBroadAIContext(t *testing.T) {
+	provider := &aiPrepProvider{}
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		Registry:        providers.NewRegistry(provider),
+		FilingsProvider: filingsProvider{},
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.filings, _ = filingsProvider{}.GetFilings(context.Background(), "AAPL")
+
+	_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+	if cmd == nil {
+		t.Fatal("expected filing analysis prepare command")
+	}
+	msg := cmd()
+	if _, ok := msg.(aiFilingAnalysisPreparedMsg); !ok {
+		t.Fatalf("expected filing analysis prepared message, got %T", msg)
+	}
+	if provider.quoteCalls != 0 || len(provider.historyCalls) != 0 || len(provider.statementCalls) != 0 || provider.newsCalls != 0 || provider.fundamentalsCalls != 0 {
+		t.Fatalf("expected filing analysis prep to skip broad AI context loads, got quote=%d history=%v statements=%v news=%d fundamentals=%d", provider.quoteCalls, provider.historyCalls, provider.statementCalls, provider.newsCalls, provider.fundamentalsCalls)
+	}
+}
+
 func TestQuoteFilingsFilterShowsOnlyPeriodicReports(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:          storage.DefaultConfig(),

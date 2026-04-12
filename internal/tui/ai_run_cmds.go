@@ -175,3 +175,78 @@ func (m Model) runFilingAnalysisCmd(symbol string, snapshot domain.FilingsSnapsh
 		}
 	}
 }
+
+func (m Model) runFilingChunkAnalysisCmd(symbol string, snapshot domain.FilingsSnapshot, filing domain.FilingDocument, chunk filingTextChunk) tea.Cmd {
+	connectorID := m.activeAIConnectorID()
+	if strings.TrimSpace(connectorID) == "" {
+		return func() tea.Msg {
+			return aiFilingChunkLoadedMsg{connectorID: "", symbol: symbol, err: fmt.Errorf("no AI connector selected")}
+		}
+	}
+	if m.services == nil {
+		return func() tea.Msg {
+			return aiFilingChunkLoadedMsg{connectorID: connectorID, symbol: symbol, err: fmt.Errorf("AI registry unavailable")}
+		}
+	}
+	envelope, err := m.buildAIFilingChunkAnalysisRequest(symbol, snapshot, filing, chunk)
+	if err != nil {
+		return func() tea.Msg {
+			return aiFilingChunkLoadedMsg{connectorID: connectorID, symbol: symbol, err: err}
+		}
+	}
+	request := agents.Request{
+		Workspace:    m.workspaceRoot,
+		Prompt:       envelope.Prompt,
+		Model:        strings.TrimSpace(m.config.AIModel),
+		SystemPrompt: envelope.SystemPrompt,
+	}
+	return func() tea.Msg {
+		resp, err := m.services.RunAI(m.ctx, connectorID, request)
+		return aiFilingChunkLoadedMsg{
+			connectorID: connectorID,
+			output:      resp.Output,
+			duration:    resp.Duration,
+			truncation:  envelope.Truncation,
+			symbol:      symbol,
+			err:         err,
+		}
+	}
+}
+
+func (m Model) runFilingSynthesisCmd(symbol string, snapshot domain.FilingsSnapshot, filing domain.FilingDocument, prompt string, analyses []filingChunkAnalysisSummary) tea.Cmd {
+	connectorID := m.activeAIConnectorID()
+	if strings.TrimSpace(connectorID) == "" {
+		return func() tea.Msg {
+			return aiFilingSynthesisLoadedMsg{connectorID: "", symbol: symbol, err: fmt.Errorf("no AI connector selected")}
+		}
+	}
+	if m.services == nil {
+		return func() tea.Msg {
+			return aiFilingSynthesisLoadedMsg{connectorID: connectorID, symbol: symbol, err: fmt.Errorf("AI registry unavailable")}
+		}
+	}
+	envelope, err := m.buildAIFilingSynthesisRequest(symbol, snapshot, filing, prompt, analyses)
+	if err != nil {
+		return func() tea.Msg {
+			return aiFilingSynthesisLoadedMsg{connectorID: connectorID, symbol: symbol, err: err}
+		}
+	}
+	request := agents.Request{
+		Workspace:    m.workspaceRoot,
+		Prompt:       envelope.Prompt,
+		Model:        strings.TrimSpace(m.config.AIModel),
+		SystemPrompt: envelope.SystemPrompt,
+	}
+	return func() tea.Msg {
+		_ = writeAILastRequestDump(m.workspaceRoot, connectorID, request.Model, envelope)
+		resp, err := m.services.RunAI(m.ctx, connectorID, request)
+		return aiFilingSynthesisLoadedMsg{
+			connectorID: connectorID,
+			output:      resp.Output,
+			duration:    resp.Duration,
+			truncation:  envelope.Truncation,
+			symbol:      symbol,
+			err:         err,
+		}
+	}
+}

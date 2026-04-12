@@ -231,6 +231,15 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 		{ID: "fundamentals", Title: "Fundamentals", Aliases: []string{"fundamental", "valuation", "fa"}, Category: "Quote", Description: fmt.Sprintf("Open the fundamentals view for %s.", activeSymbol)},
 		{ID: "technicals", Title: "Technicals", Aliases: []string{"technical", "ta"}, Category: "Quote", Description: fmt.Sprintf("Open the technicals view for %s.", activeSymbol)},
 	}
+	if m.services.HasEconomicCalendar() {
+		items = append(items, commandPaletteFunction{
+			ID:          "calendar",
+			Title:       "Calendar",
+			Aliases:     []string{"economic calendar", "macro calendar", "events"},
+			Category:    "Workspace",
+			Description: "Open the global economic calendar.",
+		})
+	}
 	if m.services.HasStatements() {
 		items = append(items, commandPaletteFunction{
 			ID:          "statements",
@@ -256,6 +265,15 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 			Aliases:     []string{"sec", "10-k", "10-q", "8-k", "edgar"},
 			Category:    "Quote",
 			Description: fmt.Sprintf("Open recent SEC filings for %s.", activeSymbol),
+		})
+	}
+	if m.services.HasEarnings() {
+		items = append(items, commandPaletteFunction{
+			ID:          "earnings",
+			Title:       "Earnings",
+			Aliases:     []string{"results", "eps", "earnings history", "earnings date"},
+			Category:    "Quote",
+			Description: fmt.Sprintf("Open earnings history and estimates for %s.", activeSymbol),
 		})
 	}
 	return items
@@ -335,6 +353,7 @@ func (m Model) executeCommandPaletteSelection() (Model, tea.Cmd) {
 func (m Model) openCommandPaletteSymbol(symbol string) (Model, tea.Cmd) {
 	m.addToWatchlist(symbol)
 	m.selectSymbol(symbol)
+	m.globalPageOpen = false
 	m.closeCommandPalette("Selected " + strings.ToUpper(strings.TrimSpace(symbol)))
 	tabCmd := m.setActiveTab(tabQuote)
 	m.setQuoteCenterMode(quoteCenterChart)
@@ -343,10 +362,30 @@ func (m Model) openCommandPaletteSymbol(symbol string) (Model, tea.Cmd) {
 
 func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 	activeSymbol := m.activeSymbol()
-	switch strings.ToLower(strings.TrimSpace(id)) {
+	normalizedID := strings.ToLower(strings.TrimSpace(id))
+	if normalizedID != "calendar" {
+		m.globalPageOpen = false
+	}
+	switch normalizedID {
 	case "markets":
 		m.closeCommandPalette("Opened Markets workspace")
 		return m, m.setActiveTab(tabMarkets)
+	case "calendar":
+		m.closeCommandPalette("Opened economic calendar")
+		m.globalPageOpen = true
+		m.globalPageKind = globalPageCalendar
+		m.calendarFilter = calendarFilterToday
+		if data, ok := m.cachedCalendar(m.calendarFilter); ok {
+			m.calendar = data
+			if len(m.calendar.Events) == 0 || m.calendarSel >= len(m.calendar.Events) {
+				m.calendarSel = 0
+			}
+			return m, nil
+		}
+		m.calendar = domain.EconomicCalendarSnapshot{}
+		m.errCalendar = nil
+		m.calendarSel = 0
+		return m, m.loadCalendarCmd(m.calendarFilter)
 	case "quote":
 		m.closeCommandPalette("Opened Quote workspace")
 		return m, m.setActiveTab(tabQuote)
@@ -392,6 +431,11 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterFilings)
 		return m, tea.Batch(tabCmd, m.loadFilingsCmd(activeSymbol))
+	case "earnings":
+		m.closeCommandPalette("Opened earnings view")
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterEarnings)
+		return m, tea.Batch(tabCmd, m.loadEarningsCmd(activeSymbol))
 	default:
 		return m, nil
 	}

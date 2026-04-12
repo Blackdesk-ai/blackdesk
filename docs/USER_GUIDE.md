@@ -92,6 +92,17 @@ The command palette is the global launcher for functions and symbols.
 - `Enter` opens the selected function or symbol
 - `Esc` closes the palette
 
+Common palette functions include:
+
+- `Calendar`
+- `Chart`
+- `Fundamentals`
+- `Technicals`
+- `Statements`
+- `Insiders`
+- `Filings`
+- `Earnings`
+
 Use `/` when you want the fastest path to a symbol.
 Use `Ctrl+K` when you want a broader launcher across workspaces and symbol results.
 
@@ -113,6 +124,24 @@ Main controls:
 - `i` generates an AI market insight
 - `r` refreshes market data
 
+## Calendar
+
+`Calendar` is the global macro and economic events page.
+It is separate from `Quote` on purpose.
+
+What it is for:
+
+- tracking high-importance economic releases
+- scanning the current day quickly
+- seeing the next week of macro catalysts
+
+Main controls:
+
+- `← / →` switches `Today` and `This Week`
+- `↑ / ↓` moves through events
+- `r` refreshes the calendar
+- `Esc` closes the page
+
 ## Quote
 
 `Quote` is the active symbol workflow.
@@ -124,6 +153,7 @@ What it is for:
 - fundamentals and company context
 - technicals and trend state
 - statements and insiders
+- filings and earnings review from the command palette
 - symbol-specific news and AI insight
 
 Main controls:
@@ -142,6 +172,15 @@ Main controls:
 - `d` removes the selected symbol from the watchlist
 - `i` generates AI insight for the active symbol
 - `r` refreshes symbol data
+
+Additional Quote pages:
+
+- `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
+- `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
+
+Global pages from the command palette:
+
+- `Calendar` opens a fullscreen economic calendar with `Today` and `This Week` filters for high-importance global events.
 
 ## News
 
@@ -201,7 +240,6 @@ Main controls:
 - `c` opens connector and model selection from the AI workspace
 - `↑ / ↓` scrolls the transcript
 - `f` toggles AI fullscreen
-- `r` re-runs the last prompt with fresh context
 - `x` clears the conversation
 
 ## AI Picker

@@ -18,9 +18,11 @@ const (
 	aiRecentHistoryMinMsgs    = 8
 	aiSummaryUserChars        = 1200
 	aiSummaryAssistantChars   = 1800
-	aiFilingPromptChars       = 1200000
-	aiFilingContextChars      = 200000
-	aiFilingDocumentChars     = 800000
+	aiFilingPromptChars       = 700000
+	aiFilingDocumentChars     = 550000
+	aiFilingChunkChars        = 200000
+	aiFilingChunkOverlapChars = 4000
+	aiFilingChunkSummaryChars = 9000
 	aiContextNewsItems        = 20
 	aiContextMarketNewsItems  = 24
 	aiContextSearchResults    = 20

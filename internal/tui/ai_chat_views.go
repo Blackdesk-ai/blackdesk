@@ -13,7 +13,7 @@ func (m Model) renderAICenter(section, muted lipgloss.Style, width, height int) 
 	lines := m.renderAITranscriptLines(width)
 	if m.aiRunning {
 		assistantStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#F3EBDD")).Background(lipgloss.Color("#3A3028")).Padding(0, 1)
-		lines = append(lines, assistantStyle.Render("AI")+" "+muted.Render(aiTypingFrame(m.clock)), "")
+		lines = append(lines, assistantStyle.Render("AI")+" "+muted.Render(m.aiRunningIndicator()), "")
 	}
 	if len(lines) == 0 {
 		b.WriteString(renderWrappedTextBlock(muted, "No messages yet. Press . or start typing to ask the selected local AI about the current desk context.", width))

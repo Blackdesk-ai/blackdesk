@@ -16,6 +16,17 @@
 - `Enter`: open selected function or symbol
 - `Esc`: close command palette
 
+Common palette functions:
+
+- `Calendar`
+- `Chart`
+- `Fundamentals`
+- `Technicals`
+- `Statements`
+- `Insiders`
+- `Filings`
+- `Earnings`
+
 ## Search
 
 - `Enter`: open typed ticker or selected result
@@ -27,6 +38,13 @@
 
 - `i`: generate AI market insight
 - `r`: refresh market data
+
+## Calendar
+
+- `← / →`: switch `Today` / `This Week`
+- `↑ / ↓`: navigate events
+- `r`: refresh economic calendar
+- `Esc`: close calendar
 
 ## Quote
 
@@ -69,7 +87,6 @@
 - `c`: open connector and model picker
 - `↑ / ↓`: scroll transcript
 - `f`: toggle fullscreen
-- `r`: run again with fresh context
 - `x`: clear conversation
 
 ## AI Picker

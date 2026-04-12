@@ -33,6 +33,7 @@ type Provider struct {
 	chartBase        string
 	quoteSummaryBase string
 	timeseriesBase   string
+	calendarBase     string
 	searchBase       string
 	cookieURL        string
 	crumbURL         string
@@ -73,6 +74,7 @@ func New(cfg Config) *Provider {
 		chartBase:        baseURL + "/v8/finance/chart/",
 		quoteSummaryBase: baseURL + "/v10/finance/quoteSummary/",
 		timeseriesBase:   baseURL + "/ws/fundamentals-timeseries/v1/finance/timeseries/",
+		calendarBase:     baseURL + "/ws/screeners/v1/finance/calendar-events",
 		searchBase:       "https://query2.finance.yahoo.com/v1/finance/search",
 		cookieURL:        "https://fc.yahoo.com/",
 		crumbURL:         baseURL + "/v1/test/getcrumb",
@@ -88,14 +90,15 @@ func (p *Provider) Name() string {
 
 func (p *Provider) Capabilities() domain.ProviderCapabilities {
 	return domain.ProviderCapabilities{
-		Quote:        true,
-		History:      true,
-		News:         true,
-		Fundamentals: true,
-		Search:       true,
-		Statements:   true,
-		Insiders:     true,
-		Screeners:    true,
+		Quote:            true,
+		History:          true,
+		News:             true,
+		Fundamentals:     true,
+		Search:           true,
+		Statements:       true,
+		Insiders:         true,
+		EconomicCalendar: true,
+		Screeners:        true,
 	}
 }
 

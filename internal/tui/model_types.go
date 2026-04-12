@@ -16,6 +16,19 @@ type statementRequest struct {
 	frequency domain.StatementFrequency
 }
 
+type aiFilingRunState struct {
+	symbol        string
+	snapshot      domain.FilingsSnapshot
+	filing        domain.FilingDocument
+	prompt        string
+	chunks        []filingTextChunk
+	analyses      []filingChunkAnalysisSummary
+	nextChunkIdx  int
+	synthesizing  bool
+	totalDuration time.Duration
+	truncation    aiRequestTruncation
+}
+
 var aiStatementRequests = []statementRequest{
 	{kind: domain.StatementKindIncome, frequency: domain.StatementFrequencyAnnual},
 	{kind: domain.StatementKindBalanceSheet, frequency: domain.StatementFrequencyAnnual},
@@ -96,10 +109,14 @@ type Model struct {
 	aiQuoteInsightRunning       bool
 	aiQuoteInsightUpdated       time.Time
 	aiQuoteInsightSymbol        string
+	aiFilingRun                 aiFilingRunState
+	aiFilingRunActive           bool
 	marketOpinionHistory        map[string]domain.PriceSeries
 	marketOpinionHistoryAt      map[string]time.Time
 	pendingMarketOpinionRefresh bool
 	helpOpen                    bool
+	globalPageOpen              bool
+	globalPageKind              globalPageKind
 
 	quote             domain.QuoteSnapshot
 	watchQuotes       map[string]domain.QuoteSnapshot
@@ -108,6 +125,8 @@ type Model struct {
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot
 	filingsCache      map[string]domain.FilingsSnapshot
+	earningsCache     map[string]domain.EarningsSnapshot
+	calendarCache     map[calendarFilterMode]domain.EconomicCalendarSnapshot
 	news              []domain.NewsItem
 	newsSelected      int
 	marketNews        []domain.NewsItem
@@ -133,6 +152,11 @@ type Model struct {
 	filings           domain.FilingsSnapshot
 	filingsSel        int
 	filingsFilter     filingsFilterMode
+	earnings          domain.EarningsSnapshot
+	earningsSel       int
+	calendar          domain.EconomicCalendarSnapshot
+	calendarSel       int
+	calendarFilter    calendarFilterMode
 
 	errQuote            error
 	errHistory          error
@@ -143,5 +167,7 @@ type Model struct {
 	errStatement        error
 	errInsiders         error
 	errFilings          error
+	errEarnings         error
+	errCalendar         error
 	errScreener         error
 }
