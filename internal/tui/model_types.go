@@ -124,6 +124,7 @@ type Model struct {
 	technicalCache    map[string]domain.PriceSeries
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot
+	analystCache      map[string]domain.AnalystRecommendationsSnapshot
 	filingsCache      map[string]domain.FilingsSnapshot
 	earningsCache     map[string]domain.EarningsSnapshot
 	calendarCache     map[calendarFilterMode]domain.EconomicCalendarSnapshot
@@ -147,8 +148,10 @@ type Model struct {
 	fundamentals      domain.FundamentalsSnapshot
 	statement         domain.FinancialStatement
 	insiders          domain.InsiderSnapshot
+	analyst           domain.AnalystRecommendationsSnapshot
 	statementKind     domain.StatementKind
 	statementFreq     domain.StatementFrequency
+	analystSel        int
 	filings           domain.FilingsSnapshot
 	filingsSel        int
 	filingsFilter     filingsFilterMode
@@ -166,6 +169,7 @@ type Model struct {
 	errFundamentals     error
 	errStatement        error
 	errInsiders         error
+	errAnalyst          error
 	errFilings          error
 	errEarnings         error
 	errCalendar         error

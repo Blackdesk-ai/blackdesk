@@ -8,6 +8,7 @@ const (
 	QuoteCenterTechnicals   QuoteCenterMode = "technicals"
 	QuoteCenterStatements   QuoteCenterMode = "statements"
 	QuoteCenterInsiders     QuoteCenterMode = "insiders"
+	QuoteCenterAnalyst      QuoteCenterMode = "analyst"
 	QuoteCenterFilings      QuoteCenterMode = "filings"
 	QuoteCenterEarnings     QuoteCenterMode = "earnings"
 	QuoteCenterNews         QuoteCenterMode = "news"
@@ -23,6 +24,7 @@ type QuoteWorkspaceLoadPlan struct {
 	LoadTechnical       bool
 	LoadStatement       bool
 	LoadInsiders        bool
+	LoadAnalyst         bool
 	LoadFilings         bool
 	LoadEarnings        bool
 }
@@ -44,6 +46,9 @@ func PlanQuoteWorkspaceLoad(mode QuoteCenterMode, needsTechnical, hasStatements,
 	}
 	if mode == QuoteCenterInsiders && hasInsiders {
 		plan.LoadInsiders = true
+	}
+	if mode == QuoteCenterAnalyst {
+		plan.LoadAnalyst = true
 	}
 	if mode == QuoteCenterFilings {
 		plan.LoadFilings = true

@@ -27,6 +27,19 @@ func (m Model) handleInsidersLoaded(msg insidersLoadedMsg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleAnalystRecommendationsLoaded(msg analystRecommendationsLoadedMsg) (Model, tea.Cmd) {
+	m.analyst = msg.data
+	if msg.err == nil {
+		m.cacheAnalystRecommendations(msg.data)
+		items := m.analystRecommendationsForSymbol(msg.data.Symbol).Items
+		if len(items) == 0 || m.analystSel >= len(items) {
+			m.analystSel = 0
+		}
+	}
+	m.errAnalyst = msg.err
+	return m, nil
+}
+
 func (m Model) handleFilingsLoaded(msg filingsLoadedMsg) (Model, tea.Cmd) {
 	m.filings = msg.data
 	if msg.err == nil {

@@ -113,6 +113,14 @@ func (p *Provider) GetInsiders(ctx context.Context, symbol string) (domain.Insid
 	return insidersProvider.GetInsiders(ctx, symbol)
 }
 
+func (p *Provider) GetAnalystRecommendations(ctx context.Context, symbol string) (domain.AnalystRecommendationsSnapshot, error) {
+	analystProvider, ok := p.base.(providers.AnalystRecommendationsProvider)
+	if !ok {
+		return domain.AnalystRecommendationsSnapshot{}, fmt.Errorf("analyst recommendations provider unavailable")
+	}
+	return analystProvider.GetAnalystRecommendations(ctx, symbol)
+}
+
 func (p *Provider) GetEarnings(ctx context.Context, symbol string) (domain.EarningsSnapshot, error) {
 	earningsProvider, ok := p.base.(providers.EarningsProvider)
 	if !ok {

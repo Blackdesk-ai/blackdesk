@@ -40,6 +40,10 @@ type InsidersProvider interface {
 	GetInsiders(context.Context, string) (domain.InsiderSnapshot, error)
 }
 
+type AnalystRecommendationsProvider interface {
+	GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error)
+}
+
 type EarningsProvider interface {
 	GetEarnings(context.Context, string) (domain.EarningsSnapshot, error)
 }
@@ -92,6 +96,14 @@ func (r *Registry) Insiders() (InsidersProvider, bool) {
 		return nil, false
 	}
 	p, ok := r.active.(InsidersProvider)
+	return p, ok
+}
+
+func (r *Registry) AnalystRecommendations() (AnalystRecommendationsProvider, bool) {
+	if r == nil || r.active == nil {
+		return nil, false
+	}
+	p, ok := r.active.(AnalystRecommendationsProvider)
 	return p, ok
 }
 

@@ -60,6 +60,11 @@ type insidersLoadedMsg struct {
 	err  error
 }
 
+type analystRecommendationsLoadedMsg struct {
+	data domain.AnalystRecommendationsSnapshot
+	err  error
+}
+
 type filingsLoadedMsg struct {
 	data domain.FilingsSnapshot
 	err  error

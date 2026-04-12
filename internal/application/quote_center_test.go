@@ -26,4 +26,12 @@ func TestPlanQuoteCenterSelectionHonorsCapabilities(t *testing.T) {
 	if !filings.Allowed || filings.Status != "Quote center: filings" {
 		t.Fatalf("unexpected filings center result: %+v", filings)
 	}
+
+	analyst := PlanQuoteCenterSelection(QuoteCenterSelectionInput{
+		Target:     QuoteCenterAnalyst,
+		HasAnalyst: true,
+	})
+	if !analyst.Allowed || !analyst.LoadAnalyst || analyst.Status != "Quote center: analyst recommendations" {
+		t.Fatalf("unexpected analyst center result: %+v", analyst)
+	}
 }

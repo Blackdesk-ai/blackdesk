@@ -52,6 +52,10 @@ type insidersCapableProvider struct {
 	baseProvider
 }
 
+type analystCapableProvider struct {
+	baseProvider
+}
+
 type screenerCapableProvider struct {
 	baseProvider
 }
@@ -66,6 +70,10 @@ func (statementsCapableProvider) GetStatement(context.Context, string, domain.St
 
 func (insidersCapableProvider) GetInsiders(context.Context, string) (domain.InsiderSnapshot, error) {
 	return domain.InsiderSnapshot{}, nil
+}
+
+func (analystCapableProvider) GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error) {
+	return domain.AnalystRecommendationsSnapshot{}, nil
 }
 
 func (screenerCapableProvider) Screeners() []domain.ScreenerDefinition {
@@ -160,6 +168,33 @@ func TestRegistryInsidersHandlesNilRegistry(t *testing.T) {
 	var registry *Registry
 
 	p, ok := registry.Insiders()
+	if ok || p != nil {
+		t.Fatal("expected nil registry to return false")
+	}
+}
+
+func TestRegistryAnalystRecommendationsReturnsOptionalProvider(t *testing.T) {
+	registry := NewRegistry(analystCapableProvider{})
+
+	p, ok := registry.AnalystRecommendations()
+	if !ok || p == nil {
+		t.Fatal("expected analyst recommendations provider to be exposed")
+	}
+}
+
+func TestRegistryAnalystRecommendationsHandlesMissingCapability(t *testing.T) {
+	registry := NewRegistry(baseProvider{})
+
+	p, ok := registry.AnalystRecommendations()
+	if ok || p != nil {
+		t.Fatal("expected missing analyst recommendations provider to return false")
+	}
+}
+
+func TestRegistryAnalystRecommendationsHandlesNilRegistry(t *testing.T) {
+	var registry *Registry
+
+	p, ok := registry.AnalystRecommendations()
 	if ok || p != nil {
 		t.Fatal("expected nil registry to return false")
 	}

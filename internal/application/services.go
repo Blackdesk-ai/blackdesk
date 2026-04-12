@@ -142,6 +142,25 @@ func (s *Services) GetInsiders(ctx context.Context, symbol string) (domain.Insid
 	return provider.GetInsiders(ctx, symbol)
 }
 
+func (s *Services) HasAnalystRecommendations() bool {
+	if s == nil || s.registry == nil {
+		return false
+	}
+	_, ok := s.registry.AnalystRecommendations()
+	return ok
+}
+
+func (s *Services) GetAnalystRecommendations(ctx context.Context, symbol string) (domain.AnalystRecommendationsSnapshot, error) {
+	if s == nil || s.registry == nil {
+		return domain.AnalystRecommendationsSnapshot{}, errServiceUnavailable
+	}
+	provider, _ := s.registry.AnalystRecommendations()
+	if provider == nil {
+		return domain.AnalystRecommendationsSnapshot{}, errServiceUnavailable
+	}
+	return provider.GetAnalystRecommendations(ctx, symbol)
+}
+
 func (s *Services) HasEarnings() bool {
 	if s == nil || s.registry == nil {
 		return false
