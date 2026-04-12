@@ -90,6 +90,29 @@ func TestGlobalCalendarUsesArrowNavigationInsteadOfWatchlist(t *testing.T) {
 	}
 }
 
+func TestCommandPaletteSelectionFromCalendarClosesGlobalPage(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.globalPageOpen = true
+	model.globalPageKind = globalPageCalendar
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{
+		{Kind: commandPaletteItemFunction, FunctionID: "earnings", Title: "Earnings"},
+	}
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.globalPageOpen {
+		t.Fatal("expected global calendar page to close after opening another palette function")
+	}
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterEarnings {
+		t.Fatalf("expected quote earnings mode, got tab=%d mode=%d", m.tabIdx, m.quoteCenterMode)
+	}
+}
+
 func TestCalendarPreviewOmitsMissingExpectationAndActual(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),

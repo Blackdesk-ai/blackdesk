@@ -353,6 +353,7 @@ func (m Model) executeCommandPaletteSelection() (Model, tea.Cmd) {
 func (m Model) openCommandPaletteSymbol(symbol string) (Model, tea.Cmd) {
 	m.addToWatchlist(symbol)
 	m.selectSymbol(symbol)
+	m.globalPageOpen = false
 	m.closeCommandPalette("Selected " + strings.ToUpper(strings.TrimSpace(symbol)))
 	tabCmd := m.setActiveTab(tabQuote)
 	m.setQuoteCenterMode(quoteCenterChart)
@@ -361,7 +362,11 @@ func (m Model) openCommandPaletteSymbol(symbol string) (Model, tea.Cmd) {
 
 func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 	activeSymbol := m.activeSymbol()
-	switch strings.ToLower(strings.TrimSpace(id)) {
+	normalizedID := strings.ToLower(strings.TrimSpace(id))
+	if normalizedID != "calendar" {
+		m.globalPageOpen = false
+	}
+	switch normalizedID {
 	case "markets":
 		m.closeCommandPalette("Opened Markets workspace")
 		return m, m.setActiveTab(tabMarkets)
