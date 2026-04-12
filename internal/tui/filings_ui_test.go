@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"blackdesk/internal/domain"
 	"blackdesk/internal/providers"
@@ -249,6 +250,106 @@ func TestQuoteFilingsModeIStartsAIAnalysisFlow(t *testing.T) {
 	}
 	if !strings.Contains(prepared.filing.Text, "Revenue grew 12%") {
 		t.Fatalf("expected filing document text in prepared message, got %q", prepared.filing.Text)
+	}
+}
+
+func TestQuoteFilingsFilterShowsOnlyPeriodicReports(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		Registry:        providers.NewRegistry(testProvider{}),
+		FilingsProvider: filingsProvider{},
+	})
+	model.width = 140
+	model.height = 40
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.filingsFilter = filingsFilterPeriodicReports
+	model.filings = domain.FilingsSnapshot{
+		Symbol: "AAPL",
+		Items: []domain.FilingItem{
+			{Form: "10-K", FilingDate: time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)},
+			{Form: "10-Q", FilingDate: time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)},
+			{Form: "8-K", FilingDate: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)},
+			{Form: "4", FilingDate: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)},
+		},
+	}
+
+	view := model.View()
+	if !strings.Contains(view, "10-K") || !strings.Contains(view, "10-Q") {
+		t.Fatal("expected periodic reports filter to keep 10-K and 10-Q visible")
+	}
+	if strings.Contains(view, "\n8-K") || strings.Contains(view, "\n4  ") {
+		t.Fatal("expected periodic reports filter to hide non-periodic filings")
+	}
+	if !strings.Contains(view, "10-K/10-Q") {
+		t.Fatal("expected current filings filter tab to be visible in the list header")
+	}
+}
+
+func TestQuoteFilingsFilterTabsShowAllOptions(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		Registry:        providers.NewRegistry(testProvider{}),
+		FilingsProvider: filingsProvider{},
+	})
+	model.width = 140
+	model.height = 40
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+
+	line := model.renderFilingsFilterTabs(lipgloss.NewStyle(), 46)
+	for _, label := range []string{"ALL", "10-K", "10-Q", "10-K/10-Q"} {
+		if !strings.Contains(line, label) {
+			t.Fatalf("expected filings filter tabs to include %q, got %q", label, line)
+		}
+	}
+}
+
+func TestQuoteFilingsFilterCycleWithArrowKeys(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:          storage.DefaultConfig(),
+		Registry:        providers.NewRegistry(testProvider{}),
+		FilingsProvider: filingsProvider{},
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFilings
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.filings = domain.FilingsSnapshot{
+		Symbol: "AAPL",
+		Items: []domain.FilingItem{
+			{Form: "10-K", FilingDate: time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)},
+			{Form: "10-Q", FilingDate: time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)},
+			{Form: "8-K", FilingDate: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)},
+		},
+	}
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRight})
+	m := updated.(Model)
+	if m.filingsFilter != filingsFilterPeriodicReports {
+		t.Fatalf("expected first filings filter step to select 10-K/10-Q, got %v", m.filingsFilter)
+	}
+	if item, ok := m.currentFiling(); !ok || (item.Form != "10-K" && item.Form != "10-Q") {
+		t.Fatal("expected current filing selection to stay on a visible periodic report")
+	}
+
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRight})
+	m = updated.(Model)
+	if m.filingsFilter != filingsFilterTenK {
+		t.Fatalf("expected second filings filter step to select 10-K, got %v", m.filingsFilter)
+	}
+	if item, ok := m.currentFiling(); !ok || item.Form != "10-K" {
+		t.Fatal("expected current filing selection to move to the visible 10-K item")
+	}
+
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyLeft})
+	m = updated.(Model)
+	if m.filingsFilter != filingsFilterPeriodicReports {
+		t.Fatalf("expected reverse filings filter step to return to 10-K/10-Q, got %v", m.filingsFilter)
 	}
 }
 

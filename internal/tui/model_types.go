@@ -131,6 +131,7 @@ type Model struct {
 	statementFreq     domain.StatementFrequency
 	filings           domain.FilingsSnapshot
 	filingsSel        int
+	filingsFilter     filingsFilterMode
 
 	errQuote            error
 	errHistory          error

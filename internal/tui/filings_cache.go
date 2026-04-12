@@ -29,7 +29,7 @@ func (m Model) filingsForSymbol(symbol string) domain.FilingsSnapshot {
 }
 
 func (m *Model) cycleFilingsSelection(step int) {
-	items := m.filingsForSymbol(m.activeSymbol()).Items
+	items := m.filteredFilingsSnapshot(m.activeSymbol()).Items
 	if len(items) == 0 {
 		m.filingsSel = 0
 		return
@@ -38,7 +38,7 @@ func (m *Model) cycleFilingsSelection(step int) {
 }
 
 func (m Model) currentFiling() (domain.FilingItem, bool) {
-	items := m.filingsForSymbol(m.activeSymbol()).Items
+	items := m.filteredFilingsSnapshot(m.activeSymbol()).Items
 	if len(items) == 0 || m.filingsSel < 0 || m.filingsSel >= len(items) {
 		return domain.FilingItem{}, false
 	}

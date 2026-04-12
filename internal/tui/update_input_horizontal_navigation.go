@@ -24,6 +24,15 @@ func (m Model) handleTimeframeNavigation(step int) (Model, tea.Cmd, bool) {
 	return m, tea.Batch(m.persistCmd(), m.loadHistoryCmd(m.activeSymbol())), true
 }
 
+func (m Model) handleFilingsFilterNavigation(step int) (Model, tea.Cmd, bool) {
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterFilings {
+		return m, nil, false
+	}
+	m.cycleFilingsFilter(step)
+	m.status = "Filings filter: " + m.filingsFilterLabel()
+	return m, nil, true
+}
+
 func (m Model) handleStatementKindNavigation(step int) (Model, tea.Cmd, bool) {
 	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterStatements {
 		return m, nil, false

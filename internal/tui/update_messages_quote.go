@@ -31,9 +31,10 @@ func (m Model) handleFilingsLoaded(msg filingsLoadedMsg) (Model, tea.Cmd) {
 	m.filings = msg.data
 	if msg.err == nil {
 		m.cacheFilings(msg.data)
-		if len(msg.data.Items) == 0 {
+		items := m.filteredFilingsSnapshot(msg.data.Symbol).Items
+		if len(items) == 0 {
 			m.filingsSel = 0
-		} else if m.filingsSel >= len(msg.data.Items) {
+		} else if m.filingsSel >= len(items) {
 			m.filingsSel = 0
 		}
 	}

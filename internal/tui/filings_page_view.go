@@ -5,12 +5,13 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"blackdesk/internal/domain"
 )
 
 func (m Model) renderQuoteFilingsPage(header, section, label, muted, pos, neg lipgloss.Style, width, height int) string {
-	snapshot := m.filingsForSymbol(m.activeSymbol())
+	snapshot := m.filteredFilingsSnapshot(m.activeSymbol())
 	listWidth := clamp((width*3)/5, 46, 76)
 	previewWidth := max(24, width-listWidth-3)
 	bodyHeight := max(8, height-6)
@@ -52,12 +53,12 @@ func (m Model) renderQuoteFilingsSummary(header, label, muted, pos, neg lipgloss
 
 func (m Model) renderQuoteFilingsList(section, muted lipgloss.Style, width, height int, snapshot domain.FilingsSnapshot) string {
 	var b strings.Builder
-	b.WriteString(section.Render("RECENT FILINGS") + "\n\n")
+	b.WriteString(renderStatusLine(width, section.Render("RECENT FILINGS"), m.renderFilingsFilterTabs(muted, max(16, width/2))) + "\n\n")
 	if len(snapshot.Items) == 0 {
 		if m.errFilings != nil {
 			b.WriteString(m.errFilings.Error())
 		} else {
-			b.WriteString(muted.Render("No recent SEC filings loaded for the active symbol"))
+			b.WriteString(muted.Render("No filings match the current filter for the active symbol"))
 		}
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
@@ -103,7 +104,7 @@ func (m Model) renderQuoteFilingsList(section, muted lipgloss.Style, width, heig
 		}
 		b.WriteString(line + "\n")
 	}
-	b.WriteString("\n" + muted.Render("↑/↓ move • Enter open filing • i analyze in AI"))
+	b.WriteString("\n" + muted.Render("←/→ filter • ↑/↓ move • Enter open filing • i analyze in AI"))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -136,4 +137,36 @@ func (m Model) renderQuoteFilingsPreview(section, label, muted lipgloss.Style, w
 	b.WriteString("\n\n" + muted.Render("AI Analysis") + "\n")
 	b.WriteString(renderWrappedTextBlock(muted, "Press i to open AI and generate a structured analysis of this selected filing.", width))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) renderFilingsFilterTabs(muted lipgloss.Style, width int) string {
+	active := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#14110D")).
+		Background(lipgloss.Color("#E7B66B")).
+		Bold(true).
+		Padding(0, 1)
+	inactive := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#D8C9B8")).
+		Background(lipgloss.Color("#2A2520")).
+		Padding(0, 1)
+
+	tabs := []struct {
+		mode  filingsFilterMode
+		label string
+	}{
+		{mode: filingsFilterAll, label: "ALL"},
+		{mode: filingsFilterPeriodicReports, label: "10-K/10-Q"},
+		{mode: filingsFilterTenK, label: "10-K"},
+		{mode: filingsFilterTenQ, label: "10-Q"},
+	}
+
+	parts := make([]string, 0, len(tabs))
+	for _, tab := range tabs {
+		style := inactive
+		if tab.mode == m.filingsFilter {
+			style = active
+		}
+		parts = append(parts, style.Render(tab.label))
+	}
+	return ansi.Truncate(strings.Join(parts, " "), width, "")
 }

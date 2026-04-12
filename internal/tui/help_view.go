@@ -56,7 +56,7 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"t", "Technicals view"},
 			{"s", "Statements view"},
 			{"h", "Insiders view"},
-			{"← / →", "Change timeframe / statement kind"},
+			{"← / →", "Chart timeframe / statement kind / Filings filter"},
 			{"[ / ]", "Change statement frequency"},
 			{"n", "Next news story"},
 			{"p", "Scroll company description"},
