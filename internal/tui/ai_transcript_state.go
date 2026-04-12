@@ -17,6 +17,7 @@ func (m *Model) pushAIUserMessage(prompt string) {
 		Timestamp: time.Now(),
 		Meta:      fmt.Sprintf("%s%s", m.activeAIConnectorLabel(), m.activeAIModelStatus()),
 	})
+	m.maintainAITranscriptBudget()
 	m.aiScroll = 0
 }
 
@@ -40,6 +41,7 @@ func (m *Model) pushAIAssistantMessage(body string, runErr error, duration time.
 		Timestamp: time.Now(),
 		Meta:      meta,
 	})
+	m.maintainAITranscriptBudget()
 	m.aiScroll = 0
 }
 

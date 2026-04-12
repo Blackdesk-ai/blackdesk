@@ -9,10 +9,15 @@ import (
 )
 
 const (
-	aiMaxPromptChars          = 64000
-	aiMaxContextChars         = 24000
-	aiMaxHistoryChars         = 36000
-	aiMaxMessageChars         = 8000
+	aiMaxPromptChars          = 1000000
+	aiMaxContextChars         = 220000
+	aiMaxHistoryChars         = 700000
+	aiMaxMessageChars         = 64000
+	aiMaxSummaryChars         = 180000
+	aiMaxRecentHistoryChars   = 520000
+	aiRecentHistoryMinMsgs    = 8
+	aiSummaryUserChars        = 1200
+	aiSummaryAssistantChars   = 1800
 	aiFilingPromptChars       = 1200000
 	aiFilingContextChars      = 200000
 	aiFilingDocumentChars     = 800000

@@ -140,6 +140,8 @@ func TestAITabClearsTranscriptWithX(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.tabIdx = tabAI
 	model.aiMessages = []aiMessage{{Role: aiMessageUser, Body: "hello"}}
+	model.aiConversationSummary = "- User: old context"
+	model.aiCompactedMessages = 6
 	model.aiOutput = "old"
 
 	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
@@ -149,6 +151,9 @@ func TestAITabClearsTranscriptWithX(t *testing.T) {
 	}
 	if m.aiOutput != "" {
 		t.Fatal("expected AI output to clear")
+	}
+	if m.aiConversationSummary != "" || m.aiCompactedMessages != 0 {
+		t.Fatal("expected AI summary state to clear too")
 	}
 }
 

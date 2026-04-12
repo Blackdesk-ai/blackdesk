@@ -28,6 +28,11 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 	b.WriteString("<blackdesk_context_update>\n")
 	b.WriteString(payload)
 	b.WriteString("\n</blackdesk_context_update>\n\n")
+	if summary := strings.TrimSpace(m.aiConversationSummary); summary != "" {
+		b.WriteString("<conversation_summary>\n")
+		b.WriteString(truncateRunes(summary, aiMaxSummaryChars))
+		b.WriteString("\n</conversation_summary>\n\n")
+	}
 	b.WriteString("<conversation>\n")
 	history := m.aiMessages
 	if len(history) > 0 {
@@ -46,7 +51,7 @@ func (m Model) buildAIRequest(prompt string) (RequestEnvelope, error) {
 		}
 		entry := "[" + role + "] " + truncateRunes(strings.TrimSpace(msg.Body), aiMaxMessageChars)
 		entry += "\n\n"
-		if historyChars+len([]rune(entry)) > aiMaxHistoryChars {
+		if historyChars+len([]rune(entry)) > aiMaxRecentHistoryChars {
 			break
 		}
 		historyBlock = append([]string{entry}, historyBlock...)

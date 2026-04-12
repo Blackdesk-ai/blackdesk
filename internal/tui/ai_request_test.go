@@ -68,6 +68,62 @@ func TestAIRequestIncludesFullHistoryWithinBudget(t *testing.T) {
 	}
 }
 
+func TestAIRequestIncludesConversationSummaryBeforeRecentHistory(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.aiConversationSummary = "- User: asked for prior filing context\n- AI: highlighted debt rollover risk"
+	model.aiMessages = []aiMessage{
+		{Role: aiMessageUser, Body: "latest follow-up"},
+		{Role: aiMessageAssistant, Body: "recent answer"},
+	}
+
+	req, err := model.buildAIRequest("follow-up")
+	if err != nil {
+		t.Fatalf("buildAIRequest failed: %v", err)
+	}
+	if !strings.Contains(req.SystemPrompt, "<conversation_summary>") {
+		t.Fatal("expected conversation summary block to be included")
+	}
+	if !strings.Contains(req.SystemPrompt, "debt rollover risk") {
+		t.Fatal("expected compacted summary content to be included")
+	}
+	if strings.Index(req.SystemPrompt, "<conversation_summary>") > strings.Index(req.SystemPrompt, "<conversation>") {
+		t.Fatal("expected conversation summary to appear before recent conversation")
+	}
+}
+
+func TestAITranscriptCompactionRollsOldMessagesIntoSummary(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	chunk := strings.Repeat("AAPL filing context and management commentary. ", 700)
+	for i := 0; i < 18; i++ {
+		role := aiMessageUser
+		if i%2 == 1 {
+			role = aiMessageAssistant
+		}
+		model.aiMessages = append(model.aiMessages, aiMessage{
+			Role: role,
+			Body: fmt.Sprintf("msg-%02d %s", i, chunk),
+		})
+	}
+
+	model.maintainAITranscriptBudget()
+
+	if model.aiConversationSummary == "" {
+		t.Fatal("expected old transcript to be compacted into a summary")
+	}
+	if model.aiCompactedMessages == 0 {
+		t.Fatal("expected compacted message count to be tracked")
+	}
+	if len(model.aiMessages) >= 18 {
+		t.Fatal("expected only recent raw messages to remain after compaction")
+	}
+	if !strings.Contains(model.aiConversationSummary, "msg-00") {
+		t.Fatal("expected oldest content to survive in compacted summary")
+	}
+	if strings.Contains(model.aiConversationSummary, "msg-17") {
+		t.Fatal("expected newest content to remain in raw conversation, not summary")
+	}
+}
+
 func TestAIRequestIncludesContextOnlyOncePerRequest(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 

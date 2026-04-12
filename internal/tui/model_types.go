@@ -72,6 +72,8 @@ type Model struct {
 	aiErr                       error
 	aiDuration                  time.Duration
 	aiMessages                  []aiMessage
+	aiConversationSummary       string
+	aiCompactedMessages         int
 	aiScroll                    int
 	aiLastContext               string
 	aiLastSymbol                string
