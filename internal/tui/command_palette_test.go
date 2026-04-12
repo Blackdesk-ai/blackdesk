@@ -168,6 +168,26 @@ func TestCommandPaletteIncludesAnalystRecommendationsWhenAvailable(t *testing.T)
 	}
 }
 
+func TestCommandPaletteIncludesOwnersWhenAvailable(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyCtrlK})
+	m := updated.(Model)
+	found := false
+	for _, item := range m.commandPaletteItems {
+		if item.Kind == commandPaletteItemFunction && item.FunctionID == "owners" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected owners function in command palette")
+	}
+}
+
 func TestCommandPaletteIncludesCalendarWhenAvailable(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),

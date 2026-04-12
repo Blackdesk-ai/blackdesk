@@ -77,6 +77,10 @@ func (testProvider) GetAnalystRecommendations(context.Context, string) (domain.A
 	return sampleAnalystRecommendationsSnapshot(), nil
 }
 
+func (testProvider) GetOwners(context.Context, string) (domain.OwnershipSnapshot, error) {
+	return sampleOwnershipSnapshot(), nil
+}
+
 func (testProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
 	return sampleEarningsSnapshot(), nil
 }
@@ -193,6 +197,10 @@ func (p *countingHistoryProvider) GetAnalystRecommendations(context.Context, str
 	return sampleAnalystRecommendationsSnapshot(), nil
 }
 
+func (p *countingHistoryProvider) GetOwners(context.Context, string) (domain.OwnershipSnapshot, error) {
+	return sampleOwnershipSnapshot(), nil
+}
+
 func (p *countingHistoryProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
 	return sampleEarningsSnapshot(), nil
 }
@@ -269,6 +277,10 @@ func (p *aiPrepProvider) GetFundamentals(context.Context, string) (domain.Fundam
 
 func (p *aiPrepProvider) GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error) {
 	return sampleAnalystRecommendationsSnapshot(), nil
+}
+
+func (p *aiPrepProvider) GetOwners(context.Context, string) (domain.OwnershipSnapshot, error) {
+	return sampleOwnershipSnapshot(), nil
 }
 
 func (p *aiPrepProvider) GetEarnings(context.Context, string) (domain.EarningsSnapshot, error) {
@@ -380,6 +392,47 @@ func sampleAnalystRecommendationsSnapshot() domain.AnalystRecommendationsSnapsho
 			{Period: "0m", StrongBuy: 12, Buy: 20, Hold: 8, Sell: 1, StrongSell: 1},
 			{Period: "-1m", StrongBuy: 11, Buy: 20, Hold: 9, Sell: 1, StrongSell: 1},
 			{Period: "-2m", StrongBuy: 10, Buy: 19, Hold: 10, Sell: 2, StrongSell: 1},
+		},
+		Freshness: domain.FreshnessLive,
+		Provider:  "test",
+		UpdatedAt: time.Now(),
+	}
+}
+
+func sampleOwnershipSnapshot() domain.OwnershipSnapshot {
+	return domain.OwnershipSnapshot{
+		Symbol:      "AAPL",
+		CompanyName: "Apple Inc.",
+		Summary: domain.OwnershipSummary{
+			InsidersPercentHeld:          0.021,
+			InstitutionsPercentHeld:      0.634,
+			InstitutionsFloatPercentHeld: 0.652,
+			InstitutionsHoldingCount:     5123,
+		},
+		Institutions: []domain.OwnershipHolder{
+			{
+				Name:        "Vanguard Group",
+				Shares:      1_401_231_221,
+				Value:       312_000_000_000,
+				PercentHeld: 0.091,
+				ReportDate:  time.Date(2026, 2, 14, 0, 0, 0, 0, time.UTC),
+			},
+			{
+				Name:        "BlackRock",
+				Shares:      1_111_000_000,
+				Value:       248_000_000_000,
+				PercentHeld: 0.072,
+				ReportDate:  time.Date(2026, 2, 14, 0, 0, 0, 0, time.UTC),
+			},
+		},
+		Funds: []domain.OwnershipHolder{
+			{
+				Name:        "Vanguard Total Stock Market Index Fund",
+				Shares:      410_000_000,
+				Value:       91_000_000_000,
+				PercentHeld: 0.027,
+				ReportDate:  time.Date(2026, 2, 14, 0, 0, 0, 0, time.UTC),
+			},
 		},
 		Freshness: domain.FreshnessLive,
 		Provider:  "test",

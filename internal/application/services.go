@@ -142,6 +142,25 @@ func (s *Services) GetInsiders(ctx context.Context, symbol string) (domain.Insid
 	return provider.GetInsiders(ctx, symbol)
 }
 
+func (s *Services) HasOwners() bool {
+	if s == nil || s.registry == nil {
+		return false
+	}
+	_, ok := s.registry.Owners()
+	return ok
+}
+
+func (s *Services) GetOwners(ctx context.Context, symbol string) (domain.OwnershipSnapshot, error) {
+	if s == nil || s.registry == nil {
+		return domain.OwnershipSnapshot{}, errServiceUnavailable
+	}
+	provider, _ := s.registry.Owners()
+	if provider == nil {
+		return domain.OwnershipSnapshot{}, errServiceUnavailable
+	}
+	return provider.GetOwners(ctx, symbol)
+}
+
 func (s *Services) HasAnalystRecommendations() bool {
 	if s == nil || s.registry == nil {
 		return false

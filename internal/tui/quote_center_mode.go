@@ -8,6 +8,7 @@ const (
 	quoteCenterTechnicals
 	quoteCenterStatements
 	quoteCenterInsiders
+	quoteCenterOwners
 	quoteCenterAnalyst
 	quoteCenterFilings
 	quoteCenterEarnings

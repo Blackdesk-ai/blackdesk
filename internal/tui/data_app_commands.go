@@ -15,6 +15,7 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 		m.needsTechnicalHistory(symbol),
 		m.services.HasStatements(),
 		m.services.HasInsiders(),
+		m.services.HasOwners(),
 	)
 	cmds := make([]tea.Cmd, 0, 10)
 	if plan.LoadQuote {
@@ -43,6 +44,9 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	}
 	if plan.LoadInsiders {
 		cmds = append(cmds, m.loadInsidersCmd(symbol))
+	}
+	if plan.LoadOwners {
+		cmds = append(cmds, m.loadOwnersCmd(symbol))
 	}
 	if plan.LoadAnalyst {
 		cmds = append(cmds, m.loadAnalystRecommendationsCmd(symbol))
@@ -115,6 +119,21 @@ func (m Model) loadAnalystRecommendationsCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
 		data, err := m.services.GetAnalystRecommendations(m.ctx, symbol)
 		return analystRecommendationsLoadedMsg{data: data, err: err}
+	}
+}
+
+func (m Model) loadOwnersCmd(symbol string) tea.Cmd {
+	if m.services == nil || !m.services.HasOwners() {
+		return nil
+	}
+	if data, ok := m.cachedOwners(symbol); ok {
+		return func() tea.Msg {
+			return ownersLoadedMsg{data: data, err: nil}
+		}
+	}
+	return func() tea.Msg {
+		data, err := m.services.GetOwners(m.ctx, symbol)
+		return ownersLoadedMsg{data: data, err: err}
 	}
 }
 

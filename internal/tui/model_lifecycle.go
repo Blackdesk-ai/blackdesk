@@ -71,6 +71,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		technicalCache:         make(map[string]domain.PriceSeries),
 		statementCache:         make(map[string]domain.FinancialStatement),
 		insiderCache:           make(map[string]domain.InsiderSnapshot),
+		ownersCache:            make(map[string]domain.OwnershipSnapshot),
 		analystCache:           make(map[string]domain.AnalystRecommendationsSnapshot),
 		filingsCache:           make(map[string]domain.FilingsSnapshot),
 		earningsCache:          make(map[string]domain.EarningsSnapshot),
@@ -130,6 +131,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleStatementLoaded(msg)
 	case insidersLoadedMsg:
 		return m.handleInsidersLoaded(msg)
+	case ownersLoadedMsg:
+		return m.handleOwnersLoaded(msg)
 	case analystRecommendationsLoadedMsg:
 		return m.handleAnalystRecommendationsLoaded(msg)
 	case filingsLoadedMsg:

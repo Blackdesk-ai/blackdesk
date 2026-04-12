@@ -14,6 +14,8 @@ import (
 
 func (m Model) renderQuoteFullscreenPage(header, section, label, muted, pos, neg lipgloss.Style, width, height int) string {
 	switch m.quoteCenterMode {
+	case quoteCenterOwners:
+		return m.renderQuoteOwnersPage(header, section, label, muted, pos, neg, width, height)
 	case quoteCenterAnalyst:
 		return m.renderQuoteAnalystRecommendationsPage(header, section, label, muted, pos, neg, width, height)
 	case quoteCenterEarnings:

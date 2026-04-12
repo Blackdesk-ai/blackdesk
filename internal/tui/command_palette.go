@@ -253,9 +253,18 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 		items = append(items, commandPaletteFunction{
 			ID:          "insiders",
 			Title:       "Insiders",
-			Aliases:     []string{"insider", "ownership"},
+			Aliases:     []string{"insider", "insiders"},
 			Category:    "Quote",
 			Description: fmt.Sprintf("Open insider activity for %s.", activeSymbol),
+		})
+	}
+	if m.services.HasOwners() {
+		items = append(items, commandPaletteFunction{
+			ID:          "owners",
+			Title:       "Owners",
+			Aliases:     []string{"owners", "ownership", "holders", "major holders", "institutional holders"},
+			Category:    "Quote",
+			Description: fmt.Sprintf("Open holders and top owners for %s.", activeSymbol),
 		})
 	}
 	if m.services.HasAnalystRecommendations() {
@@ -435,6 +444,11 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterInsiders)
 		return m, tea.Batch(tabCmd, m.loadInsidersCmd(activeSymbol))
+	case "owners":
+		m.closeCommandPalette("Opened owners view")
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterOwners)
+		return m, tea.Batch(tabCmd, m.loadOwnersCmd(activeSymbol))
 	case "analyst":
 		m.closeCommandPalette("Opened analyst recommendations view")
 		tabCmd := m.setActiveTab(tabQuote)
