@@ -60,7 +60,14 @@ type insidersLoadedMsg struct {
 	err  error
 }
 
+type searchDebouncedMsg struct {
+	id    int
+	query string
+}
+
 type searchLoadedMsg struct {
+	id      int
+	query   string
 	results []domain.SymbolRef
 	err     error
 }

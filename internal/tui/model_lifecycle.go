@@ -120,6 +120,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleStatementLoaded(msg)
 	case insidersLoadedMsg:
 		return m.handleInsidersLoaded(msg)
+	case searchDebouncedMsg:
+		return m.handleSearchDebounced(msg)
 	case searchLoadedMsg:
 		return m.handleSearchLoaded(msg)
 	case tickMsg:

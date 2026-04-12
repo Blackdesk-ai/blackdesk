@@ -12,6 +12,18 @@ import (
 	"blackdesk/internal/storage"
 )
 
+type searchProvider struct {
+	testProvider
+	queries []string
+}
+
+func (p *searchProvider) SearchSymbols(_ context.Context, query string) ([]domain.SymbolRef, error) {
+	p.queries = append(p.queries, query)
+	return []domain.SymbolRef{
+		{Symbol: "AAPL", Name: "Apple Inc.", Exchange: "NMS", Type: "EQUITY"},
+	}, nil
+}
+
 func TestSearchModeClearsInputOnOpenAndEsc(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config: storage.DefaultConfig(),
@@ -102,6 +114,117 @@ func TestSearchModeClearsPreviousResultsWhenQueryChanges(t *testing.T) {
 	}
 	if m.searchInput.Value() != "x" {
 		t.Fatalf("expected updated query, got %q", m.searchInput.Value())
+	}
+}
+
+func TestSearchModeEnterOpensDirectTickerWithoutResults(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config: storage.DefaultConfig(),
+	})
+	model.searchMode = true
+	model.searchInput.Focus()
+	model.searchInput.SetValue("aapl")
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.searchMode {
+		t.Fatal("expected search mode to close after direct symbol open")
+	}
+	if m.config.ActiveSymbol != "AAPL" {
+		t.Fatalf("expected active symbol AAPL, got %q", m.config.ActiveSymbol)
+	}
+	if m.config.Watchlist[m.selectedIdx] != "AAPL" {
+		t.Fatalf("expected selected watchlist item AAPL, got %q", m.config.Watchlist[m.selectedIdx])
+	}
+	if m.status != "Selected AAPL" {
+		t.Fatalf("expected selection status, got %q", m.status)
+	}
+}
+
+func TestSearchModeEnterPrefersSelectedResultWhenResultsExist(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config: storage.DefaultConfig(),
+	})
+	model.searchMode = true
+	model.searchInput.Focus()
+	model.searchInput.SetValue("brk")
+	model.searchItems = []domain.SymbolRef{
+		{Symbol: "BRK-A"},
+		{Symbol: "BRK-B"},
+	}
+	model.searchIdx = 1
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.config.ActiveSymbol != "BRK-B" {
+		t.Fatalf("expected selected result BRK-B, got %q", m.config.ActiveSymbol)
+	}
+}
+
+func TestSearchModeTypingSchedulesDebouncedSearch(t *testing.T) {
+	provider := &searchProvider{}
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(provider),
+	})
+	model.searchMode = true
+	model.searchInput.Focus()
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	m := updated.(Model)
+	if len(provider.queries) != 0 {
+		t.Fatalf("expected no immediate search before debounce, got %d queries", len(provider.queries))
+	}
+
+	updated, cmd := m.Update(searchDebouncedMsg{id: m.searchDebounceID, query: "a"})
+	m = updated.(Model)
+	if cmd == nil {
+		t.Fatal("expected debounce to trigger a search command")
+	}
+	msg := cmd()
+	loaded, ok := msg.(searchLoadedMsg)
+	if !ok {
+		t.Fatalf("expected searchLoadedMsg after debounce search, got %T", msg)
+	}
+	if loaded.query != "a" {
+		t.Fatalf("expected query a, got %q", loaded.query)
+	}
+	if len(provider.queries) != 1 || provider.queries[0] != "a" {
+		t.Fatalf("expected one search for a, got %#v", provider.queries)
+	}
+}
+
+func TestSearchLoadedIgnoresStaleOrClosedSearch(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config: storage.DefaultConfig(),
+	})
+	model.searchMode = true
+	model.searchRequestID = 2
+	model.searchRequestQuery = "aapl"
+
+	updated, _ := model.Update(searchLoadedMsg{
+		id:    1,
+		query: "aapl",
+		results: []domain.SymbolRef{
+			{Symbol: "AAPL"},
+		},
+	})
+	m := updated.(Model)
+	if len(m.searchItems) != 0 {
+		t.Fatalf("expected stale results to be ignored, got %d items", len(m.searchItems))
+	}
+
+	m.searchMode = false
+	updated, _ = m.Update(searchLoadedMsg{
+		id:    2,
+		query: "aapl",
+		results: []domain.SymbolRef{
+			{Symbol: "AAPL"},
+		},
+	})
+	m = updated.(Model)
+	if len(m.searchItems) != 0 {
+		t.Fatalf("expected closed search to ignore results, got %d items", len(m.searchItems))
 	}
 }
 

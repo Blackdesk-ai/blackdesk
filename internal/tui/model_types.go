@@ -54,6 +54,9 @@ type Model struct {
 	searchMode                  bool
 	searchItems                 []domain.SymbolRef
 	searchIdx                   int
+	searchDebounceID            int
+	searchRequestID             int
+	searchRequestQuery          string
 	aiInput                     textinput.Model
 	aiFocused                   bool
 	aiRunning                   bool

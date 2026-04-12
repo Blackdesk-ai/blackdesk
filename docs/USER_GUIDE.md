@@ -73,7 +73,8 @@ Search is the fastest way to load a symbol into the desk.
 
 - `/` opens search
 - type a ticker or company name
-- `Enter` submits a query when there are no results yet
+- results appear after a short pause while typing
+- `Enter` on a ticker-like query loads that symbol immediately
 - `↑ / ↓` moves through results
 - `Enter` on a selected result loads that symbol into the desk
 - `Ctrl+A` adds the selected result to the watchlist

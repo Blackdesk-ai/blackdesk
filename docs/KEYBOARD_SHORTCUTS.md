@@ -11,7 +11,7 @@
 
 ## Search
 
-- `Enter`: run query or open selected result
+- `Enter`: open typed ticker or selected result
 - `↑ / ↓`: navigate results
 - `Ctrl+A`: add selected result to watchlist
 - `Esc`: close search

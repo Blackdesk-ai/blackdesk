@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 
 	"blackdesk/internal/application"
@@ -45,10 +47,18 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m Model) searchCmd(query string) tea.Cmd {
+const searchDebounceDelay = 250 * time.Millisecond
+
+func (m Model) searchDebounceCmd(query string, id int) tea.Cmd {
+	return tea.Tick(searchDebounceDelay, func(time.Time) tea.Msg {
+		return searchDebouncedMsg{id: id, query: query}
+	})
+}
+
+func (m Model) searchCmd(query string, id int) tea.Cmd {
 	return func() tea.Msg {
 		results, err := m.services.SearchSymbols(m.ctx, query)
-		return searchLoadedMsg{results: results, err: err}
+		return searchLoadedMsg{id: id, query: query, results: results, err: err}
 	}
 }
 
