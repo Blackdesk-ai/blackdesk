@@ -97,6 +97,7 @@ func (p *Provider) Capabilities() domain.ProviderCapabilities {
 		Search:                 true,
 		Statements:             true,
 		Insiders:               true,
+		Owners:                 true,
 		AnalystRecommendations: true,
 		EconomicCalendar:       true,
 		Screeners:              true,

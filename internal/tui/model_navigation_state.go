@@ -66,6 +66,7 @@ func (m Model) quoteBottomPanelsVisible() bool {
 	return m.tabIdx == tabQuote &&
 		m.quoteCenterMode != quoteCenterStatements &&
 		m.quoteCenterMode != quoteCenterInsiders &&
+		m.quoteCenterMode != quoteCenterOwners &&
 		m.quoteCenterMode != quoteCenterAnalyst &&
 		m.quoteCenterMode != quoteCenterFilings &&
 		m.quoteCenterMode != quoteCenterEarnings
@@ -94,6 +95,8 @@ func (m Model) applicationQuoteCenterMode() application.QuoteCenterMode {
 		return application.QuoteCenterStatements
 	case quoteCenterInsiders:
 		return application.QuoteCenterInsiders
+	case quoteCenterOwners:
+		return application.QuoteCenterOwners
 	case quoteCenterAnalyst:
 		return application.QuoteCenterAnalyst
 	case quoteCenterFilings:

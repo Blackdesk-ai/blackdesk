@@ -369,6 +369,32 @@ type AnalystRecommendationsSnapshot struct {
 	UpdatedAt          time.Time
 }
 
+type OwnershipSummary struct {
+	InsidersPercentHeld          float64
+	InstitutionsPercentHeld      float64
+	InstitutionsFloatPercentHeld float64
+	InstitutionsHoldingCount     int
+}
+
+type OwnershipHolder struct {
+	Name        string
+	Shares      int64
+	Value       int64
+	PercentHeld float64
+	ReportDate  time.Time
+}
+
+type OwnershipSnapshot struct {
+	Symbol       string
+	CompanyName  string
+	Summary      OwnershipSummary
+	Institutions []OwnershipHolder
+	Funds        []OwnershipHolder
+	Freshness    string
+	Provider     string
+	UpdatedAt    time.Time
+}
+
 type EconomicCalendarEvent struct {
 	Date              time.Time
 	EventAt           time.Time
@@ -442,6 +468,7 @@ type ProviderCapabilities struct {
 	Search                 bool
 	Statements             bool
 	Insiders               bool
+	Owners                 bool
 	AnalystRecommendations bool
 	EconomicCalendar       bool
 	Screeners              bool

@@ -4,6 +4,7 @@ type QuoteCenterSelectionInput struct {
 	Target        QuoteCenterMode
 	HasStatements bool
 	HasInsiders   bool
+	HasOwners     bool
 	HasAnalyst    bool
 	HasFilings    bool
 }
@@ -14,6 +15,7 @@ type QuoteCenterSelectionResult struct {
 	LoadTechnical bool
 	LoadStatement bool
 	LoadInsiders  bool
+	LoadOwners    bool
 	LoadAnalyst   bool
 }
 
@@ -36,6 +38,15 @@ func PlanQuoteCenterSelection(input QuoteCenterSelectionInput) QuoteCenterSelect
 			Allowed:      true,
 			Status:       "Quote center: insiders",
 			LoadInsiders: true,
+		}
+	case QuoteCenterOwners:
+		if !input.HasOwners {
+			return QuoteCenterSelectionResult{Status: "Owners unavailable for active provider"}
+		}
+		return QuoteCenterSelectionResult{
+			Allowed:    true,
+			Status:     "Quote center: owners",
+			LoadOwners: true,
 		}
 	case QuoteCenterAnalyst:
 		if !input.HasAnalyst {

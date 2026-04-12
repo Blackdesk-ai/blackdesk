@@ -113,6 +113,14 @@ func (p *Provider) GetInsiders(ctx context.Context, symbol string) (domain.Insid
 	return insidersProvider.GetInsiders(ctx, symbol)
 }
 
+func (p *Provider) GetOwners(ctx context.Context, symbol string) (domain.OwnershipSnapshot, error) {
+	ownersProvider, ok := p.base.(providers.OwnersProvider)
+	if !ok {
+		return domain.OwnershipSnapshot{}, fmt.Errorf("owners provider unavailable")
+	}
+	return ownersProvider.GetOwners(ctx, symbol)
+}
+
 func (p *Provider) GetAnalystRecommendations(ctx context.Context, symbol string) (domain.AnalystRecommendationsSnapshot, error) {
 	analystProvider, ok := p.base.(providers.AnalystRecommendationsProvider)
 	if !ok {

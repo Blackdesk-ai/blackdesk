@@ -52,6 +52,10 @@ type insidersCapableProvider struct {
 	baseProvider
 }
 
+type ownersCapableProvider struct {
+	baseProvider
+}
+
 type analystCapableProvider struct {
 	baseProvider
 }
@@ -70,6 +74,10 @@ func (statementsCapableProvider) GetStatement(context.Context, string, domain.St
 
 func (insidersCapableProvider) GetInsiders(context.Context, string) (domain.InsiderSnapshot, error) {
 	return domain.InsiderSnapshot{}, nil
+}
+
+func (ownersCapableProvider) GetOwners(context.Context, string) (domain.OwnershipSnapshot, error) {
+	return domain.OwnershipSnapshot{}, nil
 }
 
 func (analystCapableProvider) GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error) {
@@ -168,6 +176,33 @@ func TestRegistryInsidersHandlesNilRegistry(t *testing.T) {
 	var registry *Registry
 
 	p, ok := registry.Insiders()
+	if ok || p != nil {
+		t.Fatal("expected nil registry to return false")
+	}
+}
+
+func TestRegistryOwnersReturnsOptionalProvider(t *testing.T) {
+	registry := NewRegistry(ownersCapableProvider{})
+
+	p, ok := registry.Owners()
+	if !ok || p == nil {
+		t.Fatal("expected owners provider to be exposed")
+	}
+}
+
+func TestRegistryOwnersHandlesMissingCapability(t *testing.T) {
+	registry := NewRegistry(baseProvider{})
+
+	p, ok := registry.Owners()
+	if ok || p != nil {
+		t.Fatal("expected missing owners provider to return false")
+	}
+}
+
+func TestRegistryOwnersHandlesNilRegistry(t *testing.T) {
+	var registry *Registry
+
+	p, ok := registry.Owners()
 	if ok || p != nil {
 		t.Fatal("expected nil registry to return false")
 	}

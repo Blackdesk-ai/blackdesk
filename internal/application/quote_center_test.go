@@ -19,6 +19,14 @@ func TestPlanQuoteCenterSelectionHonorsCapabilities(t *testing.T) {
 		t.Fatalf("unexpected insiders center result: %+v", insiders)
 	}
 
+	owners := PlanQuoteCenterSelection(QuoteCenterSelectionInput{
+		Target:    QuoteCenterOwners,
+		HasOwners: true,
+	})
+	if !owners.Allowed || !owners.LoadOwners || owners.Status != "Quote center: owners" {
+		t.Fatalf("unexpected owners center result: %+v", owners)
+	}
+
 	filings := PlanQuoteCenterSelection(QuoteCenterSelectionInput{
 		Target:     QuoteCenterFilings,
 		HasFilings: true,

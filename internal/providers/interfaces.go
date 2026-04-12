@@ -40,6 +40,10 @@ type InsidersProvider interface {
 	GetInsiders(context.Context, string) (domain.InsiderSnapshot, error)
 }
 
+type OwnersProvider interface {
+	GetOwners(context.Context, string) (domain.OwnershipSnapshot, error)
+}
+
 type AnalystRecommendationsProvider interface {
 	GetAnalystRecommendations(context.Context, string) (domain.AnalystRecommendationsSnapshot, error)
 }
@@ -96,6 +100,14 @@ func (r *Registry) Insiders() (InsidersProvider, bool) {
 		return nil, false
 	}
 	p, ok := r.active.(InsidersProvider)
+	return p, ok
+}
+
+func (r *Registry) Owners() (OwnersProvider, bool) {
+	if r == nil || r.active == nil {
+		return nil, false
+	}
+	p, ok := r.active.(OwnersProvider)
 	return p, ok
 }
 

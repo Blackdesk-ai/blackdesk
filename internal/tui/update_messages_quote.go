@@ -27,6 +27,19 @@ func (m Model) handleInsidersLoaded(msg insidersLoadedMsg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleOwnersLoaded(msg ownersLoadedMsg) (Model, tea.Cmd) {
+	m.owners = msg.data
+	if msg.err == nil {
+		m.cacheOwners(msg.data)
+		items := m.ownerItemsForSymbol(msg.data.Symbol)
+		if len(items) == 0 || m.ownersSel >= len(items) {
+			m.ownersSel = 0
+		}
+	}
+	m.errOwners = msg.err
+	return m, nil
+}
+
 func (m Model) handleAnalystRecommendationsLoaded(msg analystRecommendationsLoadedMsg) (Model, tea.Cmd) {
 	m.analyst = msg.data
 	if msg.err == nil {
