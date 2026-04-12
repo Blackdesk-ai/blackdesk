@@ -77,6 +77,10 @@ func (testProvider) GetEarnings(context.Context, string) (domain.EarningsSnapsho
 	return sampleEarningsSnapshot(), nil
 }
 
+func (testProvider) GetEconomicCalendar(context.Context, time.Time, time.Time) (domain.EconomicCalendarSnapshot, error) {
+	return sampleEconomicCalendarSnapshot(), nil
+}
+
 func (testProvider) SearchSymbols(context.Context, string) ([]domain.SymbolRef, error) {
 	return nil, nil
 }
@@ -185,6 +189,10 @@ func (p *countingHistoryProvider) GetEarnings(context.Context, string) (domain.E
 	return sampleEarningsSnapshot(), nil
 }
 
+func (p *countingHistoryProvider) GetEconomicCalendar(context.Context, time.Time, time.Time) (domain.EconomicCalendarSnapshot, error) {
+	return sampleEconomicCalendarSnapshot(), nil
+}
+
 func (p *countingHistoryProvider) SearchSymbols(context.Context, string) ([]domain.SymbolRef, error) {
 	return nil, nil
 }
@@ -255,6 +263,10 @@ func (p *aiPrepProvider) GetEarnings(context.Context, string) (domain.EarningsSn
 	return sampleEarningsSnapshot(), nil
 }
 
+func (p *aiPrepProvider) GetEconomicCalendar(context.Context, time.Time, time.Time) (domain.EconomicCalendarSnapshot, error) {
+	return sampleEconomicCalendarSnapshot(), nil
+}
+
 func (p *aiPrepProvider) SearchSymbols(context.Context, string) ([]domain.SymbolRef, error) {
 	return nil, nil
 }
@@ -312,6 +324,42 @@ func sampleEarningsSnapshot() domain.EarningsSnapshot {
 			{Period: "+1q", EPSAverage: 1.77, RevenueAverage: 102_300_000_000},
 			{Period: "0y", EPSAverage: 7.08, RevenueAverage: 403_000_000_000},
 			{Period: "+1y", EPSAverage: 7.44, RevenueAverage: 420_000_000_000},
+		},
+		Freshness: domain.FreshnessLive,
+		Provider:  "test",
+		UpdatedAt: time.Now(),
+	}
+}
+
+func sampleEconomicCalendarSnapshot() domain.EconomicCalendarSnapshot {
+	return domain.EconomicCalendarSnapshot{
+		StartDate: time.Date(2026, 4, 12, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2026, 4, 19, 0, 0, 0, 0, time.UTC),
+		Events: []domain.EconomicCalendarEvent{
+			{
+				Date:              time.Date(2026, 4, 12, 0, 0, 0, 0, time.UTC),
+				EventAt:           time.Date(2026, 4, 12, 12, 30, 0, 0, time.UTC),
+				CountryCode:       "US",
+				Event:             "Consumer Price Index YoY",
+				EventTime:         "15:30",
+				Period:            "Mar",
+				Actual:            "3.1%",
+				ConsensusEstimate: "3.0%",
+				Prior:             "3.2%",
+				Description:       "Inflation release closely watched for Fed path and front-end rates.",
+			},
+			{
+				Date:              time.Date(2026, 4, 14, 0, 0, 0, 0, time.UTC),
+				EventAt:           time.Date(2026, 4, 14, 12, 30, 0, 0, time.UTC),
+				CountryCode:       "US",
+				Event:             "Retail Sales MoM",
+				EventTime:         "15:30",
+				Period:            "Mar",
+				Actual:            "0.4%",
+				ConsensusEstimate: "0.3%",
+				Prior:             "0.2%",
+				Description:       "Consumer spending print that can move cyclicals, rates, and USD.",
+			},
 		},
 		Freshness: domain.FreshnessLive,
 		Provider:  "test",

@@ -70,6 +70,12 @@ type earningsLoadedMsg struct {
 	err  error
 }
 
+type calendarLoadedMsg struct {
+	filter calendarFilterMode
+	data   domain.EconomicCalendarSnapshot
+	err    error
+}
+
 type searchDebouncedMsg struct {
 	id    int
 	query string

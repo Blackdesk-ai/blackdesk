@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"testing"
+	"time"
 
 	"blackdesk/internal/domain"
 )
@@ -55,6 +56,10 @@ type screenerCapableProvider struct {
 	baseProvider
 }
 
+type economicCalendarCapableProvider struct {
+	baseProvider
+}
+
 func (statementsCapableProvider) GetStatement(context.Context, string, domain.StatementKind, domain.StatementFrequency) (domain.FinancialStatement, error) {
 	return domain.FinancialStatement{}, nil
 }
@@ -73,6 +78,10 @@ func (screenerCapableProvider) GetScreener(context.Context, string, int) (domain
 
 func (marketNewsCapableProvider) GetMarketNews(context.Context) ([]domain.NewsItem, error) {
 	return nil, nil
+}
+
+func (economicCalendarCapableProvider) GetEconomicCalendar(context.Context, time.Time, time.Time) (domain.EconomicCalendarSnapshot, error) {
+	return domain.EconomicCalendarSnapshot{}, nil
 }
 
 func TestRegistryStatementsReturnsOptionalProvider(t *testing.T) {
@@ -151,6 +160,33 @@ func TestRegistryInsidersHandlesNilRegistry(t *testing.T) {
 	var registry *Registry
 
 	p, ok := registry.Insiders()
+	if ok || p != nil {
+		t.Fatal("expected nil registry to return false")
+	}
+}
+
+func TestRegistryEconomicCalendarReturnsOptionalProvider(t *testing.T) {
+	registry := NewRegistry(economicCalendarCapableProvider{})
+
+	p, ok := registry.EconomicCalendar()
+	if !ok || p == nil {
+		t.Fatal("expected economic calendar provider to be exposed")
+	}
+}
+
+func TestRegistryEconomicCalendarHandlesMissingCapability(t *testing.T) {
+	registry := NewRegistry(baseProvider{})
+
+	p, ok := registry.EconomicCalendar()
+	if ok || p != nil {
+		t.Fatal("expected missing economic calendar provider to return false")
+	}
+}
+
+func TestRegistryEconomicCalendarHandlesNilRegistry(t *testing.T) {
+	var registry *Registry
+
+	p, ok := registry.EconomicCalendar()
 	if ok || p != nil {
 		t.Fatal("expected nil registry to return false")
 	}

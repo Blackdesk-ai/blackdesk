@@ -100,6 +100,8 @@ type Model struct {
 	marketOpinionHistoryAt      map[string]time.Time
 	pendingMarketOpinionRefresh bool
 	helpOpen                    bool
+	globalPageOpen              bool
+	globalPageKind              globalPageKind
 
 	quote             domain.QuoteSnapshot
 	watchQuotes       map[string]domain.QuoteSnapshot
@@ -109,6 +111,7 @@ type Model struct {
 	insiderCache      map[string]domain.InsiderSnapshot
 	filingsCache      map[string]domain.FilingsSnapshot
 	earningsCache     map[string]domain.EarningsSnapshot
+	calendarCache     map[calendarFilterMode]domain.EconomicCalendarSnapshot
 	news              []domain.NewsItem
 	newsSelected      int
 	marketNews        []domain.NewsItem
@@ -136,6 +139,9 @@ type Model struct {
 	filingsFilter     filingsFilterMode
 	earnings          domain.EarningsSnapshot
 	earningsSel       int
+	calendar          domain.EconomicCalendarSnapshot
+	calendarSel       int
+	calendarFilter    calendarFilterMode
 
 	errQuote            error
 	errHistory          error
@@ -147,5 +153,6 @@ type Model struct {
 	errInsiders         error
 	errFilings          error
 	errEarnings         error
+	errCalendar         error
 	errScreener         error
 }

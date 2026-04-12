@@ -231,6 +231,15 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 		{ID: "fundamentals", Title: "Fundamentals", Aliases: []string{"fundamental", "valuation", "fa"}, Category: "Quote", Description: fmt.Sprintf("Open the fundamentals view for %s.", activeSymbol)},
 		{ID: "technicals", Title: "Technicals", Aliases: []string{"technical", "ta"}, Category: "Quote", Description: fmt.Sprintf("Open the technicals view for %s.", activeSymbol)},
 	}
+	if m.services.HasEconomicCalendar() {
+		items = append(items, commandPaletteFunction{
+			ID:          "calendar",
+			Title:       "Calendar",
+			Aliases:     []string{"economic calendar", "macro calendar", "events"},
+			Category:    "Workspace",
+			Description: "Open the global economic calendar.",
+		})
+	}
 	if m.services.HasStatements() {
 		items = append(items, commandPaletteFunction{
 			ID:          "statements",
@@ -356,6 +365,22 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 	case "markets":
 		m.closeCommandPalette("Opened Markets workspace")
 		return m, m.setActiveTab(tabMarkets)
+	case "calendar":
+		m.closeCommandPalette("Opened economic calendar")
+		m.globalPageOpen = true
+		m.globalPageKind = globalPageCalendar
+		m.calendarFilter = calendarFilterToday
+		if data, ok := m.cachedCalendar(m.calendarFilter); ok {
+			m.calendar = data
+			if len(m.calendar.Events) == 0 || m.calendarSel >= len(m.calendar.Events) {
+				m.calendarSel = 0
+			}
+			return m, nil
+		}
+		m.calendar = domain.EconomicCalendarSnapshot{}
+		m.errCalendar = nil
+		m.calendarSel = 0
+		return m, m.loadCalendarCmd(m.calendarFilter)
 	case "quote":
 		m.closeCommandPalette("Opened Quote workspace")
 		return m, m.setActiveTab(tabQuote)

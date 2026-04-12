@@ -56,7 +56,7 @@ func (m Model) View() string {
 	fullHeightQuoteCenter := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterStatements || m.quoteCenterMode == quoteCenterInsiders)
 	fullscreenQuotePage := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterFilings || m.quoteCenterMode == quoteCenterEarnings)
 	fullHeightNews := m.tabIdx == tabNews || m.tabIdx == tabScreener
-	if m.commandPaletteOpen || m.tabIdx == tabAI || fullscreenQuotePage || fullHeightQuoteCenter || fullHeightNews {
+	if m.commandPaletteOpen || m.globalPageOpen || m.tabIdx == tabAI || fullscreenQuotePage || fullHeightQuoteCenter || fullHeightNews {
 		mainTotalHeight = availableH
 		bottomTotalHeight = 0
 	}
@@ -66,7 +66,7 @@ func (m Model) View() string {
 	mainRow := ""
 	if m.helpOpen {
 		helpH := mainHeight + bottomTotalHeight
-		if m.commandPaletteOpen || m.tabIdx == tabAI || fullscreenQuotePage || fullHeightQuoteCenter || fullHeightNews {
+		if m.commandPaletteOpen || m.globalPageOpen || m.tabIdx == tabAI || fullscreenQuotePage || fullHeightQuoteCenter || fullHeightNews {
 			helpH = mainHeight
 		}
 		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(helpH).Render(
@@ -76,6 +76,10 @@ func (m Model) View() string {
 	} else if m.commandPaletteOpen {
 		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(
 			m.renderCommandPalette(sectionStyle, labelStyle, muted, viewportWidth-frameX, mainHeight-2),
+		)
+	} else if m.globalPageOpen {
+		mainRow = frameStyle.Width(viewportWidth - frameBX).Height(mainHeight).Render(
+			m.renderGlobalFullscreenPage(headerStyle, sectionStyle, labelStyle, muted, pos, neg, viewportWidth-frameX, mainHeight-2),
 		)
 	} else if fullscreenQuotePage {
 		page := m.renderQuoteFullscreenPage(headerStyle, sectionStyle, labelStyle, muted, pos, neg, viewportWidth-frameX, mainHeight-2)
@@ -93,7 +97,7 @@ func (m Model) View() string {
 	mainRow = lipgloss.NewStyle().Width(viewportWidth).MaxWidth(viewportWidth).Render(mainRow)
 
 	bottom := ""
-	if !m.helpOpen && !m.commandPaletteOpen && !fullscreenQuotePage && m.tabIdx != tabAI && !fullHeightQuoteCenter && !fullHeightNews {
+	if !m.helpOpen && !m.commandPaletteOpen && !m.globalPageOpen && !fullscreenQuotePage && m.tabIdx != tabAI && !fullHeightQuoteCenter && !fullHeightNews {
 		bottom = frameStyle.Width(viewportWidth - frameBX).Height(bottomHeight).Render(m.renderBottomPanel(sectionStyle, labelStyle, muted, viewportWidth-frameX, bottomHeight-2))
 	}
 
@@ -104,6 +108,9 @@ func (m Model) View() string {
 		statusText = ""
 	} else if m.commandPaletteOpen {
 		lineText = muted.Render("Command palette: Enter open • ↑/↓ move • Esc close")
+		statusText = ""
+	} else if m.globalPageOpen {
+		lineText = muted.Render(m.globalPageStatusLine())
 		statusText = ""
 	} else if m.searchMode {
 		lineText = m.searchInput.View()

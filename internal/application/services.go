@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"blackdesk/internal/agents"
 	"blackdesk/internal/domain"
@@ -158,6 +159,25 @@ func (s *Services) GetEarnings(ctx context.Context, symbol string) (domain.Earni
 		return domain.EarningsSnapshot{}, errServiceUnavailable
 	}
 	return provider.GetEarnings(ctx, symbol)
+}
+
+func (s *Services) HasEconomicCalendar() bool {
+	if s == nil || s.registry == nil {
+		return false
+	}
+	_, ok := s.registry.EconomicCalendar()
+	return ok
+}
+
+func (s *Services) GetEconomicCalendar(ctx context.Context, start, end time.Time) (domain.EconomicCalendarSnapshot, error) {
+	if s == nil || s.registry == nil {
+		return domain.EconomicCalendarSnapshot{}, errServiceUnavailable
+	}
+	provider, _ := s.registry.EconomicCalendar()
+	if provider == nil {
+		return domain.EconomicCalendarSnapshot{}, errServiceUnavailable
+	}
+	return provider.GetEconomicCalendar(ctx, start, end)
 }
 
 func (s *Services) HasScreeners() bool {

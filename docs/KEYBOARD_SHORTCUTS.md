@@ -16,8 +16,9 @@
 - `Enter`: open selected function or symbol
 - `Esc`: close command palette
 
-Common Quote functions in the palette:
+Common palette functions:
 
+- `Calendar`
 - `Chart`
 - `Fundamentals`
 - `Technicals`
@@ -37,6 +38,13 @@ Common Quote functions in the palette:
 
 - `i`: generate AI market insight
 - `r`: refresh market data
+
+## Calendar
+
+- `← / →`: switch `Today` / `This Week`
+- `↑ / ↓`: navigate events
+- `r`: refresh economic calendar
+- `Esc`: close calendar
 
 ## Quote
 

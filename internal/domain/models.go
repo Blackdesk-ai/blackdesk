@@ -336,6 +336,29 @@ type EarningsSnapshot struct {
 	UpdatedAt   time.Time
 }
 
+type EconomicCalendarEvent struct {
+	Date              time.Time
+	EventAt           time.Time
+	CountryCode       string
+	Event             string
+	EventTime         string
+	Period            string
+	Actual            string
+	ConsensusEstimate string
+	Prior             string
+	RevisedFrom       string
+	Description       string
+}
+
+type EconomicCalendarSnapshot struct {
+	StartDate time.Time
+	EndDate   time.Time
+	Events    []EconomicCalendarEvent
+	Freshness string
+	Provider  string
+	UpdatedAt time.Time
+}
+
 type InsiderTransaction struct {
 	Insider   string
 	Relation  string
@@ -378,13 +401,14 @@ type PriceSeries struct {
 }
 
 type ProviderCapabilities struct {
-	Quote        bool
-	History      bool
-	News         bool
-	MarketNews   bool
-	Fundamentals bool
-	Search       bool
-	Statements   bool
-	Insiders     bool
-	Screeners    bool
+	Quote            bool
+	History          bool
+	News             bool
+	MarketNews       bool
+	Fundamentals     bool
+	Search           bool
+	Statements       bool
+	Insiders         bool
+	EconomicCalendar bool
+	Screeners        bool
 }

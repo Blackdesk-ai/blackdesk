@@ -49,6 +49,12 @@ func renderHelpOverlay(section, label, muted lipgloss.Style, width, height int) 
 			{"i", "Generate AI market insight"},
 			{"r", "Refresh market data"},
 		}},
+		{"CALENDAR", []helpEntry{
+			{"← / →", "Switch Today / This Week"},
+			{"↑ / ↓", "Navigate events"},
+			{"r", "Refresh economic calendar"},
+			{"Esc", "Close calendar"},
+		}},
 		{"QUOTE", []helpEntry{
 			{"↑ / ↓", "Navigate watchlist symbols"},
 			{"c", "Chart view"},

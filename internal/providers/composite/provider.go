@@ -3,6 +3,7 @@ package composite
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"blackdesk/internal/domain"
 	"blackdesk/internal/providers"
@@ -118,6 +119,14 @@ func (p *Provider) GetEarnings(ctx context.Context, symbol string) (domain.Earni
 		return domain.EarningsSnapshot{}, fmt.Errorf("earnings provider unavailable")
 	}
 	return earningsProvider.GetEarnings(ctx, symbol)
+}
+
+func (p *Provider) GetEconomicCalendar(ctx context.Context, start, end time.Time) (domain.EconomicCalendarSnapshot, error) {
+	calendarProvider, ok := p.base.(providers.EconomicCalendarProvider)
+	if !ok {
+		return domain.EconomicCalendarSnapshot{}, fmt.Errorf("economic calendar provider unavailable")
+	}
+	return calendarProvider.GetEconomicCalendar(ctx, start, end)
 }
 
 func (p *Provider) Screeners() []domain.ScreenerDefinition {

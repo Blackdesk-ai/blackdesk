@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -111,5 +112,57 @@ func (m Model) loadEarningsCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
 		data, err := m.services.GetEarnings(m.ctx, symbol)
 		return earningsLoadedMsg{data: data, err: err}
+	}
+}
+
+func (m Model) loadCalendarCmd(filter calendarFilterMode) tea.Cmd {
+	if m.services == nil || !m.services.HasEconomicCalendar() {
+		return nil
+	}
+	if data, ok := m.cachedCalendar(filter); ok {
+		return func() tea.Msg {
+			return calendarLoadedMsg{filter: filter, data: data, err: nil}
+		}
+	}
+	start, end := m.calendarRangeForFilter(filter)
+	return func() tea.Msg {
+		data, err := m.services.GetEconomicCalendar(m.ctx, start, end)
+		return calendarLoadedMsg{filter: filter, data: data, err: err}
+	}
+}
+
+func (m Model) calendarRangeForFilter(filter calendarFilterMode) (time.Time, time.Time) {
+	now := m.clock
+	if now.IsZero() {
+		now = time.Now()
+	}
+	localNow := now.In(now.Location())
+	start := time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, localNow.Location())
+	switch filter {
+	case calendarFilterThisWeek:
+		return start, start.AddDate(0, 0, 7)
+	default:
+		return start, start.AddDate(0, 0, 1)
+	}
+}
+
+func (m Model) calendarFilterLabel() string {
+	switch m.calendarFilter {
+	case calendarFilterThisWeek:
+		return "This Week"
+	default:
+		return "Today"
+	}
+}
+
+func (m Model) globalPageStatusLine() string {
+	if !m.globalPageOpen {
+		return ""
+	}
+	switch m.globalPageKind {
+	case globalPageCalendar:
+		return "Calendar: ←/→ filter • ↑/↓ move • r refresh • Esc close"
+	default:
+		return strings.TrimSpace(m.status)
 	}
 }

@@ -92,8 +92,9 @@ The command palette is the global launcher for functions and symbols.
 - `Enter` opens the selected function or symbol
 - `Esc` closes the palette
 
-Common Quote functions available from the palette include:
+Common palette functions include:
 
+- `Calendar`
 - `Chart`
 - `Fundamentals`
 - `Technicals`
@@ -122,6 +123,24 @@ Main controls:
 
 - `i` generates an AI market insight
 - `r` refreshes market data
+
+## Calendar
+
+`Calendar` is the global macro and economic events page.
+It is separate from `Quote` on purpose.
+
+What it is for:
+
+- tracking high-importance economic releases
+- scanning the current day quickly
+- seeing the next week of macro catalysts
+
+Main controls:
+
+- `← / →` switches `Today` and `This Week`
+- `↑ / ↓` moves through events
+- `r` refreshes the calendar
+- `Esc` closes the page
 
 ## Quote
 
@@ -158,6 +177,10 @@ Additional Quote pages:
 
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
+
+Global pages from the command palette:
+
+- `Calendar` opens a fullscreen economic calendar with `Today` and `This Week` filters for high-importance global events.
 
 ## News
 
