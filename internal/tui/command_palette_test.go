@@ -50,6 +50,31 @@ func TestCommandPaletteEnterOpensSelectedFunction(t *testing.T) {
 	}
 }
 
+func TestCommandPaletteQuoteFunctionOpensChartView(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config: storage.DefaultConfig(),
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterFundamentals
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{
+		{Kind: commandPaletteItemFunction, FunctionID: "quote", Title: "Quote"},
+	}
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.commandPaletteOpen {
+		t.Fatal("expected command palette to close after opening quote")
+	}
+	if m.tabIdx != tabQuote {
+		t.Fatalf("expected Quote tab, got %d", m.tabIdx)
+	}
+	if m.quoteCenterMode != quoteCenterChart {
+		t.Fatalf("expected chart mode, got %d", m.quoteCenterMode)
+	}
+}
+
 func TestCommandPaletteEnterOpensSelectedSymbol(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config: storage.DefaultConfig(),
