@@ -406,7 +406,9 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		return m, m.loadCalendarCmd(m.calendarFilter)
 	case "quote":
 		m.closeCommandPalette("Opened Quote workspace")
-		return m, m.setActiveTab(tabQuote)
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterChart)
+		return m, tabCmd
 	case "news":
 		m.closeCommandPalette("Opened News workspace")
 		return m, m.setActiveTab(tabNews)
