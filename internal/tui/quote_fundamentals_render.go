@@ -20,7 +20,7 @@ func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote dom
 		return renderQuoteFundamentalsStacked(section, label, muted, quote, fundamentals, width, height)
 	}
 	leftWidth, rightWidth, gap := fundamentalsGridLayout(width, gap, leftDesired, rightDesired)
-	leftCol := renderQuoteFundamentalsCard(section, label, muted, leftWidth, quoteFundamentalsValuationRows(quote, fundamentals), "VALUATION")
+	leftCol := renderQuoteFundamentalsValuationBlock(section, label, muted, leftWidth, quote, fundamentals)
 	rightCol := strings.Join([]string{
 		renderQuoteFundamentalsSplitCard(section, label, muted, rightWidth, profitabilityLeft, profitabilityRight, "PROFITABILITY"),
 		renderQuoteFundamentalsSplitCard(section, label, muted, rightWidth, financialLeft, financialRight, "FINANCIALS"),
@@ -38,11 +38,20 @@ func renderQuoteFundamentalsStacked(section, label, muted lipgloss.Style, quote 
 	profitabilityRows := quoteFundamentalsProfitabilityRows(fundamentals)
 	financialRows := quoteFundamentalsFinancialRows(fundamentals)
 	cards := []string{
-		renderQuoteFundamentalsCard(section, label, muted, width, quoteFundamentalsValuationRows(quote, fundamentals), "VALUATION"),
+		renderQuoteFundamentalsValuationBlock(section, label, muted, width, quote, fundamentals),
 		renderQuoteFundamentalsCard(section, label, muted, width, profitabilityRows, "PROFITABILITY"),
 		renderQuoteFundamentalsCard(section, label, muted, width, financialRows, "FINANCIALS"),
 	}
 	return clipLines(strings.Join(cards, "\n\n"), height)
+}
+
+func renderQuoteFundamentalsValuationBlock(section, label, muted lipgloss.Style, width int, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot) string {
+	card := renderQuoteFundamentalsCard(section, label, muted, width, quoteFundamentalsValuationRows(quote, fundamentals), "VALUATION")
+	scoreLines := renderQuoteFundamentalsScoreLines(label, width, quote, fundamentals)
+	if scoreLines == "" {
+		return card
+	}
+	return card + "\n\n" + scoreLines
 }
 
 func renderQuoteFundamentalsCard(section, label, muted lipgloss.Style, width int, rows []marketTableRow, title string) string {
@@ -54,6 +63,61 @@ func renderQuoteFundamentalsCard(section, label, muted lipgloss.Style, width int
 		b.WriteString(renderQuoteFundamentalsTableRow(row, labelWidth, valueWidth, label) + "\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
+}
+
+func renderQuoteFundamentalsScoreLines(label lipgloss.Style, width int, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot) string {
+	type scoreLine struct {
+		row      marketTableRow
+		colorize func(text string, score float64, styled bool) string
+		score    float64
+	}
+
+	lines := make([]scoreLine, 0, 2)
+	if score, ok := valuationScoreValue(quote, fundamentals); ok {
+		lines = append(lines, scoreLine{
+			row: marketTableRow{
+				name:   "QARP Score",
+				price:  formatOptionalScaledFloat(score, true, 100),
+				move:   score,
+				styled: score != 0,
+			},
+			colorize: colorizeQARPScore,
+			score:    score,
+		})
+	}
+	if score, ok := ruleOf40Value(fundamentals); ok {
+		lines = append(lines, scoreLine{
+			row: marketTableRow{
+				name:   "R40",
+				price:  formatOptionalPercent(score, true),
+				move:   score,
+				styled: true,
+			},
+			colorize: colorizeR40Score,
+			score:    score,
+		})
+	}
+	if len(lines) == 0 {
+		return ""
+	}
+
+	rows := make([]marketTableRow, 0, len(lines))
+	for _, line := range lines {
+		rows = append(rows, line.row)
+	}
+	labelWidth, valueWidth := fundamentalsTableWidths(rows, width, 18)
+
+	rendered := make([]string, 0, len(lines))
+	for _, line := range lines {
+		value := ansi.Truncate(line.colorize(line.row.price, line.score, line.row.styled), valueWidth, "...")
+		rendered = append(rendered, lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			lipgloss.NewStyle().Width(labelWidth).Render(label.Render(ansi.Truncate(line.row.name, labelWidth, "..."))),
+			strings.Repeat(" ", fundamentalsColumnGap),
+			lipgloss.NewStyle().Width(valueWidth).Render(value),
+		))
+	}
+	return strings.Join(rendered, "\n")
 }
 
 func renderQuoteFundamentalsSplitCard(section, label, muted lipgloss.Style, width int, leftRows, rightRows []marketTableRow, title string) string {

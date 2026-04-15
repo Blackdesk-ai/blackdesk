@@ -4,6 +4,7 @@ import (
 	"blackdesk/internal/domain"
 	"blackdesk/internal/ui"
 	"fmt"
+	"math"
 )
 
 func formatCompactIntDash(v int64) string {
@@ -64,6 +65,25 @@ func earningsYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (
 		return 0, false
 	}
 	return eps / q.Price, true
+}
+
+func valuationScoreValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	earningsYield, earningsYieldOK := earningsYieldValue(q, f)
+	if !earningsYieldOK || f.ReturnOnInvestedCapital == 0 {
+		return 0, false
+	}
+	score := earningsYield * f.ReturnOnInvestedCapital
+	if earningsYield < 0 || f.ReturnOnInvestedCapital < 0 {
+		return -math.Abs(score), true
+	}
+	return score, true
+}
+
+func ruleOf40Value(f domain.FundamentalsSnapshot) (float64, bool) {
+	if f.RevenueGrowth == 0 && f.ProfitMargins == 0 {
+		return 0, false
+	}
+	return f.RevenueGrowth + f.ProfitMargins, true
 }
 
 func impliedEPSGrowthEstimate(f domain.FundamentalsSnapshot) (float64, bool) {

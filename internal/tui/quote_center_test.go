@@ -313,6 +313,12 @@ func TestRenderQuoteFundamentalsGridStacksCardsWhenWidthIsNarrow(t *testing.T) {
 	if !strings.Contains(view, "Op cash flow") || !strings.Contains(view, "Free cash flow") {
 		t.Fatal("expected narrow stacked layout to keep lower financial rows visible")
 	}
+	if !strings.Contains(view, "QARP Score") || !strings.Contains(view, "1.35") {
+		t.Fatal("expected narrow stacked layout to render qarp score below valuation card without percent sign")
+	}
+	if !strings.Contains(view, "R40") || !strings.Contains(view, "32.30%") {
+		t.Fatal("expected narrow stacked layout to render r40 below qarp score")
+	}
 }
 
 func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t *testing.T) {
@@ -352,6 +358,12 @@ func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t 
 	}
 	if !strings.Contains(view, "Earnings Yield") {
 		t.Fatal("expected valuation card to include earnings yield")
+	}
+	if !strings.Contains(view, "QARP Score") || !strings.Contains(view, "1.35") {
+		t.Fatal("expected wide fundamentals layout to render separate qarp score without percent sign")
+	}
+	if !strings.Contains(view, "R40") || !strings.Contains(view, "32.30%") {
+		t.Fatal("expected wide fundamentals layout to render r40 below qarp score")
 	}
 }
 

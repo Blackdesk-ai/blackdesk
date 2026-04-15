@@ -106,6 +106,13 @@ func formatOptionalPercent(v float64, ok bool) string {
 	return ui.FormatPercent(v * 100)
 }
 
+func formatOptionalScaledFloat(v float64, ok bool, scale float64) string {
+	if !ok {
+		return "-"
+	}
+	return fmt.Sprintf("%.2f", v*scale)
+}
+
 func yearlyRangeText(f domain.FundamentalsSnapshot, price float64) string {
 	if f.FiftyTwoWeekLow == 0 && f.FiftyTwoWeekHigh == 0 {
 		return "-"

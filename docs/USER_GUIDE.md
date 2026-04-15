@@ -181,6 +181,30 @@ Additional Quote pages:
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
 
+Quote fundamentals note:
+
+- `QARP Score` means `Quality at a Reasonable Price`.
+- It is a fast composite signal shown under the `Valuation` block in `Fundamentals`.
+- Blackdesk calculates it as `Earnings Yield x ROIC`.
+- `Earnings Yield` is derived from trailing PE when available, with EPS over price as fallback.
+- `ROIC` is return on invested capital.
+- If either `Earnings Yield` or `ROIC` is negative, the score is forced negative so weak fundamentals cannot display as a strong positive result.
+- The value is displayed as a plain number instead of a percent. Example: `1.35` means the multiplied result scaled for readability in the UI.
+- The value is color-coded by threshold:
+- `< 0.5` weak / overvalued
+- `0.5 - 0.8` fair
+- `0.8 - 1.2` good
+- `1.2 - 1.5` very good
+- `> 1.5` rare / opportunity
+- `R40` is Blackdesk's `Revenue Growth + Profit Margin` readout shown directly under `QARP Score`.
+- It is displayed as a percent and color-coded by threshold:
+- `< 15%` weak
+- `15% - 25%` mediocre
+- `25% - 40%` good
+- `40% - 60%` very good
+- `> 60%` exceptional
+- Use it as a shortcut for balancing quality and price, not as a standalone investment verdict.
+
 Global pages from the command palette:
 
 - `Calendar` opens a fullscreen economic calendar with `Today` and `This Week` filters for high-importance global events.

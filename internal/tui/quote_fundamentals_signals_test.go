@@ -61,3 +61,84 @@ func TestEarningsYieldValueFallsBackToEPSOverPrice(t *testing.T) {
 		t.Fatalf("expected 4%% earnings yield, got %.6f", got)
 	}
 }
+
+func TestValuationScoreValueMultipliesEarningsYieldAndROIC(t *testing.T) {
+	got, ok := valuationScoreValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		TrailingPE:              25,
+		ReturnOnInvestedCapital: 0.18,
+	})
+	if !ok {
+		t.Fatal("expected valuation score when earnings yield and roic are available")
+	}
+	if got != 0.0072 {
+		t.Fatalf("expected multiplied score, got %.6f", got)
+	}
+}
+
+func TestValuationScoreValueTurnsNegativeWhenBothInputsAreNegative(t *testing.T) {
+	got, ok := valuationScoreValue(domain.QuoteSnapshot{Price: 100}, domain.FundamentalsSnapshot{
+		TrailingEPS:             -11.7,
+		ReturnOnInvestedCapital: -0.4936,
+	})
+	if !ok {
+		t.Fatal("expected valuation score when both inputs are available")
+	}
+	if got >= 0 {
+		t.Fatalf("expected negative score for double-negative inputs, got %.6f", got)
+	}
+}
+
+func TestValuationScoreValueTurnsNegativeWhenOnlyOneInputIsNegative(t *testing.T) {
+	got, ok := valuationScoreValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		TrailingPE:              25,
+		ReturnOnInvestedCapital: -0.18,
+	})
+	if !ok {
+		t.Fatal("expected valuation score when earnings yield and roic are available")
+	}
+	if got >= 0 {
+		t.Fatalf("expected negative score when one input is negative, got %.6f", got)
+	}
+}
+
+func TestValuationScoreValueRequiresROIC(t *testing.T) {
+	_, ok := valuationScoreValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{TrailingPE: 25})
+	if ok {
+		t.Fatal("expected missing roic to disable valuation score")
+	}
+}
+
+func TestRuleOf40ValueAddsRevenueGrowthAndProfitMargin(t *testing.T) {
+	got, ok := ruleOf40Value(domain.FundamentalsSnapshot{
+		RevenueGrowth: 0.061,
+		ProfitMargins: 0.262,
+	})
+	if !ok {
+		t.Fatal("expected rule of 40 score when growth or margin is available")
+	}
+	if got != 0.323 {
+		t.Fatalf("expected 32.3%% r40 score, got %.6f", got)
+	}
+}
+
+func TestRuleOf40ValueRequiresAtLeastOneInput(t *testing.T) {
+	_, ok := ruleOf40Value(domain.FundamentalsSnapshot{})
+	if ok {
+		t.Fatal("expected missing growth and margin to disable r40 score")
+	}
+}
+
+func TestQuoteFundamentalsValuationRowsDoNotIncludeQARPScore(t *testing.T) {
+	rows := quoteFundamentalsValuationRows(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		MarketCap:               100,
+		EnterpriseValue:         120,
+		TrailingPE:              25,
+		ReturnOnInvestedCapital: 0.18,
+	})
+
+	for _, row := range rows {
+		if row.name == "QARP Score" || row.name == "R40" {
+			t.Fatalf("expected supplemental scores to be rendered outside valuation rows, got %+v", row)
+		}
+	}
+}
