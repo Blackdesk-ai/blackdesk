@@ -25,7 +25,8 @@ func quoteFundamentalsValuationRows(quote domain.QuoteSnapshot, f domain.Fundame
 	}
 }
 
-func quoteFundamentalsProfitabilityRows(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) []marketTableRow {
+func quoteFundamentalsProfitabilityRows(f domain.FundamentalsSnapshot) []marketTableRow {
+	impliedGrowth, impliedGrowthOK := impliedEPSGrowthEstimate(f)
 	return []marketTableRow{
 		{name: "Gross margin", price: percentDash(f.GrossMargins), chg: "", move: 0, styled: false},
 		{name: "Operating", price: percentDash(f.OperatingMargins), chg: "", move: 0, styled: false},
@@ -33,9 +34,9 @@ func quoteFundamentalsProfitabilityRows(q domain.QuoteSnapshot, f domain.Fundame
 		{name: "ROIC", price: percentDash(f.ReturnOnInvestedCapital), chg: "", move: 0, styled: false},
 		{name: "ROE", price: percentDash(f.ReturnOnEquity), chg: "", move: 0, styled: false},
 		{name: "ROA", price: percentDash(f.ReturnOnAssets), chg: "", move: 0, styled: false},
-		{name: "Rev growth", price: percentDash(f.RevenueGrowth), chg: "", move: 0, styled: false},
-		{name: "EPS growth", price: percentDash(f.EarningsGrowth), chg: "", move: 0, styled: false},
-		{name: "Growth Est.", price: impliedEPSGrowthBandText(q, f), chg: "", move: 0, styled: false},
+		{name: "Rev growth", price: percentDash(f.RevenueGrowth), chg: "", move: f.RevenueGrowth, styled: f.RevenueGrowth != 0},
+		{name: "EPS growth", price: percentDash(f.EarningsGrowth), chg: "", move: f.EarningsGrowth, styled: f.EarningsGrowth != 0},
+		{name: "Fwd Growth", price: impliedEPSGrowthEstimateText(f), chg: "", move: impliedGrowth, styled: impliedGrowthOK && impliedGrowth != 0},
 	}
 }
 

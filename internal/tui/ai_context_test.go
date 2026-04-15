@@ -223,7 +223,7 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 	if !strings.Contains(req.ContextPayload, "\"statement_insights\"") || !strings.Contains(req.ContextPayload, "\"Revenue YoY\"") {
 		t.Fatal("expected quote insight payload to include derived statement insights")
 	}
-	if !strings.Contains(req.ContextPayload, "\"quote_stats\"") || !strings.Contains(req.ContextPayload, "\"Growth Est.\": \"13%-15%\"") {
+	if !strings.Contains(req.ContextPayload, "\"quote_stats\"") || !strings.Contains(req.ContextPayload, "\"Fwd Growth\": \"10%\"") {
 		t.Fatal("expected quote insight payload to include derived growth estimate in quote_stats")
 	}
 	if !strings.Contains(req.ContextPayload, "\"Earnings Yield\": \"3.21%\"") {

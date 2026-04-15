@@ -6,24 +6,39 @@ import (
 	"blackdesk/internal/domain"
 )
 
-func TestImpliedEPSGrowthBandTextUsesForwardAndTrailingPE(t *testing.T) {
-	got := impliedEPSGrowthBandText(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+func TestImpliedEPSGrowthEstimateTextUsesTrailingAndForwardPE(t *testing.T) {
+	got := impliedEPSGrowthEstimateText(domain.FundamentalsSnapshot{
 		TrailingPE: 31.2,
 		ForwardPE:  28.4,
-		PEGRatio:   2.14,
 	})
-	if got != "13%-15%" {
-		t.Fatalf("expected implied growth band, got %q", got)
+	if got != "10%" {
+		t.Fatalf("expected implied growth estimate, got %q", got)
 	}
 }
 
-func TestImpliedEPSGrowthBandTextFallsBackToQuoteTrailingPEG(t *testing.T) {
-	got := impliedEPSGrowthBandText(domain.QuoteSnapshot{TrailingPEGRatio: 1.5}, domain.FundamentalsSnapshot{
-		TrailingPE: 30,
-		ForwardPE:  24,
+func TestImpliedEPSGrowthEstimateTextRequiresTrailingAndForwardPE(t *testing.T) {
+	got := impliedEPSGrowthEstimateText(domain.FundamentalsSnapshot{TrailingPE: 30})
+	if got != "-" {
+		t.Fatalf("expected missing forward pe to disable growth estimate, got %q", got)
+	}
+}
+
+func TestQuoteFundamentalsProfitabilityRowsStylesGrowthValues(t *testing.T) {
+	rows := quoteFundamentalsProfitabilityRows(domain.FundamentalsSnapshot{
+		RevenueGrowth:  0.08,
+		EarningsGrowth: -0.03,
+		TrailingPE:     30,
+		ForwardPE:      24,
 	})
-	if got != "16%-20%" {
-		t.Fatalf("expected quote trailing peg fallback band, got %q", got)
+
+	if rows[6].name != "Rev growth" || !rows[6].styled || rows[6].move <= 0 {
+		t.Fatalf("expected revenue growth row to be positively styled, got %+v", rows[6])
+	}
+	if rows[7].name != "EPS growth" || !rows[7].styled || rows[7].move >= 0 {
+		t.Fatalf("expected eps growth row to be negatively styled, got %+v", rows[7])
+	}
+	if rows[8].name != "Fwd Growth" || !rows[8].styled || rows[8].move <= 0 {
+		t.Fatalf("expected forward growth row to be positively styled, got %+v", rows[8])
 	}
 }
 

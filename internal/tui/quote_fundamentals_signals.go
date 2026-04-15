@@ -66,43 +66,19 @@ func earningsYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (
 	return eps / q.Price, true
 }
 
-func impliedEPSGrowthBand(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, float64, bool) {
-	peg := pegRatioValue(q, f)
-	if peg <= 0 {
-		return 0, 0, false
+func impliedEPSGrowthEstimate(f domain.FundamentalsSnapshot) (float64, bool) {
+	if f.TrailingPE <= 0 || f.ForwardPE <= 0 {
+		return 0, false
 	}
-
-	values := make([]float64, 0, 2)
-	if f.ForwardPE > 0 {
-		values = append(values, f.ForwardPE/peg/100)
-	}
-	if f.TrailingPE > 0 {
-		values = append(values, f.TrailingPE/peg/100)
-	}
-	if len(values) == 0 {
-		return 0, 0, false
-	}
-	low, high := values[0], values[0]
-	for _, v := range values[1:] {
-		if v < low {
-			low = v
-		}
-		if v > high {
-			high = v
-		}
-	}
-	return low, high, true
+	return f.TrailingPE/f.ForwardPE - 1, true
 }
 
-func impliedEPSGrowthBandText(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) string {
-	low, high, ok := impliedEPSGrowthBand(q, f)
+func impliedEPSGrowthEstimateText(f domain.FundamentalsSnapshot) string {
+	growth, ok := impliedEPSGrowthEstimate(f)
 	if !ok {
 		return "-"
 	}
-	if low == high {
-		return formatImpliedGrowthPercent(low * 100)
-	}
-	return formatImpliedGrowthPercent(low*100) + "-" + formatImpliedGrowthPercent(high*100)
+	return formatImpliedGrowthPercent(growth * 100)
 }
 
 func formatImpliedGrowthPercent(v float64) string {

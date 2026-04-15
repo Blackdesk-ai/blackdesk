@@ -247,7 +247,7 @@ func TestQuoteCenterMetricLabelsUseAnalystsLabelStyle(t *testing.T) {
 		{name: "Operating", price: "31.10%"},
 	}, []marketTableRow{
 		{name: "ROIC", price: "42.10%"},
-		{name: "Growth Est.", price: "13%-15%"},
+		{name: "Fwd Growth", price: "10%"},
 	}, "PROFITABILITY")
 	if strings.Count(splitCard, "Name") != 2 || strings.Count(splitCard, "Value") != 2 {
 		t.Fatal("expected split fundamentals card to render two table headers")
