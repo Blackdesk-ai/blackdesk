@@ -100,6 +100,7 @@ Common palette functions include:
 - `Technicals`
 - `Statements`
 - `Insiders`
+- `Equity Research` or `er`
 - `Analyst Recommendations` or `anr`
 - `Filings`
 - `Earnings`
@@ -257,7 +258,13 @@ What it is for:
 - summarizing the active setup
 - asking for market context
 - reviewing fundamentals, technicals, or statement trends
+- running a structured `Equity Research` memo for the active symbol from the command palette
 - switching between local connectors and available models
+
+Command palette AI functions:
+
+- `Equity Research` opens `AI`, injects a full structured investment-research prompt for the active symbol, and starts the AI run immediately.
+- It uses the current Blackdesk app context, including market regime, quote data, fundamentals, technicals, statements, news, and derived metrics available in the AI snapshot.
 
 Main controls:
 

@@ -146,6 +146,7 @@ For example:
 Some symbol research pages also open from the command palette instead of a single-letter shortcut.
 Examples include:
 
+- `Equity Research`
 - `Analyst Recommendations`
 - `Filings`
 - `Earnings`

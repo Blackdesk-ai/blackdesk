@@ -24,6 +24,7 @@ Common palette functions:
 - `Technicals`
 - `Statements`
 - `Insiders`
+- `Equity Research` or `er`
 - `Owners`
 - `Analyst Recommendations` or `anr`
 - `Filings`
