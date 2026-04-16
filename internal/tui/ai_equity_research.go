@@ -74,6 +74,7 @@ Distinguish clearly between:
   Expected Return ≈ Earnings Yield + Sustainable Growth
 - For growth companies: base this on normalized future margins.
 - For financials: base this on sustainable returns on capital and valuation re-rating potential.
+- Adjust for potential multiple expansion or compression where relevant.
 - Provide a range:
   • Bear
   • Base
@@ -118,6 +119,20 @@ Distinguish clearly between:
   • Medium
   • High
 - Briefly explain what would increase or reduce confidence.
+
+17. Timing / Market Context (CRITICAL)
+- Is the current market regime supportive (risk-on / risk-off)?
+- Is the stock in an uptrend or downtrend based on the technical context?
+- Is this the right time to enter, or should capital wait for a better setup?
+- Use timing to refine entry and sizing, not to override core business quality.
+
+18. Relative Opportunity
+- Compared with other opportunities visible in the desk context, watchlist, or obvious alternatives, is this among the best uses of capital?
+- Would you prioritize this now, keep it as a secondary idea, or defer capital elsewhere?
+
+19. Asymmetry
+- Estimate upside vs downside from the current price.
+- Is the risk/reward asymmetric in a favorable or unfavorable way?
 
 Be concise, analytical, and avoid generic explanations.
 Focus on actionable insight, normalized reality, per-share value creation, and clear decisions.`
