@@ -490,12 +490,12 @@ func averageBalanceBase(series []datedFundamentalsValue) (float64, bool) {
 }
 
 func deriveSupplementalCashFlow(resp statementTimeseriesResponse) (supplementalCashFlow, bool) {
-	operatingCashFlow, ok := trailingStatementValueWithFallback(resp, "OperatingCashFlow", "CashFlowFromContinuingOperatingActivities")
+	operatingCashFlow, ok := trailingCashFlowValueWithFallback(resp, "OperatingCashFlow", "CashFlowFromContinuingOperatingActivities")
 	if !ok {
 		return supplementalCashFlow{}, false
 	}
 
-	capitalExpenditure, capexOK := trailingStatementValueWithFallback(resp, "CapitalExpenditure")
+	capitalExpenditure, capexOK := trailingCashFlowValueWithFallback(resp, "CapitalExpenditure")
 	if capexOK {
 		return supplementalCashFlow{
 			operatingCashFlow: operatingCashFlow,
@@ -503,7 +503,7 @@ func deriveSupplementalCashFlow(resp statementTimeseriesResponse) (supplementalC
 		}, true
 	}
 
-	freeCashFlow, fcfOK := trailingStatementValueWithFallback(resp, "FreeCashFlow")
+	freeCashFlow, fcfOK := trailingCashFlowValueWithFallback(resp, "FreeCashFlow")
 	if !fcfOK {
 		return supplementalCashFlow{operatingCashFlow: operatingCashFlow}, true
 	}
@@ -512,6 +512,40 @@ func deriveSupplementalCashFlow(resp statementTimeseriesResponse) (supplementalC
 		operatingCashFlow: operatingCashFlow,
 		freeCashFlow:      freeCashFlow,
 	}, true
+}
+
+func trailingCashFlowValueWithFallback(resp statementTimeseriesResponse, keys ...string) (float64, bool) {
+	quarterly := statementSeriesForKeys(resp, domain.StatementFrequencyQuarterly, keys...)
+	annual := statementSeriesForKeys(resp, domain.StatementFrequencyAnnual, keys...)
+
+	if len(annual) > 0 && len(quarterly) > 0 && annual[0].date == quarterly[0].date {
+		return annual[0].value, true
+	}
+
+	if len(quarterly) >= 4 {
+		sum := 0.0
+		for i := 0; i < 4; i++ {
+			sum += quarterly[i].value
+		}
+		return sum, true
+	}
+
+	if len(annual) > 0 {
+		return annual[0].value, true
+	}
+	if len(quarterly) > 0 {
+		return quarterly[0].value, true
+	}
+	return 0, false
+}
+
+func statementSeriesForKeys(resp statementTimeseriesResponse, frequency domain.StatementFrequency, keys ...string) []datedFundamentalsValue {
+	for _, key := range keys {
+		if values := statementValues(resp, frequency, key); len(values) > 0 {
+			return values
+		}
+	}
+	return nil
 }
 
 func trailingStatementValueWithFallback(resp statementTimeseriesResponse, keys ...string) (float64, bool) {

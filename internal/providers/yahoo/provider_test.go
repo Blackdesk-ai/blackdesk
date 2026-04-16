@@ -392,6 +392,91 @@ func TestGetFundamentalsDerivesCashFlowFromSupplementalTimeseries(t *testing.T) 
 	}
 }
 
+func TestGetFundamentalsPrefersAnnualCashFlowWhenQuarterlyMatchesYearEnd(t *testing.T) {
+	ctx := context.Background()
+
+	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.URL.Path == "/":
+			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
+		case req.URL.Path == "/v1/test/getcrumb":
+			return textResponse(req, http.StatusOK, "crumb-123"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			return jsonFixtureResponse(t, req, "quote_summary_aapl.json")
+		case strings.HasPrefix(req.URL.Path, "/ws/fundamentals-timeseries/v1/finance/timeseries/"):
+			types := req.URL.Query().Get("type")
+			switch {
+			case types == "trailingPegRatio":
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			case strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "quarterlyCashFlowFromContinuingOperatingActivities"), strings.Contains(types, "quarterlyCapitalExpenditure"), strings.Contains(types, "quarterlyFreeCashFlow"):
+				body := []byte(`{
+					"timeseries": {
+						"result": [
+							{
+								"meta": { "type": ["quarterlyOperatingCashFlow"] },
+								"quarterlyOperatingCashFlow": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -739.0 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": 452.0 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": 311.0 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": 1015.0 } }
+								]
+							},
+							{
+								"meta": { "type": ["quarterlyCapitalExpenditure"] },
+								"quarterlyCapitalExpenditure": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -14.0 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": -12.0 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": -11.0 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": -10.0 } }
+								]
+							}
+						],
+						"error": null
+					}
+				}`)
+				return jsonResponse(req, http.StatusOK, body, "")
+			case strings.Contains(types, "annualOperatingCashFlow"), strings.Contains(types, "annualCapitalExpenditure"), strings.Contains(types, "annualFreeCashFlow"):
+				body := []byte(`{
+					"timeseries": {
+						"result": [
+							{
+								"meta": { "type": ["annualOperatingCashFlow"] },
+								"annualOperatingCashFlow": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -739.0 } }
+								]
+							},
+							{
+								"meta": { "type": ["annualCapitalExpenditure"] },
+								"annualCapitalExpenditure": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -23.0 } }
+								]
+							}
+						],
+						"error": null
+					}
+				}`)
+				return jsonResponse(req, http.StatusOK, body, "")
+			default:
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			}
+		default:
+			return textResponse(req, http.StatusNotFound, "not found"), nil
+		}
+	})
+
+	p := newTestProvider("https://query1.finance.yahoo.test", client)
+	got, err := p.GetFundamentals(ctx, "AAPL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.OperatingCashflow != -739 {
+		t.Fatalf("expected annual operating cash flow to win over summed quarterlies, got %+v", got)
+	}
+	if got.FreeCashflow != -762 {
+		t.Fatalf("expected annual-derived free cash flow -762, got %+v", got)
+	}
+}
+
 func TestGetStatementParsesAnnualIncome(t *testing.T) {
 	ctx := context.Background()
 
