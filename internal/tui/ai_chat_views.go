@@ -51,7 +51,7 @@ func (m Model) renderAITranscriptLines(width int) []string {
 		lines = append(lines, badge)
 		wrapped := splitLines(lipgloss.NewStyle().Width(bodyWidth).Render(strings.TrimSpace(msg.Body)))
 		if msg.Role == aiMessageAssistant {
-			wrapped = renderMarkdownTranscriptSafe(msg.Body, bodyWidth)
+			wrapped = renderMarkdownTranscript(msg.Body, bodyWidth)
 		}
 		lines = append(lines, wrapped...)
 		lines = append(lines, "")

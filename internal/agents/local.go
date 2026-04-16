@@ -190,8 +190,6 @@ func (r localRunner) Run(ctx context.Context, req Request) (Response, error) {
 	cmd := exec.CommandContext(ctx, r.desc.Path, r.args(req, outputFile)...)
 	cmd.Dir = req.Workspace
 	cmd.Env = append(os.Environ(), r.env(req)...)
-	cmd.Stdin = strings.NewReader("")
-	configureIsolatedSubprocess(cmd)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout

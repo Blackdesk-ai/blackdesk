@@ -3,7 +3,6 @@ package agents
 import (
 	"context"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 )
@@ -177,15 +176,6 @@ func TestSanitizeCLIOutputPrefersFinalMessageFileStyleOutput(t *testing.T) {
 	}
 	if got := string(data); got != "pong" {
 		t.Fatalf("unexpected temp output: %q", got)
-	}
-}
-
-func TestConfigureIsolatedSubprocessKeepsCommandNonInteractive(t *testing.T) {
-	cmd := exec.Command("echo", "hello")
-	configureIsolatedSubprocess(cmd)
-	cmd.Stdin = strings.NewReader("")
-	if cmd.Stdin == nil {
-		t.Fatal("expected subprocess stdin to be set explicitly")
 	}
 }
 

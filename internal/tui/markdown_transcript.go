@@ -1,10 +1,6 @@
 package tui
 
-import (
-	"strings"
-
-	"github.com/charmbracelet/lipgloss"
-)
+import "strings"
 
 func renderMarkdownTranscript(input string, width int) []string {
 	text := normalizeMarkdownInput(strings.TrimSpace(input))
@@ -31,18 +27,4 @@ func renderMarkdownTranscript(input string, width int) []string {
 	}
 
 	return wrapMarkdownLines(rendered, renderWidth)
-}
-
-func renderMarkdownTranscriptSafe(input string, width int) (lines []string) {
-	defer func() {
-		if recover() != nil {
-			fallbackWidth := max(24, width)
-			plain := lipgloss.NewStyle().Width(fallbackWidth).Render(strings.TrimSpace(input))
-			lines = splitLines(plain)
-			if len(lines) == 0 {
-				lines = []string{""}
-			}
-		}
-	}()
-	return renderMarkdownTranscript(input, width)
 }
