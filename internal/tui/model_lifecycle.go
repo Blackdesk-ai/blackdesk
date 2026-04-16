@@ -150,6 +150,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleCommandPaletteDebounced(msg)
 	case commandPaletteLoadedMsg:
 		return m.handleCommandPaletteLoaded(msg)
+	case watchlistSelectionDebouncedMsg:
+		return m.handleWatchlistSelectionDebounced(msg)
 	case tickMsg:
 		return m.handleTick(msg)
 	case aiResponseLoadedMsg:

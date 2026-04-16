@@ -43,6 +43,9 @@ func TestHandleFundamentalsLoadedKeepsCachedSnapshotOnError(t *testing.T) {
 		Config:   storage.DefaultConfig(),
 		Registry: providers.NewRegistry(testProvider{}),
 	})
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
 	snapshot := domain.FundamentalsSnapshot{Symbol: "AAPL", Description: "Last good data", MarketCap: 1}
 	model.fundamentals = snapshot
 	model.cacheFundamentals(snapshot)

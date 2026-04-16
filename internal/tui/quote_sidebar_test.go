@@ -259,6 +259,191 @@ func TestWatchlistNavigationUpdatesVisualScroll(t *testing.T) {
 	}
 }
 
+func TestWatchlistNavigationDebouncesSymbolLoad(t *testing.T) {
+	provider := &aiPrepProvider{}
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(provider),
+	})
+	model.tabIdx = tabQuote
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyDown})
+	model = updated.(Model)
+	if cmd == nil {
+		t.Fatal("expected debounce command after watchlist navigation")
+	}
+	if provider.quoteCalls != 0 || provider.fundamentalsCalls != 0 || provider.newsCalls != 0 {
+		t.Fatalf("expected no immediate data loads before debounce, got quote=%d fundamentals=%d news=%d", provider.quoteCalls, provider.fundamentalsCalls, provider.newsCalls)
+	}
+
+	msg := cmd()
+	batch, ok := msg.(tea.BatchMsg)
+	if !ok {
+		t.Fatalf("expected batched debounce command, got %T", msg)
+	}
+	var debounced tea.Msg
+	for _, subcmd := range batch {
+		if subcmd == nil {
+			continue
+		}
+		submsg := subcmd()
+		if submsg == nil {
+			continue
+		}
+		if _, ok := submsg.(watchlistSelectionDebouncedMsg); ok {
+			debounced = submsg
+		}
+	}
+	if debounced == nil {
+		t.Fatal("expected debounced watchlist selection message")
+	}
+
+	updated, cmd = model.Update(debounced)
+	model = updated.(Model)
+	if cmd == nil {
+		t.Fatal("expected symbol load after debounce fires")
+	}
+	if provider.quoteCalls != 0 || provider.fundamentalsCalls != 0 || provider.newsCalls != 0 {
+		t.Fatalf("expected provider to stay idle until load command runs, got quote=%d fundamentals=%d news=%d", provider.quoteCalls, provider.fundamentalsCalls, provider.newsCalls)
+	}
+
+	loadMsg := cmd()
+	loadBatch, ok := loadMsg.(tea.BatchMsg)
+	if !ok {
+		t.Fatalf("expected batched load command, got %T", loadMsg)
+	}
+	for _, subcmd := range loadBatch {
+		if subcmd == nil {
+			continue
+		}
+		_ = subcmd()
+	}
+
+	if provider.quoteCalls != 1 || provider.fundamentalsCalls != 1 || provider.newsCalls != 1 {
+		t.Fatalf("expected one debounced loadAll execution, got quote=%d fundamentals=%d news=%d", provider.quoteCalls, provider.fundamentalsCalls, provider.newsCalls)
+	}
+}
+
+func TestWatchlistNavigationIgnoresStaleDebounceMessages(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.tabIdx = tabQuote
+
+	firstUpdated, firstCmd := model.Update(tea.KeyMsg{Type: tea.KeyDown})
+	model = firstUpdated.(Model)
+	secondUpdated, _ := model.Update(tea.KeyMsg{Type: tea.KeyDown})
+	model = secondUpdated.(Model)
+	if firstCmd == nil {
+		t.Fatal("expected first debounce command")
+	}
+
+	msg := firstCmd()
+	batch, ok := msg.(tea.BatchMsg)
+	if !ok {
+		t.Fatalf("expected batched debounce command, got %T", msg)
+	}
+	var stale tea.Msg
+	for _, subcmd := range batch {
+		if subcmd == nil {
+			continue
+		}
+		submsg := subcmd()
+		if _, ok := submsg.(watchlistSelectionDebouncedMsg); ok {
+			stale = submsg
+		}
+	}
+	if stale == nil {
+		t.Fatal("expected stale debounced message")
+	}
+
+	updated, cmd := model.Update(stale)
+	model = updated.(Model)
+	if cmd != nil {
+		t.Fatal("expected stale debounced message to be ignored")
+	}
+}
+
+func TestSelectSymbolShowsCachedResearchImmediately(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.watchQuotes["MSFT"] = domain.QuoteSnapshot{Symbol: "MSFT", Price: 420}
+	model.cacheFundamentals(domain.FundamentalsSnapshot{Symbol: "MSFT", Description: "Cached fundamentals", MarketCap: 1})
+	model.cacheStatement(domain.FinancialStatement{
+		Symbol:    "MSFT",
+		Kind:      model.statementKind,
+		Frequency: model.statementFreq,
+		Periods:   []domain.StatementPeriod{{Label: "FY 2025"}},
+		Rows: []domain.StatementRow{
+			{
+				Key:   "TotalRevenue",
+				Label: "Total Revenue",
+				Values: []domain.StatementValue{
+					{Value: 1, Present: true},
+				},
+			},
+		},
+	})
+
+	model.selectSymbol("MSFT")
+
+	if model.quote.Symbol != "MSFT" {
+		t.Fatalf("expected cached quote for MSFT, got %+v", model.quote)
+	}
+	if model.fundamentals.Symbol != "MSFT" {
+		t.Fatalf("expected cached fundamentals for MSFT, got %+v", model.fundamentals)
+	}
+	if model.statement.Symbol != "MSFT" {
+		t.Fatalf("expected cached statement for MSFT, got %+v", model.statement)
+	}
+	if len(model.series.Candles) != 0 {
+		t.Fatalf("expected uncached chart history to stay empty, got %+v", model.series)
+	}
+}
+
+func TestSelectSymbolClearsActiveResearchWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.quote = domain.QuoteSnapshot{Symbol: "AAPL", Price: 210}
+	model.series = domain.PriceSeries{Symbol: "AAPL", Candles: []domain.Candle{{Close: 210}}}
+	model.fundamentals = domain.FundamentalsSnapshot{Symbol: "AAPL", Description: "Old fundamentals"}
+	model.statement = domain.FinancialStatement{
+		Symbol:    "AAPL",
+		Kind:      model.statementKind,
+		Frequency: model.statementFreq,
+		Periods:   []domain.StatementPeriod{{Label: "FY 2024"}},
+		Rows: []domain.StatementRow{
+			{
+				Key:   "TotalRevenue",
+				Label: "Total Revenue",
+				Values: []domain.StatementValue{
+					{Value: 1, Present: true},
+				},
+			},
+		},
+	}
+
+	model.selectSymbol("MSFT")
+
+	if model.quote.Symbol != "" {
+		t.Fatalf("expected quote to clear without cache, got %+v", model.quote)
+	}
+	if model.fundamentals.Symbol != "" {
+		t.Fatalf("expected fundamentals to clear without cache, got %+v", model.fundamentals)
+	}
+	if model.statement.Symbol != "" || len(model.statement.Rows) != 0 {
+		t.Fatalf("expected statement to clear without cache, got %+v", model.statement)
+	}
+	if len(model.series.Candles) != 0 {
+		t.Fatalf("expected chart history to clear without cache, got %+v", model.series)
+	}
+}
+
 func TestAddToWatchlistEvictsOldestWhenLimitExceeded(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),

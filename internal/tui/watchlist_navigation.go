@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"blackdesk/internal/application"
+	"blackdesk/internal/domain"
 )
 
 func (m *Model) selectSymbol(symbol string) {
@@ -11,10 +12,38 @@ func (m *Model) selectSymbol(symbol string) {
 	m.config = application.SetActiveSymbol(m.config, symbol)
 	if !strings.EqualFold(prev, strings.TrimSpace(m.config.ActiveSymbol)) {
 		m.touchAIContext()
+		m.resetActiveQuoteWorkspaceData(m.config.ActiveSymbol)
 	}
 	m.errTechnicalHistory = nil
 	m.errStatement = nil
 	m.errInsiders = nil
+}
+
+func (m *Model) resetActiveQuoteWorkspaceData(symbol string) {
+	m.quote = domain.QuoteSnapshot{}
+	m.series = domain.PriceSeries{}
+	m.fundamentals = domain.FundamentalsSnapshot{}
+	m.statement = domain.FinancialStatement{}
+	m.errQuote = nil
+	m.errHistory = nil
+	m.errFundamentals = nil
+	m.errStatement = nil
+	m.errTechnicalHistory = nil
+	m.profileScroll = 0
+
+	key := strings.ToUpper(strings.TrimSpace(symbol))
+	if key == "" {
+		return
+	}
+	if quote, ok := m.watchQuotes[key]; ok {
+		m.quote = quote
+	}
+	if fundamentals, ok := m.cachedFundamentals(key); ok {
+		m.fundamentals = fundamentals
+	}
+	if statement, ok := m.cachedStatement(key, m.statementKind, m.statementFreq); ok {
+		m.statement = statement
+	}
 }
 
 func (m *Model) addToWatchlist(symbol string) {

@@ -71,10 +71,17 @@ func (m Model) autoRefreshQuotesCmd(symbol string) tea.Cmd {
 }
 
 const searchDebounceDelay = 250 * time.Millisecond
+const watchlistSelectionDebounceDelay = 120 * time.Millisecond
 
 func (m Model) searchDebounceCmd(query string, id int) tea.Cmd {
 	return tea.Tick(searchDebounceDelay, func(time.Time) tea.Msg {
 		return searchDebouncedMsg{id: id, query: query}
+	})
+}
+
+func (m Model) watchlistSelectionDebounceCmd(symbol string, id int) tea.Cmd {
+	return tea.Tick(watchlistSelectionDebounceDelay, func(time.Time) tea.Msg {
+		return watchlistSelectionDebouncedMsg{id: id, symbol: symbol}
 	})
 }
 

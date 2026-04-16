@@ -29,7 +29,11 @@ func (m Model) renderOverviewCenter(header, section, label, muted, pos, neg lipg
 		priceStyle = neg
 	}
 
-	titleLine := header.Render(fmt.Sprintf("%s  ", quote.Symbol)) +
+	symbolLabel := strings.ToUpper(m.activeSymbol())
+	if quote.Symbol != "" {
+		symbolLabel = quote.Symbol
+	}
+	titleLine := header.Render(fmt.Sprintf("%s  ", symbolLabel)) +
 		priceStyle.Render(ui.FormatMoney(displayPrice)) +
 		header.Render(fmt.Sprintf(" %s", quote.Currency))
 	badgeLine := renderBadgeRow(
@@ -65,6 +69,10 @@ func (m Model) renderOverviewCenter(header, section, label, muted, pos, neg lipg
 
 func (m Model) renderOverviewFundamentals(section, label, muted, neg lipgloss.Style, quote domain.QuoteSnapshot, chartWidth, height int, b *strings.Builder) string {
 	boardHeight := max(8, height-6)
+	if !strings.EqualFold(m.fundamentals.Symbol, m.activeSymbol()) && m.errFundamentals == nil {
+		b.WriteString(muted.Render("Loading " + strings.ToUpper(m.activeSymbol()) + " fundamentals…"))
+		return clipLines(strings.TrimRight(b.String(), "\n"), height)
+	}
 	b.WriteString(renderQuoteFundamentalsGrid(section, label, muted, quote, m.fundamentals, chartWidth, boardHeight))
 	if m.errFundamentals != nil {
 		b.WriteString("\n\n" + neg.Render("Fundamentals may be stale: "+m.errFundamentals.Error()))
@@ -74,6 +82,10 @@ func (m Model) renderOverviewFundamentals(section, label, muted, neg lipgloss.St
 
 func (m Model) renderOverviewTechnicals(section, label, muted, neg lipgloss.Style, quote domain.QuoteSnapshot, chartWidth, height int, b *strings.Builder) string {
 	boardHeight := max(8, height-6)
+	if len(m.technicalSeries(m.activeSymbol()).Candles) == 0 && m.errTechnicalHistory == nil {
+		b.WriteString(muted.Render("Loading " + strings.ToUpper(m.activeSymbol()) + " technicals…"))
+		return clipLines(strings.TrimRight(b.String(), "\n"), height)
+	}
 	b.WriteString(renderQuoteTechnicalsGrid(section, label, muted, quote, m.technicalSeries(m.activeSymbol()), chartWidth, boardHeight))
 	if m.errTechnicalHistory != nil {
 		b.WriteString("\n\n" + neg.Render("Technicals may be stale: "+m.errTechnicalHistory.Error()))
@@ -83,6 +95,10 @@ func (m Model) renderOverviewTechnicals(section, label, muted, neg lipgloss.Styl
 
 func (m Model) renderOverviewStatements(section, label, muted, neg lipgloss.Style, chartWidth, height int, b *strings.Builder) string {
 	boardHeight := max(8, height-6)
+	if (!strings.EqualFold(m.statement.Symbol, m.activeSymbol()) || m.statement.Kind != m.statementKind || m.statement.Frequency != m.statementFreq || len(m.statement.Rows) == 0) && m.errStatement == nil {
+		b.WriteString(muted.Render("Loading " + strings.ToUpper(m.activeSymbol()) + " statements…"))
+		return clipLines(strings.TrimRight(b.String(), "\n"), height)
+	}
 	b.WriteString(renderQuoteStatementsBoard(section, label, muted, m.statement, m.statementKind, m.statementFreq, chartWidth, boardHeight))
 	if m.errStatement != nil {
 		b.WriteString("\n\n" + neg.Render("Statements may be stale: "+m.errStatement.Error()))
@@ -139,6 +155,10 @@ func (m Model) renderOverviewFilings(section, label, muted, neg lipgloss.Style, 
 }
 
 func (m Model) renderOverviewChart(section, label, muted, neg lipgloss.Style, chartWidth, height int, displaySeries domain.PriceSeries, b *strings.Builder) string {
+	if len(displaySeries.Candles) == 0 && m.errHistory == nil {
+		b.WriteString(muted.Render("Loading " + strings.ToUpper(m.activeSymbol()) + " chart…"))
+		return clipLines(strings.TrimRight(b.String(), "\n"), height)
+	}
 	chartHeight := max(9, height-12)
 	plotWidth := ui.ChartPlotWidth(chartWidth)
 	leftPad := strings.Repeat(" ", ui.ChartPlotPad())

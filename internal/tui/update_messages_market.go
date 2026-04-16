@@ -44,6 +44,9 @@ func (m Model) handleQuotesLoaded(msg quotesLoadedMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleHistoryLoaded(msg historyLoadedMsg) (Model, tea.Cmd) {
+	if !strings.EqualFold(msg.symbol, m.activeSymbol()) {
+		return m, nil
+	}
 	m.series = msg.series
 	m.errHistory = msg.err
 	return m, nil
@@ -52,6 +55,9 @@ func (m Model) handleHistoryLoaded(msg historyLoadedMsg) (Model, tea.Cmd) {
 func (m Model) handleTechnicalHistoryLoaded(msg technicalHistoryLoadedMsg) (Model, tea.Cmd) {
 	if msg.err == nil && msg.series.Symbol != "" {
 		m.technicalCache[strings.ToUpper(msg.series.Symbol)] = msg.series
+	}
+	if !strings.EqualFold(msg.symbol, m.activeSymbol()) {
+		return m, nil
 	}
 	m.errTechnicalHistory = msg.err
 	return m, nil

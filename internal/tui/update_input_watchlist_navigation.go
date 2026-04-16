@@ -18,8 +18,10 @@ func (m Model) handleWatchlistNavigation(step int) (Model, tea.Cmd, bool) {
 	if plan.Changed {
 		m.selectedIdx = plan.NextIndex
 		m.ensureWatchlistSelectionVisible()
-		m.selectSymbol(m.activeSymbol())
-		return m, tea.Batch(m.persistCmd(), m.loadAllCmd(m.activeSymbol())), true
+		symbol := m.activeSymbol()
+		m.selectSymbol(symbol)
+		m.watchlistSelectionDebounceID++
+		return m, tea.Batch(m.persistCmd(), m.watchlistSelectionDebounceCmd(symbol, m.watchlistSelectionDebounceID)), true
 	}
 	return m, nil, true
 }

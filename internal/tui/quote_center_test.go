@@ -154,6 +154,9 @@ func TestQuoteTabNavigationShowsTechnicalsBoard(t *testing.T) {
 	model.width = 140
 	model.height = 42
 	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
 	model.quote = domain.QuoteSnapshot{
 		Symbol:            "AAPL",
 		ShortName:         "Apple",
@@ -378,6 +381,9 @@ func TestQuoteTabNavigationShowsStatementsBoardWhenSupported(t *testing.T) {
 	model.width = 140
 	model.height = 42
 	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
 	model.quote = domain.QuoteSnapshot{
 		Symbol:            "AAPL",
 		ShortName:         "Apple",
@@ -480,5 +486,62 @@ func TestQuoteTabNavigationShowsInsidersBoardWhenSupported(t *testing.T) {
 	}
 	if strings.Contains(view, "NEWS") || strings.Contains(view, "PROFILE") {
 		t.Fatal("expected insiders mode to hide bottom panels")
+	}
+}
+
+func TestFundamentalsViewShowsLoadingStateWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"MSFT"}
+	model.config.ActiveSymbol = "MSFT"
+	model.selectedIdx = 0
+	model.quoteCenterMode = quoteCenterFundamentals
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Loading MSFT fundamentals") {
+		t.Fatal("expected fundamentals loading state without cache")
+	}
+}
+
+func TestTechnicalsViewShowsLoadingStateWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"MSFT"}
+	model.config.ActiveSymbol = "MSFT"
+	model.selectedIdx = 0
+	model.quoteCenterMode = quoteCenterTechnicals
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Loading MSFT technicals") {
+		t.Fatal("expected technicals loading state without cache")
+	}
+}
+
+func TestStatementsViewShowsLoadingStateWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"MSFT"}
+	model.config.ActiveSymbol = "MSFT"
+	model.selectedIdx = 0
+	model.quoteCenterMode = quoteCenterStatements
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Loading MSFT statements") {
+		t.Fatal("expected statements loading state without cache")
 	}
 }
