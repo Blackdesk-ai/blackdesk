@@ -50,6 +50,7 @@ func renderMarkdownInline(line string) string {
 	line = markdownURLPattern.ReplaceAllStringFunc(line, func(s string) string {
 		return terminalHyperlink(compactURLLabel(s), s)
 	})
+	line = strings.ReplaceAll(line, `\$`, "$")
 	return strings.TrimSpace(line)
 }
 
