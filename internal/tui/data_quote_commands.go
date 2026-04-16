@@ -32,9 +32,14 @@ func (m Model) loadNewsCmd(symbol string) tea.Cmd {
 }
 
 func (m Model) loadFundamentalsCmd(symbol string) tea.Cmd {
+	if data, ok := m.cachedFundamentals(symbol); ok {
+		return func() tea.Msg {
+			return fundamentalsLoadedMsg{symbol: symbol, data: data, err: nil}
+		}
+	}
 	return func() tea.Msg {
 		data, err := m.services.GetFundamentals(m.ctx, symbol)
-		return fundamentalsLoadedMsg{data: data, err: err}
+		return fundamentalsLoadedMsg{symbol: symbol, data: data, err: err}
 	}
 }
 

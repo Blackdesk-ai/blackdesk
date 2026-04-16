@@ -124,13 +124,7 @@ func (m Model) handleTick(msg tickMsg) (Model, tea.Cmd) {
 	m.lastMarketNews = plan.NextLastMarketRefresh
 	cmds := []tea.Cmd{tickCmd(time.Second)}
 	if plan.RefreshAll {
-		cmds = append(cmds, m.loadAllCmd(m.activeSymbol()))
-		if plan.RefreshScreener {
-			cmds = append(cmds, m.loadScreenerCmd(false))
-		}
-	}
-	if plan.RefreshMarketNews {
-		cmds = append(cmds, m.loadMarketNewsCmd())
+		cmds = append(cmds, m.autoRefreshQuotesCmd(m.activeSymbol()))
 	}
 	return m, tea.Batch(cmds...)
 }

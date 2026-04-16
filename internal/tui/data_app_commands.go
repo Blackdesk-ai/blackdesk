@@ -61,6 +61,15 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (m Model) autoRefreshQuotesCmd(symbol string) tea.Cmd {
+	cmds := []tea.Cmd{
+		m.loadQuoteCmd(symbol),
+		m.loadWatchlistQuotesCmd(symbol),
+		m.loadMarketQuotesCmd(),
+	}
+	return tea.Batch(cmds...)
+}
+
 const searchDebounceDelay = 250 * time.Millisecond
 
 func (m Model) searchDebounceCmd(query string, id int) tea.Cmd {

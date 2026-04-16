@@ -230,7 +230,7 @@ func (p *Provider) GetFundamentals(ctx context.Context, symbol string) (domain.F
 		Params:   params,
 		CacheKey: "fundamentals:" + normalizedSymbol,
 		TTL:      30 * time.Minute,
-		Auth:     authRequired,
+		Auth:     authOptional,
 	}, &resp)
 	if err != nil {
 		return domain.FundamentalsSnapshot{}, err

@@ -3,7 +3,19 @@ package tui
 import tea "github.com/charmbracelet/bubbletea"
 
 func (m Model) handleFundamentalsLoaded(msg fundamentalsLoadedMsg) (Model, tea.Cmd) {
-	m.fundamentals = msg.data
+	if msg.err == nil {
+		m.fundamentals = msg.data
+		m.cacheFundamentals(msg.data)
+		m.errFundamentals = nil
+		m.profileScroll = 0
+		return m, nil
+	}
+	if cached, ok := m.cachedFundamentals(msg.symbol); ok {
+		m.fundamentals = cached
+		m.profileScroll = 0
+	} else {
+		m.fundamentals = msg.data
+	}
 	m.errFundamentals = msg.err
 	m.profileScroll = 0
 	return m, nil

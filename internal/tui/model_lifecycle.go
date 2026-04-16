@@ -68,6 +68,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		aiInput:                ai,
 		aiModels:               make(map[string][]string),
 		watchQuotes:            make(map[string]domain.QuoteSnapshot),
+		fundamentalsCache:      make(map[string]domain.FundamentalsSnapshot),
 		technicalCache:         make(map[string]domain.PriceSeries),
 		statementCache:         make(map[string]domain.FinancialStatement),
 		insiderCache:           make(map[string]domain.InsiderSnapshot),

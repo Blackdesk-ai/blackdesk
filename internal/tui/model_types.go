@@ -121,6 +121,7 @@ type Model struct {
 	quote             domain.QuoteSnapshot
 	watchQuotes       map[string]domain.QuoteSnapshot
 	series            domain.PriceSeries
+	fundamentalsCache map[string]domain.FundamentalsSnapshot
 	technicalCache    map[string]domain.PriceSeries
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot

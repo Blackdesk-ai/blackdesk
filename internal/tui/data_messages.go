@@ -46,8 +46,9 @@ type screenerLoadedMsg struct {
 }
 
 type fundamentalsLoadedMsg struct {
-	data domain.FundamentalsSnapshot
-	err  error
+	symbol string
+	data   domain.FundamentalsSnapshot
+	err    error
 }
 
 type statementLoadedMsg struct {

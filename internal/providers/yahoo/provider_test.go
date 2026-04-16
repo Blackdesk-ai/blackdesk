@@ -19,7 +19,7 @@ import (
 	"blackdesk/internal/domain"
 )
 
-func TestGetFundamentalsUsesCookieAndCrumb(t *testing.T) {
+func TestGetFundamentalsUsesQuoteSummaryWithoutCrumbWhenAvailable(t *testing.T) {
 	ctx := context.Background()
 	var sawCrumb atomic.Bool
 
@@ -55,14 +55,58 @@ func TestGetFundamentalsUsesCookieAndCrumb(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !sawCrumb.Load() {
-		t.Fatal("expected quoteSummary request with crumb")
+	if sawCrumb.Load() {
+		t.Fatal("expected quoteSummary fundamentals request to avoid crumb when not required")
 	}
 	if got.Symbol != "AAPL" || got.Sector != "Technology" {
 		t.Fatalf("unexpected fundamentals %+v", got)
 	}
 	if got.PEGRatio != 1.88 {
 		t.Fatalf("expected supplemental trailing peg ratio, got %+v", got)
+	}
+}
+
+func TestGetFundamentalsRetriesWithCrumbAfterForbidden(t *testing.T) {
+	ctx := context.Background()
+	var quoteSummaryCalls atomic.Int32
+	var sawCrumb atomic.Bool
+
+	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.URL.Path == "/":
+			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
+		case req.URL.Path == "/v1/test/getcrumb":
+			return textResponse(req, http.StatusOK, "crumb-123"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			call := quoteSummaryCalls.Add(1)
+			if call == 1 && req.URL.Query().Get("crumb") == "" {
+				return textResponse(req, http.StatusForbidden, "forbidden"), nil
+			}
+			if req.URL.Query().Get("crumb") == "crumb-123" {
+				sawCrumb.Store(true)
+			}
+			return jsonFixtureResponse(t, req, "quote_summary_aapl.json")
+		case strings.HasPrefix(req.URL.Path, "/ws/fundamentals-timeseries/v1/finance/timeseries/"):
+			return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+		default:
+			return textResponse(req, http.StatusNotFound, "not found"), nil
+		}
+		return nil, nil
+	})
+
+	p := newTestProvider("https://query1.finance.yahoo.test", client)
+	got, err := p.GetFundamentals(ctx, "AAPL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if quoteSummaryCalls.Load() != 2 {
+		t.Fatalf("expected 2 quoteSummary calls, got %d", quoteSummaryCalls.Load())
+	}
+	if !sawCrumb.Load() {
+		t.Fatal("expected fundamentals retry with crumb after forbidden")
+	}
+	if got.Symbol != "AAPL" {
+		t.Fatalf("unexpected fundamentals %+v", got)
 	}
 }
 
@@ -530,11 +574,13 @@ func TestInvalidCrumbResponseIsRejected(t *testing.T) {
 	ctx := context.Background()
 
 	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
-		switch req.URL.Path {
-		case "/":
+		switch {
+		case req.URL.Path == "/":
 			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
-		case "/v1/test/getcrumb":
+		case req.URL.Path == "/v1/test/getcrumb":
 			return textResponse(req, http.StatusOK, "Too Many Requests"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			return textResponse(req, http.StatusForbidden, "forbidden"), nil
 		default:
 			return textResponse(req, http.StatusNotFound, "not found"), nil
 		}
