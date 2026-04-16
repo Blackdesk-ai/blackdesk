@@ -39,7 +39,7 @@ func TestGetFundamentalsUsesQuoteSummaryWithoutCrumbWhenAvailable(t *testing.T) 
 			switch {
 			case types == "trailingPegRatio":
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[{"trailingPegRatio":[{"reportedValue":{"raw":1.88}}]}],"error":null}}`), "")
-			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"):
+			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"), strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "annualOperatingCashFlow"):
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
@@ -126,7 +126,7 @@ func TestGetFundamentalsFallsBackToTimeseriesPEG(t *testing.T) {
 			switch {
 			case types == "trailingPegRatio":
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[{"trailingPegRatio":[{"reportedValue":{"raw":2.41}}]}],"error":null}}`), "")
-			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"):
+			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"), strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "annualOperatingCashFlow"):
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
@@ -270,6 +270,8 @@ func TestGetFundamentalsDerivesROICFromSupplementalTimeseries(t *testing.T) {
 				return jsonResponse(req, http.StatusOK, body, "")
 			case strings.Contains(types, "annualInvestedCapital"):
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			case strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "annualOperatingCashFlow"):
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
 			}
@@ -310,6 +312,83 @@ func TestGetFundamentalsDerivesROICFromSupplementalTimeseries(t *testing.T) {
 	wantROA := (28.0 + 27.2 + 26.4 + 26.4) / ((249.0 + 175.0) / 2)
 	if math.Abs(got.ReturnOnAssets-wantROA) > 0.0001 {
 		t.Fatalf("expected derived roa %.6f, got %+v", wantROA, got)
+	}
+}
+
+func TestGetFundamentalsDerivesCashFlowFromSupplementalTimeseries(t *testing.T) {
+	ctx := context.Background()
+
+	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.URL.Path == "/":
+			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
+		case req.URL.Path == "/v1/test/getcrumb":
+			return textResponse(req, http.StatusOK, "crumb-123"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			body := readFixture(t, "quote_summary_aapl.json")
+			var parsed map[string]any
+			if err := json.Unmarshal(body, &parsed); err != nil {
+				t.Fatal(err)
+			}
+			result := parsed["quoteSummary"].(map[string]any)["result"].([]any)[0].(map[string]any)
+			financialData := result["financialData"].(map[string]any)
+			financialData["operatingCashflow"] = map[string]any{"raw": 999000000}
+			financialData["freeCashflow"] = map[string]any{"raw": 894000000}
+			body, err := json.Marshal(parsed)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return jsonResponse(req, http.StatusOK, body, "")
+		case strings.HasPrefix(req.URL.Path, "/ws/fundamentals-timeseries/v1/finance/timeseries/"):
+			types := req.URL.Query().Get("type")
+			switch {
+			case types == "trailingPegRatio":
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			case strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "quarterlyCashFlowFromContinuingOperatingActivities"), strings.Contains(types, "quarterlyCapitalExpenditure"), strings.Contains(types, "quarterlyFreeCashFlow"):
+				body := []byte(`{
+					"timeseries": {
+						"result": [
+							{
+								"meta": { "type": ["quarterlyOperatingCashFlow"] },
+								"quarterlyOperatingCashFlow": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": 2.18 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": 2.00 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": 1.95 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": 2.05 } }
+								]
+							},
+							{
+								"meta": { "type": ["quarterlyCapitalExpenditure"] },
+								"quarterlyCapitalExpenditure": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -1.01 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": -0.90 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": -0.92 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": -0.98 } }
+								]
+							}
+						],
+						"error": null
+					}
+				}`)
+				return jsonResponse(req, http.StatusOK, body, "")
+			default:
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			}
+		default:
+			return textResponse(req, http.StatusNotFound, "not found"), nil
+		}
+	})
+
+	p := newTestProvider("https://query1.finance.yahoo.test", client)
+	got, err := p.GetFundamentals(ctx, "AAPL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.OperatingCashflow != 8 {
+		t.Fatalf("expected supplemental operating cash flow 8, got %+v", got)
+	}
+	if got.FreeCashflow != 4 {
+		t.Fatalf("expected supplemental free cash flow 4, got %+v", got)
 	}
 }
 

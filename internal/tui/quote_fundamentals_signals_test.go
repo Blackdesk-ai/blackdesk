@@ -62,6 +62,31 @@ func TestEarningsYieldValueFallsBackToEPSOverPrice(t *testing.T) {
 	}
 }
 
+func TestFCFYieldValueUsesFreeCashFlowOverMarketCap(t *testing.T) {
+	got, ok := fcfYieldValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		MarketCap:    100_000_000_000,
+		FreeCashflow: 5_000_000_000,
+	})
+	if !ok {
+		t.Fatal("expected fcf yield from market cap and free cash flow")
+	}
+	if got != 0.05 {
+		t.Fatalf("expected 5%% fcf yield, got %.6f", got)
+	}
+}
+
+func TestFCFYieldValueFallsBackToQuoteMarketCap(t *testing.T) {
+	got, ok := fcfYieldValue(domain.QuoteSnapshot{MarketCap: 80_000_000_000}, domain.FundamentalsSnapshot{
+		FreeCashflow: 4_000_000_000,
+	})
+	if !ok {
+		t.Fatal("expected fcf yield fallback from quote market cap")
+	}
+	if got != 0.05 {
+		t.Fatalf("expected 5%% fcf yield, got %.6f", got)
+	}
+}
+
 func TestValuationScoreValueMultipliesEarningsYieldAndROIC(t *testing.T) {
 	got, ok := valuationScoreValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
 		TrailingPE:              25,

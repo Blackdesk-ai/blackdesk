@@ -67,6 +67,17 @@ func earningsYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (
 	return eps / q.Price, true
 }
 
+func fcfYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	marketCap := f.MarketCap
+	if marketCap == 0 {
+		marketCap = q.MarketCap
+	}
+	if marketCap <= 0 || f.FreeCashflow == 0 {
+		return 0, false
+	}
+	return float64(f.FreeCashflow) / float64(marketCap), true
+}
+
 func valuationScoreValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
 	earningsYield, earningsYieldOK := earningsYieldValue(q, f)
 	if !earningsYieldOK || f.ReturnOnInvestedCapital == 0 {

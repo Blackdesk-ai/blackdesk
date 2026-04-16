@@ -125,6 +125,9 @@ func TestQuoteTabNavigationSwitchesCenterBetweenChartAndFundamentals(t *testing.
 	if !strings.Contains(fundamentalsView, "VALUATION") || !strings.Contains(fundamentalsView, "FINANCIALS") || !strings.Contains(fundamentalsView, "PROFITABILITY") {
 		t.Fatal("expected fundamentals cards in quote center")
 	}
+	if !strings.Contains(fundamentalsView, "FCF Yield") {
+		t.Fatal("expected FCF Yield to be shown in valuation card")
+	}
 	if !strings.Contains(fundamentalsView, "ROIC") {
 		t.Fatal("expected ROIC to be shown in profitability card")
 	}

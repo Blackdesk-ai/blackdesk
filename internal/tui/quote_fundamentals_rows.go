@@ -11,12 +11,14 @@ func quoteFundamentalsValuationRows(quote domain.QuoteSnapshot, f domain.Fundame
 		marketCap = quote.MarketCap
 	}
 	earningsYield, earningsYieldOK := earningsYieldValue(quote, f)
+	fcfYield, fcfYieldOK := fcfYieldValue(quote, f)
 	return []marketTableRow{
 		{name: "Market cap", price: ui.FormatCompactInt(marketCap), chg: "", move: 0, styled: false},
 		{name: "Ent value", price: formatCompactIntDash(f.EnterpriseValue), chg: "", move: 0, styled: false},
 		{name: "Trailing PE", price: formatMetricFloat(f.TrailingPE), chg: "", move: 0, styled: false},
 		{name: "Forward PE", price: formatMetricFloat(f.ForwardPE), chg: "", move: 0, styled: false},
 		{name: "Earnings Yield", price: formatOptionalPercent(earningsYield, earningsYieldOK), chg: "", move: earningsYield, styled: earningsYieldOK && earningsYield != 0},
+		{name: "FCF Yield", price: formatOptionalPercent(fcfYield, fcfYieldOK), chg: "", move: fcfYield, styled: fcfYieldOK && fcfYield != 0},
 		{name: "PEG", price: formatMetricFloat(pegRatioValue(quote, f)), chg: "", move: 0, styled: false},
 		{name: "P/B", price: formatMetricFloat(f.PriceToBook), chg: "", move: 0, styled: false},
 		{name: "P/S", price: formatMetricFloat(f.PriceToSales), chg: "", move: 0, styled: false},
