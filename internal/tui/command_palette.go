@@ -227,6 +227,7 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 		{ID: "news", Title: "News", Aliases: []string{"wire", "headlines"}, Category: "Workspace", Description: "Open the market news wire."},
 		{ID: "screeners", Title: "Screeners", Aliases: []string{"screener", "scan"}, Category: "Workspace", Description: "Open the screener workspace."},
 		{ID: "ai", Title: "AI", Aliases: []string{"assistant", "chat"}, Category: "Workspace", Description: "Open the AI workspace."},
+		{ID: "equity-research", Title: "Equity Research", Aliases: []string{"er", "eq", "equity", "research", "eqr"}, Category: "AI", Description: fmt.Sprintf("Run an equity research AI memo for %s.", activeSymbol)},
 		{ID: "chart", Title: "Chart", Aliases: []string{"price", "quote chart"}, Category: "Quote", Description: fmt.Sprintf("Open the chart view for %s.", activeSymbol)},
 		{ID: "fundamentals", Title: "Fundamentals", Aliases: []string{"fundamental", "valuation", "fa"}, Category: "Quote", Description: fmt.Sprintf("Open the fundamentals view for %s.", activeSymbol)},
 		{ID: "technicals", Title: "Technicals", Aliases: []string{"technical", "ta"}, Category: "Quote", Description: fmt.Sprintf("Open the technicals view for %s.", activeSymbol)},
@@ -418,6 +419,9 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 	case "ai":
 		m.closeCommandPalette("Opened AI workspace")
 		return m, m.setActiveTab(tabAI)
+	case "equity-research":
+		m.closeCommandPalette("Running equity research…")
+		return m, m.launchAIPrompt(aiEquityResearchPrompt, "Refreshing AI context for equity research…")
 	case "chart":
 		m.closeCommandPalette("Opened chart view")
 		tabCmd := m.setActiveTab(tabQuote)

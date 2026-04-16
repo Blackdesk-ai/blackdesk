@@ -232,3 +232,77 @@ func TestCommandPaletteIncludesCalendarWhenAvailable(t *testing.T) {
 		t.Fatal("expected calendar function in command palette")
 	}
 }
+
+func TestCommandPaletteIncludesEquityResearchAICommand(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyCtrlK})
+	m := updated.(Model)
+	found := false
+	for _, item := range m.commandPaletteItems {
+		if item.Kind == commandPaletteItemFunction && item.FunctionID == "equity-research" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected equity research AI function in command palette")
+	}
+}
+
+func TestCommandPaletteEquityResearchStartsAIRunWithoutPromptCut(t *testing.T) {
+	provider := &aiPrepProvider{}
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(provider),
+	})
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{
+		{Kind: commandPaletteItemFunction, FunctionID: "equity-research", Title: "Equity Research"},
+	}
+
+	if len([]rune(aiEquityResearchPrompt)) <= 1000 {
+		t.Fatalf("expected equity research prompt to exceed AI input char limit, got %d runes", len([]rune(aiEquityResearchPrompt)))
+	}
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.tabIdx != tabAI {
+		t.Fatalf("expected equity research command to switch to AI tab, got %d", m.tabIdx)
+	}
+	if !m.aiRunning {
+		t.Fatal("expected equity research command to start AI thinking state immediately")
+	}
+	if m.aiFocused {
+		t.Fatal("expected equity research command not to rely on focused AI input")
+	}
+	if m.aiInput.Value() != "" {
+		t.Fatalf("expected AI composer to stay empty, got %q", m.aiInput.Value())
+	}
+	if len(m.aiMessages) == 0 {
+		t.Fatal("expected equity research command to append a user prompt")
+	}
+	last := m.aiMessages[len(m.aiMessages)-1]
+	if last.Role != aiMessageUser {
+		t.Fatalf("expected last AI message to be user prompt, got %q", last.Role)
+	}
+	if last.Body != aiEquityResearchPrompt {
+		t.Fatal("expected full equity research prompt to be preserved without truncation")
+	}
+	if cmd == nil {
+		t.Fatal("expected equity research command to start AI context preparation")
+	}
+
+	nextMsg := cmd()
+	prepared, ok := nextMsg.(aiContextPreparedMsg)
+	if !ok {
+		t.Fatalf("expected aiContextPreparedMsg, got %T", nextMsg)
+	}
+	if prepared.prompt != aiEquityResearchPrompt {
+		t.Fatal("expected prepared AI context to retain the full equity research prompt")
+	}
+}
