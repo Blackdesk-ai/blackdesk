@@ -25,6 +25,11 @@ type technicalHistoryLoadedMsg struct {
 	err    error
 }
 
+type sharpeHistoryLoadedMsg struct {
+	series domain.PriceSeries
+	err    error
+}
+
 type newsLoadedMsg struct {
 	items []domain.NewsItem
 	err   error

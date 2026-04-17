@@ -52,7 +52,7 @@ func (m *Model) setActiveTab(tab int) tea.Cmd {
 }
 
 func (m Model) canChangeTimeframe() bool {
-	return m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterChart
+	return m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterChart || m.quoteCenterMode == quoteCenterSharpe)
 }
 
 func (m *Model) setQuoteCenterMode(mode quoteCenterMode) {
@@ -64,6 +64,7 @@ func (m *Model) setQuoteCenterMode(mode quoteCenterMode) {
 
 func (m Model) quoteBottomPanelsVisible() bool {
 	return m.tabIdx == tabQuote &&
+		m.quoteCenterMode != quoteCenterSharpe &&
 		m.quoteCenterMode != quoteCenterStatements &&
 		m.quoteCenterMode != quoteCenterInsiders &&
 		m.quoteCenterMode != quoteCenterOwners &&

@@ -63,6 +63,14 @@ func (m Model) handleTechnicalHistoryLoaded(msg technicalHistoryLoadedMsg) (Mode
 	return m, nil
 }
 
+func (m Model) handleSharpeHistoryLoaded(msg sharpeHistoryLoadedMsg) (Model, tea.Cmd) {
+	if msg.err == nil && msg.series.Symbol != "" {
+		m.sharpeCache[strings.ToUpper(msg.series.Symbol)] = msg.series
+	}
+	m.errSharpeHistory = msg.err
+	return m, nil
+}
+
 func (m Model) handleNewsLoaded(msg newsLoadedMsg) (Model, tea.Cmd) {
 	m.news = msg.items
 	m.errNews = msg.err

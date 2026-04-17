@@ -56,6 +56,8 @@ func (m Model) renderOverviewCenter(header, section, label, muted, pos, neg lipg
 		return m.renderOverviewFundamentals(section, label, muted, neg, quote, chartWidth, height, &b)
 	case quoteCenterTechnicals:
 		return m.renderOverviewTechnicals(section, label, muted, neg, quote, chartWidth, height, &b)
+	case quoteCenterSharpe:
+		return m.renderOverviewSharpe(section, label, muted, pos, neg, chartWidth, height, &b)
 	case quoteCenterStatements:
 		return m.renderOverviewStatements(section, label, muted, neg, chartWidth, height, &b)
 	case quoteCenterInsiders:
@@ -89,6 +91,15 @@ func (m Model) renderOverviewTechnicals(section, label, muted, neg lipgloss.Styl
 	b.WriteString(renderQuoteTechnicalsGrid(section, label, muted, quote, m.technicalSeries(m.activeSymbol()), chartWidth, boardHeight))
 	if m.errTechnicalHistory != nil {
 		b.WriteString("\n\n" + neg.Render("Technicals may be stale: "+m.errTechnicalHistory.Error()))
+	}
+	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) renderOverviewSharpe(section, label, muted, pos, neg lipgloss.Style, chartWidth, height int, b *strings.Builder) string {
+	boardHeight := max(8, height-6)
+	b.WriteString(renderQuoteSharpeBoard(section, label, muted, pos, neg, chartWidth, boardHeight, m.sharpeRangeIdx, m.sharpeSeries(m.activeSymbol())))
+	if m.errSharpeHistory != nil {
+		b.WriteString("\n\n" + neg.Render("Sharpe history may be stale: "+m.errSharpeHistory.Error()))
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
