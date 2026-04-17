@@ -43,11 +43,11 @@ func TestGetFundamentalsUsesQuoteSummaryWithoutCrumbWhenAvailable(t *testing.T) 
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
+				return nil, nil
 			}
 		default:
 			return textResponse(req, http.StatusNotFound, "not found"), nil
 		}
-		return nil, nil
 	})
 
 	p := newTestProvider("https://query1.finance.yahoo.test", client)
@@ -91,7 +91,6 @@ func TestGetFundamentalsRetriesWithCrumbAfterForbidden(t *testing.T) {
 		default:
 			return textResponse(req, http.StatusNotFound, "not found"), nil
 		}
-		return nil, nil
 	})
 
 	p := newTestProvider("https://query1.finance.yahoo.test", client)
