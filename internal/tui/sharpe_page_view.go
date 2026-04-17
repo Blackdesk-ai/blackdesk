@@ -57,18 +57,37 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 		latestStyle = pos
 	} else if stats.Latest < 0 {
 		latestStyle = neg
+	} else {
+		latestStyle = muted
 	}
 	b.WriteString(muted.Render("Latest") + "\n")
 	b.WriteString(latestStyle.Render(formatMetricSigned(stats.Latest)) + "\n")
 	b.WriteString("\n" + muted.Render("Range") + "\n")
-	b.WriteString(renderWrappedTextBlock(muted, fmt.Sprintf("Best %s  •  Worst %s", formatMetricSigned(stats.Max), formatMetricSigned(stats.Min)), width))
+	b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s  •  %s %s", muted.Render("Best"), renderSharpeValue(pos, neg, muted, stats.Max), muted.Render("Worst"), renderSharpeValue(pos, neg, muted, stats.Min)), width))
 	b.WriteString("\n\n" + muted.Render("Central Tendency") + "\n")
-	b.WriteString(renderWrappedTextBlock(muted, fmt.Sprintf("Average %s  •  Median %s", formatMetricSigned(stats.Mean), formatMetricSigned(stats.Median)), width))
+	b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s  •  %s %s", muted.Render("Average"), renderSharpeValue(pos, neg, muted, stats.Mean), muted.Render("Median"), renderSharpeValue(pos, neg, muted, stats.Median)), width))
 	b.WriteString("\n\n" + muted.Render("Hit Rate") + "\n")
-	b.WriteString(renderWrappedTextBlock(muted, fmt.Sprintf("Positive readings %d%% of observations", stats.PositivePct), width))
-	b.WriteString("\n\n" + muted.Render("Window") + "\n")
-	b.WriteString(renderWrappedTextBlock(muted, fmt.Sprintf("Computed from %d displayed observations using extended history so the Sharpe path covers about 5 years.", len(chartSeries.Candles)), width))
+	b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s %s  •  %s %s", muted.Render("Positive readings"), renderSharpePercent(pos, muted, stats.PositivePct), muted.Render("of observations"), muted.Render("Above 1:"), renderSharpePercent(pos, muted, stats.AboveOnePct)), width))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func renderSharpeValue(pos, neg, muted lipgloss.Style, value float64) string {
+	text := formatMetricSigned(value)
+	if value > 0 {
+		return pos.Render(text)
+	}
+	if value < 0 {
+		return neg.Render(text)
+	}
+	return muted.Render(text)
+}
+
+func renderSharpePercent(pos, muted lipgloss.Style, value int) string {
+	text := fmt.Sprintf("%d%%", value)
+	if value > 50 {
+		return pos.Render(text)
+	}
+	return muted.Render(text)
 }
 
 func buildSharpeChartSeries(series domain.PriceSeries) domain.PriceSeries {
@@ -156,6 +175,7 @@ type sharpeStats struct {
 	Min         float64
 	Max         float64
 	PositivePct int
+	AboveOnePct int
 }
 
 func sharpeSeriesStats(series domain.PriceSeries) (sharpeStats, bool) {
@@ -164,6 +184,7 @@ func sharpeSeriesStats(series domain.PriceSeries) (sharpeStats, bool) {
 	}
 	values := make([]float64, 0, len(series.Candles))
 	positive := 0
+	aboveOne := 0
 	sum := 0.0
 	minValue := series.Candles[0].Close
 	maxValue := series.Candles[0].Close
@@ -173,6 +194,9 @@ func sharpeSeriesStats(series domain.PriceSeries) (sharpeStats, bool) {
 		sum += value
 		if value > 0 {
 			positive++
+		}
+		if value > 1 {
+			aboveOne++
 		}
 		if value < minValue {
 			minValue = value
@@ -193,5 +217,6 @@ func sharpeSeriesStats(series domain.PriceSeries) (sharpeStats, bool) {
 		Min:         minValue,
 		Max:         maxValue,
 		PositivePct: int(float64(positive) / float64(len(series.Candles)) * 100),
+		AboveOnePct: int(float64(aboveOne) / float64(len(series.Candles)) * 100),
 	}, true
 }

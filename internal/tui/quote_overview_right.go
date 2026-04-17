@@ -39,7 +39,9 @@ func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, 
 
 func (m Model) renderOverviewSharpeRight(section, label, muted lipgloss.Style, width, height int) string {
 	chartSeries := displaySharpeSeriesForRange(buildSharpeChartSeries(m.sharpeSeries(m.activeSymbol())), ranges[m.sharpeRangeIdx].Range)
-	return renderQuoteSharpePreview(label, muted, lipgloss.NewStyle(), lipgloss.NewStyle(), width, height, chartSeries)
+	pos := lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394"))
+	neg := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF7A73"))
+	return renderQuoteSharpePreview(label, muted, pos, neg, width, height, chartSeries)
 }
 
 func (m Model) renderOverviewFilingsRight(section, label, muted lipgloss.Style, width, height int) string {
