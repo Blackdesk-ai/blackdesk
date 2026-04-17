@@ -1,6 +1,14 @@
 package tui
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"errors"
+
+	tea "github.com/charmbracelet/bubbletea"
+
+	"blackdesk/internal/domain"
+)
+
+var sharpeHistoryRanges = []string{"10y", "7y", "5y", "2y", "1y"}
 
 func (m Model) loadQuoteCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
@@ -22,6 +30,28 @@ func (m Model) loadTechnicalHistoryCmd(symbol string) tea.Cmd {
 		series, err := m.services.GetHistory(m.ctx, symbol, "2y", "1d")
 		return technicalHistoryLoadedMsg{series: series, err: err}
 	}
+}
+
+func (m Model) loadSharpeHistoryCmd(symbol string) tea.Cmd {
+	return func() tea.Msg {
+		series, err := m.loadSharpeHistory(symbol)
+		return sharpeHistoryLoadedMsg{series: series, err: err}
+	}
+}
+
+func (m Model) loadSharpeHistory(symbol string) (domain.PriceSeries, error) {
+	var lastErr error
+	for _, rangeKey := range sharpeHistoryRanges {
+		series, err := m.services.GetHistory(m.ctx, symbol, rangeKey, "1d")
+		if err == nil {
+			return series, nil
+		}
+		lastErr = err
+	}
+	if lastErr == nil {
+		lastErr = errors.New("sharpe history unavailable")
+	}
+	return domain.PriceSeries{}, lastErr
 }
 
 func (m Model) loadNewsCmd(symbol string) tea.Cmd {

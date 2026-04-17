@@ -168,7 +168,7 @@ func TestInsidersStatusHidesBottomPanelKeysAndActiveShortcut(t *testing.T) {
 	}
 }
 
-func TestArrowKeysChangeTimeframeOnlyInQuoteChart(t *testing.T) {
+func TestArrowKeysChangeTimeframeInQuoteChartAndSharpe(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),
 		Registry: providers.NewRegistry(testProvider{}),
@@ -190,6 +190,18 @@ func TestArrowKeysChangeTimeframeOnlyInQuoteChart(t *testing.T) {
 	model = updated.(Model)
 	if model.rangeIdx != chartlessRange {
 		t.Fatalf("expected left arrow to leave timeframe unchanged outside chart mode, got %d from %d", model.rangeIdx, chartlessRange)
+	}
+
+	model.quoteCenterMode = quoteCenterSharpe
+	chartRangeBeforeSharpe := model.rangeIdx
+	sharpeRange := model.sharpeRangeIdx
+	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyLeft})
+	model = updated.(Model)
+	if model.sharpeRangeIdx == sharpeRange {
+		t.Fatalf("expected left arrow to change sharpe timeframe, stayed at %d", model.sharpeRangeIdx)
+	}
+	if model.rangeIdx != chartRangeBeforeSharpe {
+		t.Fatalf("expected chart timeframe unchanged while sharpe is visible, got %d from %d", model.rangeIdx, chartRangeBeforeSharpe)
 	}
 
 	updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})

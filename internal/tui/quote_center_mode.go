@@ -6,6 +6,7 @@ const (
 	quoteCenterChart quoteCenterMode = iota
 	quoteCenterFundamentals
 	quoteCenterTechnicals
+	quoteCenterSharpe
 	quoteCenterStatements
 	quoteCenterInsiders
 	quoteCenterOwners

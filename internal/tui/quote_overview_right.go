@@ -9,6 +9,9 @@ import (
 )
 
 func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, height int) string {
+	if m.quoteCenterMode == quoteCenterSharpe {
+		return m.renderOverviewSharpeRight(section, label, muted, width, height)
+	}
 	if m.quoteCenterMode == quoteCenterFilings {
 		return m.renderOverviewFilingsRight(section, label, muted, width, height)
 	}
@@ -32,6 +35,11 @@ func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, 
 	b.WriteString("\n" + section.Render("AI INSIGHT") + " " + muted.Render("(i)") + "\n\n")
 	b.WriteString(m.renderQuoteInsightBlock(muted, width))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) renderOverviewSharpeRight(section, label, muted lipgloss.Style, width, height int) string {
+	chartSeries := displaySharpeSeriesForRange(buildSharpeChartSeries(m.sharpeSeries(m.activeSymbol())), ranges[m.sharpeRangeIdx].Range)
+	return renderQuoteSharpePreview(label, muted, lipgloss.NewStyle(), lipgloss.NewStyle(), width, height, chartSeries)
 }
 
 func (m Model) renderOverviewFilingsRight(section, label, muted lipgloss.Style, width, height int) string {

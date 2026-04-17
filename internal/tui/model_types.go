@@ -50,6 +50,7 @@ type Model struct {
 	selectedIdx     int
 	watchlistScroll int
 	rangeIdx        int
+	sharpeRangeIdx  int
 	tabIdx          int
 	quoteCenterMode quoteCenterMode
 	status          string
@@ -122,6 +123,7 @@ type Model struct {
 	watchQuotes       map[string]domain.QuoteSnapshot
 	series            domain.PriceSeries
 	technicalCache    map[string]domain.PriceSeries
+	sharpeCache       map[string]domain.PriceSeries
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot
 	ownersCache       map[string]domain.OwnershipSnapshot
@@ -167,6 +169,7 @@ type Model struct {
 	errQuote            error
 	errHistory          error
 	errTechnicalHistory error
+	errSharpeHistory    error
 	errNews             error
 	errMarketNews       error
 	errFundamentals     error
