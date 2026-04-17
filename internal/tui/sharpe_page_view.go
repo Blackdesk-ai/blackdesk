@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -11,12 +12,27 @@ import (
 	"blackdesk/internal/ui"
 )
 
+type sharpeSeriesSpec struct {
+	ShortLabel string
+	Lookback   int
+}
+
+type sharpeChartSeries struct {
+	Spec   sharpeSeriesSpec
+	Series domain.PriceSeries
+}
+
+var sharpeSeriesSpecs = []sharpeSeriesSpec{
+	{ShortLabel: "252d", Lookback: 252},
+	{ShortLabel: "63d", Lookback: 63},
+}
+
 func renderQuoteSharpeBoard(section, label, muted, pos, neg lipgloss.Style, width, height, rangeIdx int, series domain.PriceSeries) string {
 	var b strings.Builder
-	b.WriteString(section.Render("SHARPE") + "\n\n")
+	b.WriteString(section.Render("RISK ADJUSTED") + "\n\n")
 	chartSeries := displaySharpeSeriesForRange(buildSharpeChartSeries(series), ranges[rangeIdx].Range)
 	if len(chartSeries.Candles) == 0 {
-		b.WriteString(renderWrappedTextBlock(muted, "No Sharpe history loaded for the active symbol yet.", width))
+		b.WriteString(renderWrappedTextBlock(muted, "No risk-adjusted history loaded for the active symbol yet.", width))
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
 
@@ -43,31 +59,49 @@ func renderQuoteSharpeBoard(section, label, muted, pos, neg lipgloss.Style, widt
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
-func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, height int, chartSeries domain.PriceSeries) string {
+func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, height int, chartSeries []sharpeChartSeries) string {
 	var b strings.Builder
 
-	stats, ok := sharpeSeriesStats(chartSeries)
-	if !ok {
-		b.WriteString(muted.Render("Sharpe preview becomes available after enough history loads."))
+	stats := sharpeSeriesPreviewStats(chartSeries)
+	if len(stats) == 0 {
+		b.WriteString(muted.Render("Risk-adjusted preview becomes available after enough history loads."))
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
 
-	latestStyle := lipgloss.NewStyle()
-	if stats.Latest > 0 {
-		latestStyle = pos
-	} else if stats.Latest < 0 {
-		latestStyle = neg
-	} else {
-		latestStyle = muted
-	}
 	b.WriteString(muted.Render("Latest") + "\n")
-	b.WriteString(latestStyle.Render(formatMetricSigned(stats.Latest)) + "\n")
+	for _, stat := range stats {
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render(stat.Label), renderSharpeValue(pos, neg, muted, stat.Latest)))
+	}
+	if delta, ok := sharpeLatestDelta(stats); ok {
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Δ"), renderSharpeValue(pos, neg, muted, delta)))
+	}
+
 	b.WriteString("\n" + muted.Render("Range") + "\n")
-	b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s  •  %s %s", muted.Render("Best"), renderSharpeValue(pos, neg, muted, stats.Max), muted.Render("Worst"), renderSharpeValue(pos, neg, muted, stats.Min)), width))
+	for idx, stat := range stats {
+		line := fmt.Sprintf("%s %s %s  •  %s %s", label.Render(stat.Label), muted.Render("Best"), renderSharpeValue(pos, neg, muted, stat.Max), muted.Render("Worst"), renderSharpeValue(pos, neg, muted, stat.Min))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), line, width))
+		if idx < len(stats)-1 {
+			b.WriteString("\n")
+		}
+	}
+
 	b.WriteString("\n\n" + muted.Render("Central Tendency") + "\n")
-	b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s  •  %s %s", muted.Render("Average"), renderSharpeValue(pos, neg, muted, stats.Mean), muted.Render("Median"), renderSharpeValue(pos, neg, muted, stats.Median)), width))
+	for idx, stat := range stats {
+		line := fmt.Sprintf("%s %s %s  •  %s %s", label.Render(stat.Label), muted.Render("avg."), renderSharpeValue(pos, neg, muted, stat.Mean), muted.Render("mdn."), renderSharpeValue(pos, neg, muted, stat.Median))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), line, width))
+		if idx < len(stats)-1 {
+			b.WriteString("\n")
+		}
+	}
+
 	b.WriteString("\n\n" + muted.Render("Hit Rate") + "\n")
-	b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s %s  •  %s %s", muted.Render("Positive readings"), renderSharpePercent(pos, muted, stats.PositivePct), muted.Render("of observations"), muted.Render("Above 1:"), renderSharpePercent(pos, muted, stats.AboveOnePct)), width))
+	for idx, stat := range stats {
+		line := fmt.Sprintf("%s %s %s  •  %s %s", label.Render(stat.Label), muted.Render("> 0"), renderSharpePercent(pos, muted, stat.PositivePct), muted.Render("> 1"), renderSharpePercent(pos, muted, stat.AboveOnePct))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), line, width))
+		if idx < len(stats)-1 {
+			b.WriteString("\n")
+		}
+	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -117,6 +151,55 @@ func buildSharpeChartSeries(series domain.PriceSeries) domain.PriceSeries {
 	}
 }
 
+func buildSharpePreviewSeries(series domain.PriceSeries, lookback int) domain.PriceSeries {
+	closes := extractCloses(series.Candles)
+	if len(closes) <= lookback {
+		return domain.PriceSeries{Symbol: series.Symbol, Range: series.Range, Interval: series.Interval}
+	}
+	candles := make([]domain.Candle, 0, len(series.Candles)-lookback)
+	for i := lookback; i < len(series.Candles); i++ {
+		window := closes[:i+1]
+		value := returnOverVol(annualizedLookbackReturn(window, lookback), historicalVolatility(window, lookback), 1)
+		candles = append(candles, domain.Candle{
+			Time:  series.Candles[i].Time,
+			Open:  value,
+			High:  value,
+			Low:   value,
+			Close: value,
+		})
+	}
+	return domain.PriceSeries{
+		Symbol:      series.Symbol,
+		Range:       series.Range,
+		Interval:    series.Interval,
+		Candles:     candles,
+		Freshness:   series.Freshness,
+		LastUpdated: series.LastUpdated,
+	}
+}
+
+func buildSharpePreviewSeriesSet(series domain.PriceSeries) []sharpeChartSeries {
+	out := make([]sharpeChartSeries, 0, len(sharpeSeriesSpecs))
+	for _, spec := range sharpeSeriesSpecs {
+		out = append(out, sharpeChartSeries{
+			Spec:   spec,
+			Series: buildSharpePreviewSeries(series, spec.Lookback),
+		})
+	}
+	return out
+}
+
+func displaySharpeChartSeriesForRange(series []sharpeChartSeries, rangeKey string) []sharpeChartSeries {
+	out := make([]sharpeChartSeries, 0, len(series))
+	for _, item := range series {
+		out = append(out, sharpeChartSeries{
+			Spec:   item.Spec,
+			Series: displaySharpeSeriesForRange(item.Series, rangeKey),
+		})
+	}
+	return out
+}
+
 func displaySharpeSeriesForRange(series domain.PriceSeries, rangeKey string) domain.PriceSeries {
 	if len(series.Candles) <= 2 {
 		return series
@@ -163,9 +246,20 @@ func displaySharpeSeriesForRange(series domain.PriceSeries, rangeKey string) dom
 func renderSharpeSeriesSummary(series domain.PriceSeries) string {
 	stats, ok := sharpeSeriesStats(series)
 	if !ok {
-		return "No Sharpe history"
+		return "No risk-adjusted history"
 	}
 	return fmt.Sprintf("%s %s | latest %s | avg %s | best %s | worst %s", series.Range, series.Interval, formatMetricSigned(stats.Latest), formatMetricSigned(stats.Mean), formatMetricSigned(stats.Max), formatMetricSigned(stats.Min))
+}
+
+type sharpePreviewStat struct {
+	Label       string
+	Latest      float64
+	Mean        float64
+	Median      float64
+	Min         float64
+	Max         float64
+	PositivePct int
+	AboveOnePct int
 }
 
 type sharpeStats struct {
@@ -219,4 +313,58 @@ func sharpeSeriesStats(series domain.PriceSeries) (sharpeStats, bool) {
 		PositivePct: int(float64(positive) / float64(len(series.Candles)) * 100),
 		AboveOnePct: int(float64(aboveOne) / float64(len(series.Candles)) * 100),
 	}, true
+}
+
+func sharpeSeriesPreviewStats(series []sharpeChartSeries) []sharpePreviewStat {
+	out := make([]sharpePreviewStat, 0, len(series))
+	for _, item := range series {
+		stats, ok := sharpeSeriesStats(item.Series)
+		if !ok {
+			continue
+		}
+		out = append(out, sharpePreviewStat{
+			Label:       item.Spec.ShortLabel,
+			Latest:      stats.Latest,
+			Mean:        stats.Mean,
+			Median:      stats.Median,
+			Min:         stats.Min,
+			Max:         stats.Max,
+			PositivePct: stats.PositivePct,
+			AboveOnePct: stats.AboveOnePct,
+		})
+	}
+	return out
+}
+
+func sharpeLatestDelta(stats []sharpePreviewStat) (float64, bool) {
+	var latest252 float64
+	var latest63 float64
+	have252 := false
+	have63 := false
+	for _, stat := range stats {
+		switch stat.Label {
+		case "252d":
+			latest252 = stat.Latest
+			have252 = true
+		case "63d":
+			latest63 = stat.Latest
+			have63 = true
+		}
+	}
+	if !have252 || !have63 {
+		return 0, false
+	}
+	return latest63 - latest252, true
+}
+
+func annualizedLookbackReturn(values []float64, periods int) float64 {
+	if periods <= 0 || len(values) <= periods {
+		return 0
+	}
+	base := values[len(values)-1-periods]
+	last := values[len(values)-1]
+	if base <= 0 || last <= 0 {
+		return 0
+	}
+	return math.Pow(last/base, 252.0/float64(periods)) - 1
 }

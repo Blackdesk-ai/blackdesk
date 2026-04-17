@@ -24,7 +24,7 @@ func (m Model) handleTimeframeNavigation(step int) (Model, tea.Cmd, bool) {
 	}
 	if m.quoteCenterMode == quoteCenterSharpe {
 		m.sharpeRangeIdx = plan.NextIndex
-		m.status = "Sharpe timeframe: " + ranges[m.sharpeRangeIdx].Label
+		m.status = "Risk Adjusted timeframe: " + ranges[m.sharpeRangeIdx].Label
 		return m, nil, true
 	}
 	m.rangeIdx = plan.NextIndex

@@ -99,7 +99,7 @@ func (m Model) renderOverviewSharpe(section, label, muted, pos, neg lipgloss.Sty
 	boardHeight := max(8, height-6)
 	b.WriteString(renderQuoteSharpeBoard(section, label, muted, pos, neg, chartWidth, boardHeight, m.sharpeRangeIdx, m.sharpeSeries(m.activeSymbol())))
 	if m.errSharpeHistory != nil {
-		b.WriteString("\n\n" + neg.Render("Sharpe history may be stale: "+m.errSharpeHistory.Error()))
+		b.WriteString("\n\n" + neg.Render("Risk-adjusted history may be stale: "+m.errSharpeHistory.Error()))
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }

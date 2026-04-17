@@ -19,6 +19,6 @@ func technicalStatRows(s technicalSnapshot) []marketTableRow {
 	}
 	return []marketTableRow{
 		{name: "PriceZ 21", price: priceZValue, chg: priceZSignal, move: 0, styled: false},
-		{name: "Sharpe", price: formatMetricSigned(s.ret12MOverHV), chg: "12M", move: s.ret12MOverHV, styled: s.ret12MOverHV != 0},
+		{name: "ROC/HV", price: formatMetricSigned(s.ret12MOverHV), chg: "12M", move: s.ret12MOverHV, styled: s.ret12MOverHV != 0},
 	}
 }

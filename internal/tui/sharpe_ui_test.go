@@ -25,7 +25,7 @@ func TestCommandPaletteSharpeOpensQuoteSharpeMode(t *testing.T) {
 	model.selectedIdx = 0
 	model.commandPaletteOpen = true
 	model.commandInput.Focus()
-	model.commandPaletteItems = []commandPaletteItem{{Kind: commandPaletteItemFunction, FunctionID: "sharpe", Title: "Sharpe"}}
+	model.commandPaletteItems = []commandPaletteItem{{Kind: commandPaletteItemFunction, FunctionID: "sharpe", Title: "Risk Adjusted"}}
 
 	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m := updated.(Model)
@@ -83,8 +83,11 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
 
 	view := model.View()
-	if !strings.Contains(view, "SHARPE") || !strings.Contains(view, "Latest") {
+	if !strings.Contains(view, "RISK ADJUSTED") || !strings.Contains(view, "Latest") {
 		t.Fatal("expected sharpe board and preview section")
+	}
+	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
+		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
 		t.Fatal("expected sharpe board to render chart-style timeframe controls")

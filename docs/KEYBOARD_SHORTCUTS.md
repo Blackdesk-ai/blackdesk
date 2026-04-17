@@ -22,6 +22,7 @@ Common palette functions:
 - `Chart`
 - `Fundamentals`
 - `Technicals`
+- `Risk Adjusted`
 - `Statements`
 - `Insiders`
 - `Equity Research` or `er`

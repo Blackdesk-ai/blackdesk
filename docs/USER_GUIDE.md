@@ -98,6 +98,7 @@ Common palette functions include:
 - `Chart`
 - `Fundamentals`
 - `Technicals`
+- `Risk Adjusted`
 - `Statements`
 - `Insiders`
 - `Equity Research` or `er`
@@ -178,6 +179,7 @@ Main controls:
 
 Additional Quote pages:
 
+- `Risk Adjusted` is opened from the command palette and shows the long-horizon `ROC252/HV252` chart together with sidebar readouts for both `252d` and `63d` risk-adjusted ratios.
 - `Analyst Recommendations` is opened from the command palette or by typing `anr` and uses a fullscreen research layout for broker rating changes, recommendation trend, and current consensus targets.
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.

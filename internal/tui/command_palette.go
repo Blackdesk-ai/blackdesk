@@ -231,7 +231,7 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 		{ID: "chart", Title: "Chart", Aliases: []string{"price", "quote chart"}, Category: "Quote", Description: fmt.Sprintf("Open the chart view for %s.", activeSymbol)},
 		{ID: "fundamentals", Title: "Fundamentals", Aliases: []string{"fundamental", "valuation", "fa"}, Category: "Quote", Description: fmt.Sprintf("Open the fundamentals view for %s.", activeSymbol)},
 		{ID: "technicals", Title: "Technicals", Aliases: []string{"technical", "ta"}, Category: "Quote", Description: fmt.Sprintf("Open the technicals view for %s.", activeSymbol)},
-		{ID: "sharpe", Title: "Sharpe", Aliases: []string{"roc/hv", "risk adjusted", "technical sharpe"}, Category: "Chart", Description: fmt.Sprintf("Open the 5Y Sharpe chart for %s.", activeSymbol)},
+		{ID: "sharpe", Title: "Risk Adjusted", Aliases: []string{"roc/hv", "risk adjusted", "technical sharpe", "sharpe"}, Category: "Chart", Description: fmt.Sprintf("Open the 5Y risk-adjusted chart for %s.", activeSymbol)},
 	}
 	if m.services.HasEconomicCalendar() {
 		items = append(items, commandPaletteFunction{
@@ -442,7 +442,7 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		}
 		return m, tabCmd
 	case "sharpe":
-		m.closeCommandPalette("Opened Sharpe view")
+		m.closeCommandPalette("Opened Risk Adjusted view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterSharpe)
 		for i, item := range ranges {
