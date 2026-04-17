@@ -10,12 +10,21 @@ func (m Model) handleTimeframeNavigation(step int) (Model, tea.Cmd, bool) {
 	if !m.canChangeTimeframe() {
 		return m, nil, true
 	}
+	currentIdx := m.rangeIdx
+	if m.quoteCenterMode == quoteCenterSharpe {
+		currentIdx = m.sharpeRangeIdx
+	}
 	plan := application.PlanWrappedIndexStep(application.WrappedIndexInput{
-		CurrentIndex: m.rangeIdx,
+		CurrentIndex: currentIdx,
 		Count:        len(ranges),
 		Step:         step,
 	})
 	if !plan.Changed {
+		return m, nil, true
+	}
+	if m.quoteCenterMode == quoteCenterSharpe {
+		m.sharpeRangeIdx = plan.NextIndex
+		m.status = "Risk Adjusted timeframe: " + ranges[m.sharpeRangeIdx].Label
 		return m, nil, true
 	}
 	m.rangeIdx = plan.NextIndex

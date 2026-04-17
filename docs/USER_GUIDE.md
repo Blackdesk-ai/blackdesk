@@ -98,8 +98,10 @@ Common palette functions include:
 - `Chart`
 - `Fundamentals`
 - `Technicals`
+- `Risk Adjusted`
 - `Statements`
 - `Insiders`
+- `Equity Research` or `er`
 - `Analyst Recommendations` or `anr`
 - `Filings`
 - `Earnings`
@@ -177,9 +179,34 @@ Main controls:
 
 Additional Quote pages:
 
+- `Risk Adjusted` is opened from the command palette and shows the long-horizon `ROC252/HV252` chart together with sidebar readouts for both `252d` and `63d` risk-adjusted ratios.
 - `Analyst Recommendations` is opened from the command palette or by typing `anr` and uses a fullscreen research layout for broker rating changes, recommendation trend, and current consensus targets.
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
+
+Quote fundamentals note:
+
+- `QARP Score` means `Quality at a Reasonable Price`.
+- It is a fast composite signal shown under the `Valuation` block in `Fundamentals`.
+- Blackdesk calculates it as `Earnings Yield x ROIC`.
+- `Earnings Yield` is derived from trailing PE when available, with EPS over price as fallback.
+- `ROIC` is return on invested capital.
+- If either `Earnings Yield` or `ROIC` is negative, the score is forced negative so weak fundamentals cannot display as a strong positive result.
+- The value is displayed as a plain number instead of a percent. Example: `1.35` means the multiplied result scaled for readability in the UI.
+- The value is color-coded by threshold:
+- `< 0.5` weak / overvalued
+- `0.5 - 0.8` fair
+- `0.8 - 1.2` good
+- `1.2 - 1.5` very good
+- `> 1.5` rare / opportunity
+- `R40` is Blackdesk's `Revenue Growth + Profit Margin` readout shown directly under `QARP Score`.
+- It is displayed as a percent and color-coded by threshold:
+- `< 15%` weak
+- `15% - 25%` mediocre
+- `25% - 40%` good
+- `40% - 60%` very good
+- `> 60%` exceptional
+- Use it as a shortcut for balancing quality and price, not as a standalone investment verdict.
 
 Global pages from the command palette:
 
@@ -233,7 +260,13 @@ What it is for:
 - summarizing the active setup
 - asking for market context
 - reviewing fundamentals, technicals, or statement trends
+- running a structured `Equity Research` memo for the active symbol from the command palette
 - switching between local connectors and available models
+
+Command palette AI functions:
+
+- `Equity Research` opens `AI`, injects a full structured investment-research prompt for the active symbol, and starts the AI run immediately.
+- It uses the current Blackdesk app context, including market regime, quote data, fundamentals, technicals, statements, news, and derived metrics available in the AI snapshot.
 
 Main controls:
 

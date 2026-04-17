@@ -57,15 +57,34 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	if plan.LoadEarnings {
 		cmds = append(cmds, m.loadEarningsCmd(symbol))
 	}
+	if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterSharpe && m.needsSharpeHistory(symbol) {
+		cmds = append(cmds, m.loadSharpeHistoryCmd(symbol))
+	}
 	cmds = append(cmds, m.loadMarketRiskCmd())
 	return tea.Batch(cmds...)
 }
 
+func (m Model) autoRefreshQuotesCmd(symbol string) tea.Cmd {
+	cmds := []tea.Cmd{
+		m.loadQuoteCmd(symbol),
+		m.loadWatchlistQuotesCmd(symbol),
+		m.loadMarketQuotesCmd(),
+	}
+	return tea.Batch(cmds...)
+}
+
 const searchDebounceDelay = 250 * time.Millisecond
+const watchlistSelectionDebounceDelay = 120 * time.Millisecond
 
 func (m Model) searchDebounceCmd(query string, id int) tea.Cmd {
 	return tea.Tick(searchDebounceDelay, func(time.Time) tea.Msg {
 		return searchDebouncedMsg{id: id, query: query}
+	})
+}
+
+func (m Model) watchlistSelectionDebounceCmd(symbol string, id int) tea.Cmd {
+	return tea.Tick(watchlistSelectionDebounceDelay, func(time.Time) tea.Msg {
+		return watchlistSelectionDebouncedMsg{id: id, symbol: symbol}
 	})
 }
 

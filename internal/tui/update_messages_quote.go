@@ -1,19 +1,41 @@
 package tui
 
+import "strings"
+
 import tea "github.com/charmbracelet/bubbletea"
 
 func (m Model) handleFundamentalsLoaded(msg fundamentalsLoadedMsg) (Model, tea.Cmd) {
-	m.fundamentals = msg.data
+	if msg.err == nil && msg.data.Symbol != "" {
+		m.cacheFundamentals(msg.data)
+	}
+	if !strings.EqualFold(msg.symbol, m.activeSymbol()) {
+		return m, nil
+	}
+	if msg.err == nil {
+		m.fundamentals = msg.data
+		m.errFundamentals = nil
+		m.profileScroll = 0
+		return m, nil
+	}
+	if cached, ok := m.cachedFundamentals(msg.symbol); ok {
+		m.fundamentals = cached
+		m.profileScroll = 0
+	} else {
+		m.fundamentals = msg.data
+	}
 	m.errFundamentals = msg.err
 	m.profileScroll = 0
 	return m, nil
 }
 
 func (m Model) handleStatementLoaded(msg statementLoadedMsg) (Model, tea.Cmd) {
-	m.statement = msg.data
 	if msg.err == nil {
 		m.cacheStatement(msg.data)
 	}
+	if !strings.EqualFold(msg.symbol, m.activeSymbol()) {
+		return m, nil
+	}
+	m.statement = msg.data
 	m.errStatement = msg.err
 	return m, nil
 }

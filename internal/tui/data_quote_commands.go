@@ -1,6 +1,14 @@
 package tui
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"errors"
+
+	tea "github.com/charmbracelet/bubbletea"
+
+	"blackdesk/internal/domain"
+)
+
+var sharpeHistoryRanges = []string{"10y", "7y", "5y", "2y", "1y"}
 
 func (m Model) loadQuoteCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
@@ -13,15 +21,37 @@ func (m Model) loadHistoryCmd(symbol string) tea.Cmd {
 	current := ranges[m.rangeIdx]
 	return func() tea.Msg {
 		series, err := m.services.GetHistory(m.ctx, symbol, current.Range, current.Interval)
-		return historyLoadedMsg{series: series, err: err}
+		return historyLoadedMsg{symbol: symbol, series: series, err: err}
 	}
 }
 
 func (m Model) loadTechnicalHistoryCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
 		series, err := m.services.GetHistory(m.ctx, symbol, "2y", "1d")
-		return technicalHistoryLoadedMsg{series: series, err: err}
+		return technicalHistoryLoadedMsg{symbol: symbol, series: series, err: err}
 	}
+}
+
+func (m Model) loadSharpeHistoryCmd(symbol string) tea.Cmd {
+	return func() tea.Msg {
+		series, err := m.loadSharpeHistory(symbol)
+		return sharpeHistoryLoadedMsg{series: series, err: err}
+	}
+}
+
+func (m Model) loadSharpeHistory(symbol string) (domain.PriceSeries, error) {
+	var lastErr error
+	for _, rangeKey := range sharpeHistoryRanges {
+		series, err := m.services.GetHistory(m.ctx, symbol, rangeKey, "1d")
+		if err == nil {
+			return series, nil
+		}
+		lastErr = err
+	}
+	if lastErr == nil {
+		lastErr = errors.New("sharpe history unavailable")
+	}
+	return domain.PriceSeries{}, lastErr
 }
 
 func (m Model) loadNewsCmd(symbol string) tea.Cmd {
@@ -32,9 +62,14 @@ func (m Model) loadNewsCmd(symbol string) tea.Cmd {
 }
 
 func (m Model) loadFundamentalsCmd(symbol string) tea.Cmd {
+	if data, ok := m.cachedFundamentals(symbol); ok {
+		return func() tea.Msg {
+			return fundamentalsLoadedMsg{symbol: symbol, data: data, err: nil}
+		}
+	}
 	return func() tea.Msg {
 		data, err := m.services.GetFundamentals(m.ctx, symbol)
-		return fundamentalsLoadedMsg{data: data, err: err}
+		return fundamentalsLoadedMsg{symbol: symbol, data: data, err: err}
 	}
 }
 
@@ -46,12 +81,12 @@ func (m Model) loadStatementCmd(symbol string) tea.Cmd {
 	frequency := m.statementFreq
 	if data, ok := m.cachedStatement(symbol, kind, frequency); ok {
 		return func() tea.Msg {
-			return statementLoadedMsg{data: data, err: nil}
+			return statementLoadedMsg{symbol: symbol, data: data, err: nil}
 		}
 	}
 	return func() tea.Msg {
 		data, err := m.services.GetStatement(m.ctx, symbol, kind, frequency)
-		return statementLoadedMsg{data: data, err: err}
+		return statementLoadedMsg{symbol: symbol, data: data, err: err}
 	}
 }
 

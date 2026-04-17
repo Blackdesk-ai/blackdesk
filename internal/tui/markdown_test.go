@@ -61,6 +61,27 @@ func TestAITabRendersInlineMarkdownInNormalView(t *testing.T) {
 	}
 }
 
+func TestAITabUnescapesMarkdownEscapesInNormalView(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabAI
+	model.aiMessages = []aiMessage{
+		{Role: aiMessageAssistant, Body: "• Cash: \\$9.402 billion\n• Growth\\_rate improved\n• Literal \\*asterisks\\* remain visible", Timestamp: time.Now()},
+	}
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "$9.402 billion") {
+		t.Fatal("expected escaped dollars to render without backslashes")
+	}
+	if strings.Contains(view, `\$9.402 billion`) {
+		t.Fatal("expected escaped dollars to stop rendering raw backslashes")
+	}
+}
+
 func TestRenderMarkdownTranscriptWrapsWideLines(t *testing.T) {
 	lines := renderMarkdownTranscript("| Section | Indicator | Value | Interpretation |\n| --- | --- | --- | --- |\n| Trend | SMA 20 / 50 / 200 | 26.76 / 29.64 / 39.8 | Price remains below the key moving averages and the trend stays weak across multiple windows. |", 48)
 	if len(lines) < 4 {

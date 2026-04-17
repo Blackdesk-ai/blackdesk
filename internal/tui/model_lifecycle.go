@@ -35,6 +35,13 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 			break
 		}
 	}
+	sharpeRangeIdx := rangeIdx
+	for i, item := range ranges {
+		if item.Range == "5y" && item.Interval == "1mo" {
+			sharpeRangeIdx = i
+			break
+		}
+	}
 
 	selectedIdx := 0
 	for i, symbol := range deps.Config.Watchlist {
@@ -58,6 +65,7 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		workspaceRoot:          deps.WorkspaceRoot,
 		selectedIdx:            selectedIdx,
 		rangeIdx:               rangeIdx,
+		sharpeRangeIdx:         sharpeRangeIdx,
 		status:                 "Loading market data…",
 		clock:                  now,
 		lastAutoRefresh:        now,
@@ -68,7 +76,9 @@ func NewModel(ctx context.Context, deps Dependencies) Model {
 		aiInput:                ai,
 		aiModels:               make(map[string][]string),
 		watchQuotes:            make(map[string]domain.QuoteSnapshot),
+		fundamentalsCache:      make(map[string]domain.FundamentalsSnapshot),
 		technicalCache:         make(map[string]domain.PriceSeries),
+		sharpeCache:            make(map[string]domain.PriceSeries),
 		statementCache:         make(map[string]domain.FinancialStatement),
 		insiderCache:           make(map[string]domain.InsiderSnapshot),
 		ownersCache:            make(map[string]domain.OwnershipSnapshot),
@@ -117,6 +127,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleHistoryLoaded(msg)
 	case technicalHistoryLoadedMsg:
 		return m.handleTechnicalHistoryLoaded(msg)
+	case sharpeHistoryLoadedMsg:
+		return m.handleSharpeHistoryLoaded(msg)
 	case newsLoadedMsg:
 		return m.handleNewsLoaded(msg)
 	case marketNewsLoadedMsg:
@@ -149,6 +161,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleCommandPaletteDebounced(msg)
 	case commandPaletteLoadedMsg:
 		return m.handleCommandPaletteLoaded(msg)
+	case watchlistSelectionDebouncedMsg:
+		return m.handleWatchlistSelectionDebounced(msg)
 	case tickMsg:
 		return m.handleTick(msg)
 	case aiResponseLoadedMsg:

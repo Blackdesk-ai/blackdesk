@@ -106,6 +106,34 @@ Yes.
 Blackdesk supports connector selection in the AI workspace.
 Model discovery depends on what each local CLI exposes.
 
+## What is QARP Score?
+
+`QARP Score` means `Quality at a Reasonable Price`.
+In the `Quote` fundamentals view, Blackdesk calculates it as `Earnings Yield x ROIC`.
+If either input is negative, Blackdesk keeps the final score negative instead of letting a double-negative turn positive.
+
+It is color-coded by threshold:
+
+- `< 0.5` weak / overvalued
+- `0.5 - 0.8` fair
+- `0.8 - 1.2` good
+- `1.2 - 1.5` very good
+- `> 1.5` rare / opportunity
+
+It is meant as a quick quality-plus-valuation shortcut, not a full ranking model or a standalone recommendation.
+
+## What is R40?
+
+`R40` is the `Revenue Growth + Profit Margin` score shown under `QARP Score` in the `Quote` fundamentals view.
+
+It is color-coded by threshold:
+
+- `< 15%` weak
+- `15% - 25%` mediocre
+- `25% - 40%` good
+- `40% - 60%` very good
+- `> 60%` exceptional
+
 ## Why is a feature unavailable in my current view?
 
 Some actions are workspace-specific.
@@ -118,6 +146,7 @@ For example:
 Some symbol research pages also open from the command palette instead of a single-letter shortcut.
 Examples include:
 
+- `Equity Research`
 - `Analyst Recommendations`
 - `Filings`
 - `Earnings`

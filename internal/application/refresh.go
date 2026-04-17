@@ -36,14 +36,6 @@ func PlanAutoRefresh(input AutoRefreshInput) AutoRefreshPlan {
 	if input.Now.Sub(input.LastAutoRefresh) >= refreshEvery {
 		plan.RefreshAll = true
 		plan.NextLastAutoRefresh = input.Now
-		if input.ScreenerTabActive && input.ScreenerLoaded {
-			plan.RefreshScreener = true
-		}
-	}
-
-	if input.NewsTabActive && input.Now.Sub(input.LastMarketNewsRefresh) >= input.MarketNewsInterval {
-		plan.RefreshMarketNews = true
-		plan.NextLastMarketRefresh = input.Now
 	}
 
 	return plan

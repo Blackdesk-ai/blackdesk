@@ -125,6 +125,9 @@ func TestQuoteTabNavigationSwitchesCenterBetweenChartAndFundamentals(t *testing.
 	if !strings.Contains(fundamentalsView, "VALUATION") || !strings.Contains(fundamentalsView, "FINANCIALS") || !strings.Contains(fundamentalsView, "PROFITABILITY") {
 		t.Fatal("expected fundamentals cards in quote center")
 	}
+	if !strings.Contains(fundamentalsView, "FCF Yield") {
+		t.Fatal("expected FCF Yield to be shown in valuation card")
+	}
 	if !strings.Contains(fundamentalsView, "ROIC") {
 		t.Fatal("expected ROIC to be shown in profitability card")
 	}
@@ -151,6 +154,9 @@ func TestQuoteTabNavigationShowsTechnicalsBoard(t *testing.T) {
 	model.width = 140
 	model.height = 42
 	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
 	model.quote = domain.QuoteSnapshot{
 		Symbol:            "AAPL",
 		ShortName:         "Apple",
@@ -247,7 +253,7 @@ func TestQuoteCenterMetricLabelsUseAnalystsLabelStyle(t *testing.T) {
 		{name: "Operating", price: "31.10%"},
 	}, []marketTableRow{
 		{name: "ROIC", price: "42.10%"},
-		{name: "Growth Est.", price: "13%-15%"},
+		{name: "Fwd Growth", price: "10%"},
 	}, "PROFITABILITY")
 	if strings.Count(splitCard, "Name") != 2 || strings.Count(splitCard, "Value") != 2 {
 		t.Fatal("expected split fundamentals card to render two table headers")
@@ -313,6 +319,12 @@ func TestRenderQuoteFundamentalsGridStacksCardsWhenWidthIsNarrow(t *testing.T) {
 	if !strings.Contains(view, "Op cash flow") || !strings.Contains(view, "Free cash flow") {
 		t.Fatal("expected narrow stacked layout to keep lower financial rows visible")
 	}
+	if !strings.Contains(view, "QARP Score") || !strings.Contains(view, "1.35") {
+		t.Fatal("expected narrow stacked layout to render qarp score below valuation card without percent sign")
+	}
+	if !strings.Contains(view, "R40") || !strings.Contains(view, "32.30%") {
+		t.Fatal("expected narrow stacked layout to render r40 below qarp score")
+	}
 }
 
 func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t *testing.T) {
@@ -353,6 +365,12 @@ func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t 
 	if !strings.Contains(view, "Earnings Yield") {
 		t.Fatal("expected valuation card to include earnings yield")
 	}
+	if !strings.Contains(view, "QARP Score") || !strings.Contains(view, "1.35") {
+		t.Fatal("expected wide fundamentals layout to render separate qarp score without percent sign")
+	}
+	if !strings.Contains(view, "R40") || !strings.Contains(view, "32.30%") {
+		t.Fatal("expected wide fundamentals layout to render r40 below qarp score")
+	}
 }
 
 func TestQuoteTabNavigationShowsStatementsBoardWhenSupported(t *testing.T) {
@@ -363,6 +381,9 @@ func TestQuoteTabNavigationShowsStatementsBoardWhenSupported(t *testing.T) {
 	model.width = 140
 	model.height = 42
 	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
 	model.quote = domain.QuoteSnapshot{
 		Symbol:            "AAPL",
 		ShortName:         "Apple",
@@ -465,5 +486,62 @@ func TestQuoteTabNavigationShowsInsidersBoardWhenSupported(t *testing.T) {
 	}
 	if strings.Contains(view, "NEWS") || strings.Contains(view, "PROFILE") {
 		t.Fatal("expected insiders mode to hide bottom panels")
+	}
+}
+
+func TestFundamentalsViewShowsLoadingStateWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"MSFT"}
+	model.config.ActiveSymbol = "MSFT"
+	model.selectedIdx = 0
+	model.quoteCenterMode = quoteCenterFundamentals
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Loading MSFT fundamentals") {
+		t.Fatal("expected fundamentals loading state without cache")
+	}
+}
+
+func TestTechnicalsViewShowsLoadingStateWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"MSFT"}
+	model.config.ActiveSymbol = "MSFT"
+	model.selectedIdx = 0
+	model.quoteCenterMode = quoteCenterTechnicals
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Loading MSFT technicals") {
+		t.Fatal("expected technicals loading state without cache")
+	}
+}
+
+func TestStatementsViewShowsLoadingStateWithoutCache(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.config.Watchlist = []string{"MSFT"}
+	model.config.ActiveSymbol = "MSFT"
+	model.selectedIdx = 0
+	model.quoteCenterMode = quoteCenterStatements
+
+	view := ansi.Strip(model.View())
+	if !strings.Contains(view, "Loading MSFT statements") {
+		t.Fatal("expected statements loading state without cache")
 	}
 }

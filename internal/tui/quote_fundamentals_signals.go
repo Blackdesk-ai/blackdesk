@@ -4,6 +4,7 @@ import (
 	"blackdesk/internal/domain"
 	"blackdesk/internal/ui"
 	"fmt"
+	"math"
 )
 
 func formatCompactIntDash(v int64) string {
@@ -66,43 +67,49 @@ func earningsYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (
 	return eps / q.Price, true
 }
 
-func impliedEPSGrowthBand(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, float64, bool) {
-	peg := pegRatioValue(q, f)
-	if peg <= 0 {
-		return 0, 0, false
+func fcfYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	marketCap := f.MarketCap
+	if marketCap == 0 {
+		marketCap = q.MarketCap
 	}
-
-	values := make([]float64, 0, 2)
-	if f.ForwardPE > 0 {
-		values = append(values, f.ForwardPE/peg/100)
+	if marketCap <= 0 || f.FreeCashflow == 0 {
+		return 0, false
 	}
-	if f.TrailingPE > 0 {
-		values = append(values, f.TrailingPE/peg/100)
-	}
-	if len(values) == 0 {
-		return 0, 0, false
-	}
-	low, high := values[0], values[0]
-	for _, v := range values[1:] {
-		if v < low {
-			low = v
-		}
-		if v > high {
-			high = v
-		}
-	}
-	return low, high, true
+	return float64(f.FreeCashflow) / float64(marketCap), true
 }
 
-func impliedEPSGrowthBandText(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) string {
-	low, high, ok := impliedEPSGrowthBand(q, f)
+func valuationScoreValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	earningsYield, earningsYieldOK := earningsYieldValue(q, f)
+	if !earningsYieldOK || f.ReturnOnInvestedCapital == 0 {
+		return 0, false
+	}
+	score := earningsYield * f.ReturnOnInvestedCapital
+	if earningsYield < 0 || f.ReturnOnInvestedCapital < 0 {
+		return -math.Abs(score), true
+	}
+	return score, true
+}
+
+func ruleOf40Value(f domain.FundamentalsSnapshot) (float64, bool) {
+	if f.RevenueGrowth == 0 && f.ProfitMargins == 0 {
+		return 0, false
+	}
+	return f.RevenueGrowth + f.ProfitMargins, true
+}
+
+func impliedEPSGrowthEstimate(f domain.FundamentalsSnapshot) (float64, bool) {
+	if f.TrailingPE <= 0 || f.ForwardPE <= 0 {
+		return 0, false
+	}
+	return f.TrailingPE/f.ForwardPE - 1, true
+}
+
+func impliedEPSGrowthEstimateText(f domain.FundamentalsSnapshot) string {
+	growth, ok := impliedEPSGrowthEstimate(f)
 	if !ok {
 		return "-"
 	}
-	if low == high {
-		return formatImpliedGrowthPercent(low * 100)
-	}
-	return formatImpliedGrowthPercent(low*100) + "-" + formatImpliedGrowthPercent(high*100)
+	return formatImpliedGrowthPercent(growth * 100)
 }
 
 func formatImpliedGrowthPercent(v float64) string {

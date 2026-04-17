@@ -31,6 +31,13 @@ var supplementalBalanceFields = []string{
 	"CashAndCashEquivalents",
 }
 
+var supplementalCashFlowFields = []string{
+	"OperatingCashFlow",
+	"CashFlowFromContinuingOperatingActivities",
+	"CapitalExpenditure",
+	"FreeCashFlow",
+}
+
 type datedFundamentalsValue struct {
 	date  string
 	end   time.Time
@@ -45,6 +52,11 @@ type supplementalProfitability struct {
 	returnOnEquity  float64
 	returnOnIC      float64
 	investedCapital float64
+}
+
+type supplementalCashFlow struct {
+	operatingCashFlow float64
+	freeCashFlow      float64
 }
 
 func (p *Provider) hydrateSupplementalFundamentals(ctx context.Context, symbol string, fundamentals *domain.FundamentalsSnapshot) {
@@ -68,7 +80,22 @@ func (p *Provider) hydrateSupplementalFundamentals(ctx context.Context, symbol s
 	if err != nil {
 		return
 	}
-	resp := mergeStatementTimeseriesResponses(incomeQuarterlyResp, incomeAnnualResp, balanceQuarterlyResp, balanceAnnualResp)
+	cashFlowQuarterlyResp, err := p.fetchSupplementalTimeseries(ctx, symbol, "cashflow-quarterly", domain.StatementFrequencyQuarterly, supplementalCashFlowFields)
+	if err != nil {
+		return
+	}
+	cashFlowAnnualResp, err := p.fetchSupplementalTimeseries(ctx, symbol, "cashflow-annual", domain.StatementFrequencyAnnual, supplementalCashFlowFields)
+	if err != nil {
+		return
+	}
+	resp := mergeStatementTimeseriesResponses(
+		incomeQuarterlyResp,
+		incomeAnnualResp,
+		balanceQuarterlyResp,
+		balanceAnnualResp,
+		cashFlowQuarterlyResp,
+		cashFlowAnnualResp,
+	)
 
 	investedCapital, roic, ok := deriveSupplementalROIC(resp)
 	if ok {
@@ -85,6 +112,15 @@ func (p *Provider) hydrateSupplementalFundamentals(ctx context.Context, symbol s
 		fundamentals.ReturnOnInvestedCapital = metrics.returnOnIC
 		if metrics.investedCapital > 0 {
 			fundamentals.InvestedCapital = int64(math.Round(metrics.investedCapital))
+		}
+	}
+
+	if metrics, ok := deriveSupplementalCashFlow(resp); ok {
+		if metrics.operatingCashFlow != 0 {
+			fundamentals.OperatingCashflow = int64(math.Round(metrics.operatingCashFlow))
+		}
+		if metrics.freeCashFlow != 0 {
+			fundamentals.FreeCashflow = int64(math.Round(metrics.freeCashFlow))
 		}
 	}
 }
@@ -451,4 +487,77 @@ func averageBalanceBase(series []datedFundamentalsValue) (float64, bool) {
 		return (base + series[1].value) / 2, true
 	}
 	return base, true
+}
+
+func deriveSupplementalCashFlow(resp statementTimeseriesResponse) (supplementalCashFlow, bool) {
+	operatingCashFlow, ok := trailingCashFlowValueWithFallback(resp, "OperatingCashFlow", "CashFlowFromContinuingOperatingActivities")
+	if !ok {
+		return supplementalCashFlow{}, false
+	}
+
+	capitalExpenditure, capexOK := trailingCashFlowValueWithFallback(resp, "CapitalExpenditure")
+	if capexOK {
+		return supplementalCashFlow{
+			operatingCashFlow: operatingCashFlow,
+			freeCashFlow:      computeStatementFreeCashFlow(operatingCashFlow, capitalExpenditure),
+		}, true
+	}
+
+	freeCashFlow, fcfOK := trailingCashFlowValueWithFallback(resp, "FreeCashFlow")
+	if !fcfOK {
+		return supplementalCashFlow{operatingCashFlow: operatingCashFlow}, true
+	}
+
+	return supplementalCashFlow{
+		operatingCashFlow: operatingCashFlow,
+		freeCashFlow:      freeCashFlow,
+	}, true
+}
+
+func trailingCashFlowValueWithFallback(resp statementTimeseriesResponse, keys ...string) (float64, bool) {
+	quarterly := statementSeriesForKeys(resp, domain.StatementFrequencyQuarterly, keys...)
+	annual := statementSeriesForKeys(resp, domain.StatementFrequencyAnnual, keys...)
+
+	if len(annual) > 0 && len(quarterly) > 0 && annual[0].date == quarterly[0].date {
+		return annual[0].value, true
+	}
+
+	if len(quarterly) >= 4 {
+		sum := 0.0
+		for i := 0; i < 4; i++ {
+			sum += quarterly[i].value
+		}
+		return sum, true
+	}
+
+	if len(annual) > 0 {
+		return annual[0].value, true
+	}
+	if len(quarterly) > 0 {
+		return quarterly[0].value, true
+	}
+	return 0, false
+}
+
+func statementSeriesForKeys(resp statementTimeseriesResponse, frequency domain.StatementFrequency, keys ...string) []datedFundamentalsValue {
+	for _, key := range keys {
+		if values := statementValues(resp, frequency, key); len(values) > 0 {
+			return values
+		}
+	}
+	return nil
+}
+
+func trailingStatementValueWithFallback(resp statementTimeseriesResponse, keys ...string) (float64, bool) {
+	if value, ok := sumStatementValues(resp, domain.StatementFrequencyQuarterly, 4, keys...); ok {
+		return value, true
+	}
+	return firstPresentStatementValue(resp, domain.StatementFrequencyAnnual, 0, keys...)
+}
+
+func computeStatementFreeCashFlow(operatingCashFlow, capitalExpenditure float64) float64 {
+	if capitalExpenditure > 0 {
+		return operatingCashFlow - capitalExpenditure
+	}
+	return operatingCashFlow + capitalExpenditure
 }

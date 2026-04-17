@@ -44,6 +44,9 @@ func (m Model) handleQuotesLoaded(msg quotesLoadedMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleHistoryLoaded(msg historyLoadedMsg) (Model, tea.Cmd) {
+	if !strings.EqualFold(msg.symbol, m.activeSymbol()) {
+		return m, nil
+	}
 	m.series = msg.series
 	m.errHistory = msg.err
 	return m, nil
@@ -53,7 +56,18 @@ func (m Model) handleTechnicalHistoryLoaded(msg technicalHistoryLoadedMsg) (Mode
 	if msg.err == nil && msg.series.Symbol != "" {
 		m.technicalCache[strings.ToUpper(msg.series.Symbol)] = msg.series
 	}
+	if !strings.EqualFold(msg.symbol, m.activeSymbol()) {
+		return m, nil
+	}
 	m.errTechnicalHistory = msg.err
+	return m, nil
+}
+
+func (m Model) handleSharpeHistoryLoaded(msg sharpeHistoryLoadedMsg) (Model, tea.Cmd) {
+	if msg.err == nil && msg.series.Symbol != "" {
+		m.sharpeCache[strings.ToUpper(msg.series.Symbol)] = msg.series
+	}
+	m.errSharpeHistory = msg.err
 	return m, nil
 }
 
@@ -124,13 +138,7 @@ func (m Model) handleTick(msg tickMsg) (Model, tea.Cmd) {
 	m.lastMarketNews = plan.NextLastMarketRefresh
 	cmds := []tea.Cmd{tickCmd(time.Second)}
 	if plan.RefreshAll {
-		cmds = append(cmds, m.loadAllCmd(m.activeSymbol()))
-		if plan.RefreshScreener {
-			cmds = append(cmds, m.loadScreenerCmd(false))
-		}
-	}
-	if plan.RefreshMarketNews {
-		cmds = append(cmds, m.loadMarketNewsCmd())
+		cmds = append(cmds, m.autoRefreshQuotesCmd(m.activeSymbol()))
 	}
 	return m, tea.Batch(cmds...)
 }

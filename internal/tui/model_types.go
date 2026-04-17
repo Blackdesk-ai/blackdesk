@@ -50,6 +50,7 @@ type Model struct {
 	selectedIdx     int
 	watchlistScroll int
 	rangeIdx        int
+	sharpeRangeIdx  int
 	tabIdx          int
 	quoteCenterMode quoteCenterMode
 	status          string
@@ -63,65 +64,68 @@ type Model struct {
 	upgradeRunning  bool
 	restartOnQuit   bool
 
-	searchInput                 textinput.Model
-	searchMode                  bool
-	searchItems                 []domain.SymbolRef
-	searchIdx                   int
-	searchDebounceID            int
-	searchRequestID             int
-	searchRequestQuery          string
-	commandInput                textinput.Model
-	commandPaletteOpen          bool
-	commandPaletteItems         []commandPaletteItem
-	commandPaletteIdx           int
-	commandPaletteSymbolItems   []domain.SymbolRef
-	commandPaletteDebounceID    int
-	commandPaletteRequestID     int
-	commandPaletteRequestQuery  string
-	aiInput                     textinput.Model
-	aiFocused                   bool
-	aiRunning                   bool
-	aiOutput                    string
-	aiErr                       error
-	aiDuration                  time.Duration
-	aiMessages                  []aiMessage
-	aiConversationSummary       string
-	aiCompactedMessages         int
-	aiLastRequestTruncation     aiRequestTruncation
-	aiContextRevision           int
-	aiLastContextRevision       int
-	aiScroll                    int
-	aiLastContext               string
-	aiLastSymbol                string
-	aiFullscreen                bool
-	aiPickerOpen                bool
-	aiPickerStep                aiPickerStep
-	aiModels                    map[string][]string
-	aiModelIdx                  int
-	aiModelErr                  error
-	aiModelBusy                 bool
-	aiMarketOpinion             string
-	aiMarketOpinionErr          error
-	aiMarketOpinionRunning      bool
-	aiMarketOpinionUpdated      time.Time
-	aiQuoteInsight              string
-	aiQuoteInsightErr           error
-	aiQuoteInsightRunning       bool
-	aiQuoteInsightUpdated       time.Time
-	aiQuoteInsightSymbol        string
-	aiFilingRun                 aiFilingRunState
-	aiFilingRunActive           bool
-	marketOpinionHistory        map[string]domain.PriceSeries
-	marketOpinionHistoryAt      map[string]time.Time
-	pendingMarketOpinionRefresh bool
-	helpOpen                    bool
-	globalPageOpen              bool
-	globalPageKind              globalPageKind
+	searchInput                  textinput.Model
+	searchMode                   bool
+	searchItems                  []domain.SymbolRef
+	searchIdx                    int
+	searchDebounceID             int
+	searchRequestID              int
+	searchRequestQuery           string
+	watchlistSelectionDebounceID int
+	commandInput                 textinput.Model
+	commandPaletteOpen           bool
+	commandPaletteItems          []commandPaletteItem
+	commandPaletteIdx            int
+	commandPaletteSymbolItems    []domain.SymbolRef
+	commandPaletteDebounceID     int
+	commandPaletteRequestID      int
+	commandPaletteRequestQuery   string
+	aiInput                      textinput.Model
+	aiFocused                    bool
+	aiRunning                    bool
+	aiOutput                     string
+	aiErr                        error
+	aiDuration                   time.Duration
+	aiMessages                   []aiMessage
+	aiConversationSummary        string
+	aiCompactedMessages          int
+	aiLastRequestTruncation      aiRequestTruncation
+	aiContextRevision            int
+	aiLastContextRevision        int
+	aiScroll                     int
+	aiLastContext                string
+	aiLastSymbol                 string
+	aiFullscreen                 bool
+	aiPickerOpen                 bool
+	aiPickerStep                 aiPickerStep
+	aiModels                     map[string][]string
+	aiModelIdx                   int
+	aiModelErr                   error
+	aiModelBusy                  bool
+	aiMarketOpinion              string
+	aiMarketOpinionErr           error
+	aiMarketOpinionRunning       bool
+	aiMarketOpinionUpdated       time.Time
+	aiQuoteInsight               string
+	aiQuoteInsightErr            error
+	aiQuoteInsightRunning        bool
+	aiQuoteInsightUpdated        time.Time
+	aiQuoteInsightSymbol         string
+	aiFilingRun                  aiFilingRunState
+	aiFilingRunActive            bool
+	marketOpinionHistory         map[string]domain.PriceSeries
+	marketOpinionHistoryAt       map[string]time.Time
+	pendingMarketOpinionRefresh  bool
+	helpOpen                     bool
+	globalPageOpen               bool
+	globalPageKind               globalPageKind
 
 	quote             domain.QuoteSnapshot
 	watchQuotes       map[string]domain.QuoteSnapshot
 	series            domain.PriceSeries
+	fundamentalsCache map[string]domain.FundamentalsSnapshot
 	technicalCache    map[string]domain.PriceSeries
+	sharpeCache       map[string]domain.PriceSeries
 	statementCache    map[string]domain.FinancialStatement
 	insiderCache      map[string]domain.InsiderSnapshot
 	ownersCache       map[string]domain.OwnershipSnapshot
@@ -167,6 +171,7 @@ type Model struct {
 	errQuote            error
 	errHistory          error
 	errTechnicalHistory error
+	errSharpeHistory    error
 	errNews             error
 	errMarketNews       error
 	errFundamentals     error

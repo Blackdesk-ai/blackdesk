@@ -14,11 +14,18 @@ type quotesLoadedMsg struct {
 }
 
 type historyLoadedMsg struct {
+	symbol string
 	series domain.PriceSeries
 	err    error
 }
 
 type technicalHistoryLoadedMsg struct {
+	symbol string
+	series domain.PriceSeries
+	err    error
+}
+
+type sharpeHistoryLoadedMsg struct {
 	series domain.PriceSeries
 	err    error
 }
@@ -46,13 +53,15 @@ type screenerLoadedMsg struct {
 }
 
 type fundamentalsLoadedMsg struct {
-	data domain.FundamentalsSnapshot
-	err  error
+	symbol string
+	data   domain.FundamentalsSnapshot
+	err    error
 }
 
 type statementLoadedMsg struct {
-	data domain.FinancialStatement
-	err  error
+	symbol string
+	data   domain.FinancialStatement
+	err    error
 }
 
 type insidersLoadedMsg struct {
@@ -108,4 +117,9 @@ type commandPaletteLoadedMsg struct {
 	query   string
 	results []domain.SymbolRef
 	err     error
+}
+
+type watchlistSelectionDebouncedMsg struct {
+	id     int
+	symbol string
 }

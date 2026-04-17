@@ -19,7 +19,7 @@ import (
 	"blackdesk/internal/domain"
 )
 
-func TestGetFundamentalsUsesCookieAndCrumb(t *testing.T) {
+func TestGetFundamentalsUsesQuoteSummaryWithoutCrumbWhenAvailable(t *testing.T) {
 	ctx := context.Background()
 	var sawCrumb atomic.Bool
 
@@ -39,15 +39,15 @@ func TestGetFundamentalsUsesCookieAndCrumb(t *testing.T) {
 			switch {
 			case types == "trailingPegRatio":
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[{"trailingPegRatio":[{"reportedValue":{"raw":1.88}}]}],"error":null}}`), "")
-			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"):
+			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"), strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "annualOperatingCashFlow"):
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
+				return nil, nil
 			}
 		default:
 			return textResponse(req, http.StatusNotFound, "not found"), nil
 		}
-		return nil, nil
 	})
 
 	p := newTestProvider("https://query1.finance.yahoo.test", client)
@@ -55,14 +55,57 @@ func TestGetFundamentalsUsesCookieAndCrumb(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !sawCrumb.Load() {
-		t.Fatal("expected quoteSummary request with crumb")
+	if sawCrumb.Load() {
+		t.Fatal("expected quoteSummary fundamentals request to avoid crumb when not required")
 	}
 	if got.Symbol != "AAPL" || got.Sector != "Technology" {
 		t.Fatalf("unexpected fundamentals %+v", got)
 	}
 	if got.PEGRatio != 1.88 {
 		t.Fatalf("expected supplemental trailing peg ratio, got %+v", got)
+	}
+}
+
+func TestGetFundamentalsRetriesWithCrumbAfterForbidden(t *testing.T) {
+	ctx := context.Background()
+	var quoteSummaryCalls atomic.Int32
+	var sawCrumb atomic.Bool
+
+	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.URL.Path == "/":
+			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
+		case req.URL.Path == "/v1/test/getcrumb":
+			return textResponse(req, http.StatusOK, "crumb-123"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			call := quoteSummaryCalls.Add(1)
+			if call == 1 && req.URL.Query().Get("crumb") == "" {
+				return textResponse(req, http.StatusForbidden, "forbidden"), nil
+			}
+			if req.URL.Query().Get("crumb") == "crumb-123" {
+				sawCrumb.Store(true)
+			}
+			return jsonFixtureResponse(t, req, "quote_summary_aapl.json")
+		case strings.HasPrefix(req.URL.Path, "/ws/fundamentals-timeseries/v1/finance/timeseries/"):
+			return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+		default:
+			return textResponse(req, http.StatusNotFound, "not found"), nil
+		}
+	})
+
+	p := newTestProvider("https://query1.finance.yahoo.test", client)
+	got, err := p.GetFundamentals(ctx, "AAPL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if quoteSummaryCalls.Load() != 2 {
+		t.Fatalf("expected 2 quoteSummary calls, got %d", quoteSummaryCalls.Load())
+	}
+	if !sawCrumb.Load() {
+		t.Fatal("expected fundamentals retry with crumb after forbidden")
+	}
+	if got.Symbol != "AAPL" {
+		t.Fatalf("unexpected fundamentals %+v", got)
 	}
 }
 
@@ -82,7 +125,7 @@ func TestGetFundamentalsFallsBackToTimeseriesPEG(t *testing.T) {
 			switch {
 			case types == "trailingPegRatio":
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[{"trailingPegRatio":[{"reportedValue":{"raw":2.41}}]}],"error":null}}`), "")
-			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"):
+			case strings.Contains(types, "quarterlyEBIT"), strings.Contains(types, "annualEBIT"), strings.Contains(types, "quarterlyInvestedCapital"), strings.Contains(types, "annualInvestedCapital"), strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "annualOperatingCashFlow"):
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
@@ -226,6 +269,8 @@ func TestGetFundamentalsDerivesROICFromSupplementalTimeseries(t *testing.T) {
 				return jsonResponse(req, http.StatusOK, body, "")
 			case strings.Contains(types, "annualInvestedCapital"):
 				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			case strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "annualOperatingCashFlow"):
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
 			default:
 				t.Fatalf("unexpected timeseries type %q", types)
 			}
@@ -266,6 +311,168 @@ func TestGetFundamentalsDerivesROICFromSupplementalTimeseries(t *testing.T) {
 	wantROA := (28.0 + 27.2 + 26.4 + 26.4) / ((249.0 + 175.0) / 2)
 	if math.Abs(got.ReturnOnAssets-wantROA) > 0.0001 {
 		t.Fatalf("expected derived roa %.6f, got %+v", wantROA, got)
+	}
+}
+
+func TestGetFundamentalsDerivesCashFlowFromSupplementalTimeseries(t *testing.T) {
+	ctx := context.Background()
+
+	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.URL.Path == "/":
+			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
+		case req.URL.Path == "/v1/test/getcrumb":
+			return textResponse(req, http.StatusOK, "crumb-123"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			body := readFixture(t, "quote_summary_aapl.json")
+			var parsed map[string]any
+			if err := json.Unmarshal(body, &parsed); err != nil {
+				t.Fatal(err)
+			}
+			result := parsed["quoteSummary"].(map[string]any)["result"].([]any)[0].(map[string]any)
+			financialData := result["financialData"].(map[string]any)
+			financialData["operatingCashflow"] = map[string]any{"raw": 999000000}
+			financialData["freeCashflow"] = map[string]any{"raw": 894000000}
+			body, err := json.Marshal(parsed)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return jsonResponse(req, http.StatusOK, body, "")
+		case strings.HasPrefix(req.URL.Path, "/ws/fundamentals-timeseries/v1/finance/timeseries/"):
+			types := req.URL.Query().Get("type")
+			switch {
+			case types == "trailingPegRatio":
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			case strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "quarterlyCashFlowFromContinuingOperatingActivities"), strings.Contains(types, "quarterlyCapitalExpenditure"), strings.Contains(types, "quarterlyFreeCashFlow"):
+				body := []byte(`{
+					"timeseries": {
+						"result": [
+							{
+								"meta": { "type": ["quarterlyOperatingCashFlow"] },
+								"quarterlyOperatingCashFlow": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": 2.18 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": 2.00 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": 1.95 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": 2.05 } }
+								]
+							},
+							{
+								"meta": { "type": ["quarterlyCapitalExpenditure"] },
+								"quarterlyCapitalExpenditure": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -1.01 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": -0.90 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": -0.92 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": -0.98 } }
+								]
+							}
+						],
+						"error": null
+					}
+				}`)
+				return jsonResponse(req, http.StatusOK, body, "")
+			default:
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			}
+		default:
+			return textResponse(req, http.StatusNotFound, "not found"), nil
+		}
+	})
+
+	p := newTestProvider("https://query1.finance.yahoo.test", client)
+	got, err := p.GetFundamentals(ctx, "AAPL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.OperatingCashflow != 8 {
+		t.Fatalf("expected supplemental operating cash flow 8, got %+v", got)
+	}
+	if got.FreeCashflow != 4 {
+		t.Fatalf("expected supplemental free cash flow 4, got %+v", got)
+	}
+}
+
+func TestGetFundamentalsPrefersAnnualCashFlowWhenQuarterlyMatchesYearEnd(t *testing.T) {
+	ctx := context.Background()
+
+	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.URL.Path == "/":
+			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
+		case req.URL.Path == "/v1/test/getcrumb":
+			return textResponse(req, http.StatusOK, "crumb-123"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			return jsonFixtureResponse(t, req, "quote_summary_aapl.json")
+		case strings.HasPrefix(req.URL.Path, "/ws/fundamentals-timeseries/v1/finance/timeseries/"):
+			types := req.URL.Query().Get("type")
+			switch {
+			case types == "trailingPegRatio":
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			case strings.Contains(types, "quarterlyOperatingCashFlow"), strings.Contains(types, "quarterlyCashFlowFromContinuingOperatingActivities"), strings.Contains(types, "quarterlyCapitalExpenditure"), strings.Contains(types, "quarterlyFreeCashFlow"):
+				body := []byte(`{
+					"timeseries": {
+						"result": [
+							{
+								"meta": { "type": ["quarterlyOperatingCashFlow"] },
+								"quarterlyOperatingCashFlow": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -739.0 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": 452.0 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": 311.0 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": 1015.0 } }
+								]
+							},
+							{
+								"meta": { "type": ["quarterlyCapitalExpenditure"] },
+								"quarterlyCapitalExpenditure": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -14.0 } },
+									{ "asOfDate": "2025-09-30", "reportedValue": { "raw": -12.0 } },
+									{ "asOfDate": "2025-06-30", "reportedValue": { "raw": -11.0 } },
+									{ "asOfDate": "2025-03-31", "reportedValue": { "raw": -10.0 } }
+								]
+							}
+						],
+						"error": null
+					}
+				}`)
+				return jsonResponse(req, http.StatusOK, body, "")
+			case strings.Contains(types, "annualOperatingCashFlow"), strings.Contains(types, "annualCapitalExpenditure"), strings.Contains(types, "annualFreeCashFlow"):
+				body := []byte(`{
+					"timeseries": {
+						"result": [
+							{
+								"meta": { "type": ["annualOperatingCashFlow"] },
+								"annualOperatingCashFlow": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -739.0 } }
+								]
+							},
+							{
+								"meta": { "type": ["annualCapitalExpenditure"] },
+								"annualCapitalExpenditure": [
+									{ "asOfDate": "2025-12-31", "reportedValue": { "raw": -23.0 } }
+								]
+							}
+						],
+						"error": null
+					}
+				}`)
+				return jsonResponse(req, http.StatusOK, body, "")
+			default:
+				return jsonResponse(req, http.StatusOK, []byte(`{"timeseries":{"result":[],"error":null}}`), "")
+			}
+		default:
+			return textResponse(req, http.StatusNotFound, "not found"), nil
+		}
+	})
+
+	p := newTestProvider("https://query1.finance.yahoo.test", client)
+	got, err := p.GetFundamentals(ctx, "AAPL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.OperatingCashflow != -739 {
+		t.Fatalf("expected annual operating cash flow to win over summed quarterlies, got %+v", got)
+	}
+	if got.FreeCashflow != -762 {
+		t.Fatalf("expected annual-derived free cash flow -762, got %+v", got)
 	}
 }
 
@@ -530,11 +737,13 @@ func TestInvalidCrumbResponseIsRejected(t *testing.T) {
 	ctx := context.Background()
 
 	client := newTestHTTPClient(func(req *http.Request) (*http.Response, error) {
-		switch req.URL.Path {
-		case "/":
+		switch {
+		case req.URL.Path == "/":
 			return jsonResponse(req, http.StatusOK, []byte(`{}`), "A=B; Path=/")
-		case "/v1/test/getcrumb":
+		case req.URL.Path == "/v1/test/getcrumb":
 			return textResponse(req, http.StatusOK, "Too Many Requests"), nil
+		case strings.HasPrefix(req.URL.Path, "/v10/finance/quoteSummary/"):
+			return textResponse(req, http.StatusForbidden, "forbidden"), nil
 		default:
 			return textResponse(req, http.StatusNotFound, "not found"), nil
 		}

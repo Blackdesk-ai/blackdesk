@@ -1,7 +1,9 @@
 package agents
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -98,6 +100,7 @@ func (r *Registry) Models(ctx context.Context, connectorID string) ([]string, er
 type localRunner struct {
 	desc     Descriptor
 	args     func(Request, string) []string
+	env      func(Request) []string
 	models   func(context.Context, Descriptor) ([]string, error)
 	trimANSI bool
 }
@@ -106,7 +109,7 @@ func newCodexRunner() localRunner {
 	return newLocalRunner(
 		Descriptor{ID: "codex", Label: "Codex", Binary: "codex", Description: "OpenAI local Codex CLI"},
 		func(req Request, outputFile string) []string {
-			args := []string{"exec", "--skip-git-repo-check", "--sandbox", "read-only", "-C", req.Workspace}
+			args := []string{"exec", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox", "-C", req.Workspace}
 			if model := strings.TrimSpace(req.Model); model != "" {
 				args = append(args, "--model", model)
 			}
@@ -115,6 +118,7 @@ func newCodexRunner() localRunner {
 			}
 			return append(args, buildPrompt(req))
 		},
+		nil,
 		codexModelList,
 	)
 }
@@ -123,12 +127,13 @@ func newClaudeRunner() localRunner {
 	return newLocalRunner(
 		Descriptor{ID: "claude", Label: "Claude Code", Binary: "claude", Description: "Anthropic Claude Code CLI"},
 		func(req Request, outputFile string) []string {
-			args := []string{"-p", "--permission-mode", "plan", "--add-dir", req.Workspace}
+			args := []string{"-p", "--permission-mode", "bypassPermissions", "--dangerously-skip-permissions", "--add-dir", req.Workspace}
 			if model := strings.TrimSpace(req.Model); model != "" {
 				args = append(args, "--model", model)
 			}
 			return append(args, buildPrompt(req))
 		},
+		nil,
 		claudeCodeModelList,
 	)
 }
@@ -137,23 +142,31 @@ func newOpenCodeRunner() localRunner {
 	return newLocalRunner(
 		Descriptor{ID: "opencode", Label: "OpenCode", Binary: "opencode", Description: "OpenCode local agent CLI"},
 		func(req Request, outputFile string) []string {
-			args := []string{"run", "--dir", req.Workspace}
+			args := []string{"run", "--dir", req.Workspace, "--format", "json"}
 			if model := strings.TrimSpace(req.Model); model != "" {
 				args = append(args, "--model", model)
 			}
 			return append(args, buildPrompt(req))
 		},
+		func(req Request) []string {
+			return []string{
+				"OPENCODE_CONFIG_CONTENT={\"$schema\":\"https://opencode.ai/config.json\",\"permission\":\"allow\"}",
+			}
+		},
 		openCodeModelList,
 	)
 }
 
-func newLocalRunner(desc Descriptor, args func(Request, string) []string, models func(context.Context, Descriptor) ([]string, error)) localRunner {
+func newLocalRunner(desc Descriptor, args func(Request, string) []string, env func(Request) []string, models func(context.Context, Descriptor) ([]string, error)) localRunner {
 	path, err := exec.LookPath(desc.Binary)
 	if err == nil {
 		desc.Path = path
 		desc.Available = true
 	}
-	return localRunner{desc: desc, args: args, models: models, trimANSI: true}
+	if env == nil {
+		env = func(Request) []string { return nil }
+	}
+	return localRunner{desc: desc, args: args, env: env, models: models, trimANSI: true}
 }
 
 func (r localRunner) Descriptor() Descriptor {
@@ -176,8 +189,14 @@ func (r localRunner) Run(ctx context.Context, req Request) (Response, error) {
 	}
 	cmd := exec.CommandContext(ctx, r.desc.Path, r.args(req, outputFile)...)
 	cmd.Dir = req.Workspace
-	output, err := cmd.CombinedOutput()
-	text := strings.TrimSpace(string(output))
+	cmd.Env = append(os.Environ(), r.env(req)...)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	text := strings.TrimSpace(stdout.String())
+	errText := strings.TrimSpace(stderr.String())
 	if outputFile != "" {
 		if data, readErr := os.ReadFile(outputFile); readErr == nil && strings.TrimSpace(string(data)) != "" {
 			text = strings.TrimSpace(string(data))
@@ -185,8 +204,13 @@ func (r localRunner) Run(ctx context.Context, req Request) (Response, error) {
 	}
 	if r.trimANSI {
 		text = stripANSI(text)
+		errText = stripANSI(errText)
 	}
-	text = sanitizeCLIOutput(text)
+	text = sanitizeCLIOutput(r.desc.ID, text)
+	errText = sanitizeCLIOutput(r.desc.ID, errText)
+	if text == "" {
+		text = errText
+	}
 	resp := Response{
 		ConnectorID: r.desc.ID,
 		Output:      text,
@@ -202,8 +226,11 @@ func (r localRunner) Run(ctx context.Context, req Request) (Response, error) {
 	return resp, nil
 }
 
-func sanitizeCLIOutput(text string) string {
+func sanitizeCLIOutput(connectorID, text string) string {
 	text = strings.ReplaceAll(text, "\r\n", "\n")
+	if structured := extractStructuredCLIOutput(connectorID, text); structured != "" {
+		return structured
+	}
 	lines := strings.Split(text, "\n")
 	start := 0
 	for start < len(lines) {
@@ -220,7 +247,11 @@ func sanitizeCLIOutput(text string) string {
 		}
 		break
 	}
-	return strings.TrimSpace(strings.Join(lines[start:], "\n"))
+	text = strings.TrimSpace(strings.Join(lines[start:], "\n"))
+	if trimmed := extractTrailingAssistantReply(connectorID, text); trimmed != "" {
+		return trimmed
+	}
+	return text
 }
 
 func isCLIStatusLine(line string) bool {
@@ -232,6 +263,110 @@ func isCLIStatusLine(line string) bool {
 		return false
 	}
 	return strings.Contains(body, " · ") || strings.Contains(body, " • ")
+}
+
+func extractStructuredCLIOutput(connectorID, text string) string {
+	if !strings.EqualFold(connectorID, "opencode") {
+		return ""
+	}
+	var b strings.Builder
+	parsed := false
+	for _, raw := range strings.Split(text, "\n") {
+		line := strings.TrimSpace(raw)
+		if line == "" || !strings.HasPrefix(line, "{") {
+			continue
+		}
+		var event map[string]any
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			continue
+		}
+		parsed = true
+		kind := strings.ToLower(strings.TrimSpace(jsonString(event["type"])))
+		if !isStructuredTextEvent(kind, event) {
+			continue
+		}
+		b.WriteString(strings.Join(collectStructuredText(event), ""))
+	}
+	if !parsed {
+		return ""
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func isStructuredTextEvent(kind string, event map[string]any) bool {
+	if kind == "" {
+		return false
+	}
+	switch {
+	case strings.Contains(kind, "tool"), strings.Contains(kind, "step"), strings.Contains(kind, "think"), strings.Contains(kind, "error"):
+		return false
+	case kind == "text", strings.Contains(kind, "text"):
+		return true
+	case kind == "message", strings.Contains(kind, "message"), kind == "assistant", strings.Contains(kind, "assistant"):
+		role := strings.ToLower(strings.TrimSpace(jsonString(event["role"])))
+		return role == "" || role == "assistant"
+	default:
+		return false
+	}
+}
+
+func collectStructuredText(value any) []string {
+	orderedKeys := []string{"text", "delta", "value", "body", "content", "contents", "part", "parts", "message", "messages"}
+	switch v := value.(type) {
+	case map[string]any:
+		parts := make([]string, 0, len(v))
+		for _, key := range orderedKeys {
+			for rawKey, nested := range v {
+				if !strings.EqualFold(strings.TrimSpace(rawKey), key) {
+					continue
+				}
+				parts = append(parts, collectStructuredText(nested)...)
+			}
+		}
+		return parts
+	case []any:
+		parts := make([]string, 0, len(v))
+		for _, item := range v {
+			parts = append(parts, collectStructuredText(item)...)
+		}
+		return parts
+	case string:
+		if strings.TrimSpace(v) == "" {
+			return nil
+		}
+		return []string{v}
+	default:
+		return nil
+	}
+}
+
+func jsonString(value any) string {
+	text, _ := value.(string)
+	return text
+}
+
+func extractTrailingAssistantReply(connectorID, text string) string {
+	if !strings.EqualFold(connectorID, "opencode") {
+		return ""
+	}
+	lines := strings.Split(text, "\n")
+	lastTrace := -1
+	for i, raw := range lines {
+		if isOpenCodeTraceLine(strings.TrimSpace(raw)) {
+			lastTrace = i
+		}
+	}
+	if lastTrace < 0 || lastTrace >= len(lines)-1 {
+		return ""
+	}
+	return strings.TrimSpace(strings.Join(lines[lastTrace+1:], "\n"))
+}
+
+func isOpenCodeTraceLine(line string) bool {
+	if line == "" {
+		return false
+	}
+	return strings.HasPrefix(line, "% ") || strings.HasPrefix(line, "$ ") || strings.HasPrefix(line, "Error:")
 }
 
 func (r localRunner) Models(ctx context.Context) ([]string, error) {

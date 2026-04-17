@@ -93,6 +93,20 @@ func TestRenderLineChartUsesRequestedWidthAndRightAxis(t *testing.T) {
 	}
 }
 
+func TestRenderLineChartWithReferenceAddsHorizontalBaseline(t *testing.T) {
+	candles := []domain.Candle{
+		{Time: time.Now().AddDate(0, 0, -4), Close: -2},
+		{Time: time.Now().AddDate(0, 0, -3), Close: 1},
+		{Time: time.Now().AddDate(0, 0, -2), Close: -1},
+		{Time: time.Now().AddDate(0, 0, -1), Close: 2},
+	}
+
+	got := RenderLineChartWithReference(candles, 48, 8, 0)
+	if !strings.Contains(got, "┈") {
+		t.Fatal("expected chart to include a horizontal reference line")
+	}
+}
+
 func TestChartYStepShowsMorePriceLevels(t *testing.T) {
 	if got := chartYStep(9); got != 2 {
 		t.Fatalf("expected y step 2 for height 9, got %d", got)

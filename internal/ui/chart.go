@@ -41,6 +41,14 @@ func ChartPlotPad() int {
 }
 
 func RenderLineChart(candles []domain.Candle, width, height int) string {
+	return renderLineChart(candles, width, height, nil)
+}
+
+func RenderLineChartWithReference(candles []domain.Candle, width, height int, reference float64) string {
+	return renderLineChart(candles, width, height, &reference)
+}
+
+func renderLineChart(candles []domain.Candle, width, height int, reference *float64) string {
 	if len(candles) == 0 || width < 8 || height < 4 {
 		return "no chart data"
 	}
@@ -82,7 +90,11 @@ func RenderLineChart(candles []domain.Candle, width, height int) string {
 		chart.Push(point)
 	}
 	chart.DrawBraille()
-	return colorizePlot(addRightAxis(chart.View(), width, series[len(series)-1], minY, maxY, height), series, width)
+	plot := chart.View()
+	if reference != nil {
+		plot = addHorizontalReference(plot, bodyWidth, *reference, minY, maxY, height)
+	}
+	return colorizePlot(addRightAxis(plot, width, series[len(series)-1], minY, maxY, height), series, width)
 }
 
 func chartYStep(height int) int {
@@ -297,6 +309,28 @@ func colorizePlot(plot string, series []float64, totalWidth int) string {
 		}
 		lines[i] = b.String()
 	}
+	return strings.Join(lines, "\n")
+}
+
+func addHorizontalReference(plot string, bodyWidth int, reference, minY, maxY float64, height int) string {
+	if maxY <= minY || reference < minY || reference > maxY {
+		return plot
+	}
+	lines := strings.Split(plot, "\n")
+	if len(lines) == 0 {
+		return plot
+	}
+	row := chartPriceRow(reference, minY, maxY, height, len(lines))
+	if row < 0 || row >= len(lines) {
+		return plot
+	}
+	runes := []rune(lines[row])
+	for x := chartPlotPad; x < min(len(runes), bodyWidth); x++ {
+		if unicodeIsSpace(runes[x]) {
+			runes[x] = '┈'
+		}
+	}
+	lines[row] = string(runes)
 	return strings.Join(lines, "\n")
 }
 
