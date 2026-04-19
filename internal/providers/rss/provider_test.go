@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"strings"
 	"testing"
 	"time"
@@ -134,6 +135,60 @@ func TestGetMarketNewsUsesCacheAfterFirstFetch(t *testing.T) {
 	}
 	if hits != 1 {
 		t.Fatalf("expected one network fetch due to cache, got %d", hits)
+	}
+}
+
+func TestGetMarketNewsHonorsSourceMaxItems(t *testing.T) {
+	now := time.Now().UTC()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?>
+			<rss version="2.0">
+			  <channel>
+			    <title>Wire</title>
+			    <item>
+			      <guid>story-1</guid>
+			      <title>Oil rises as traders watch OPEC output</title>
+			      <link>https://example.com/story-1</link>
+			      <pubDate>%s</pubDate>
+			    </item>
+			    <item>
+			      <guid>story-2</guid>
+			      <title>Gold slips as dollar steadies</title>
+			      <link>https://example.com/story-2</link>
+			      <pubDate>%s</pubDate>
+			    </item>
+			    <item>
+			      <guid>story-3</guid>
+			      <title>Treasury yields ease after inflation data</title>
+			      <link>https://example.com/story-3</link>
+			      <pubDate>%s</pubDate>
+			    </item>
+			  </channel>
+			</rss>`,
+			now.Add(-1*time.Minute).Format(time.RFC1123Z),
+			now.Add(-2*time.Minute).Format(time.RFC1123Z),
+			now.Add(-3*time.Minute).Format(time.RFC1123Z),
+		)
+	}))
+	defer server.Close()
+
+	provider := New(Config{
+		Client: server.Client(),
+		Cache:  storage.NewMemoryCache(),
+		Sources: []FeedSource{
+			{Name: "Yahoo Finance", URL: server.URL, MaxItems: 2},
+		},
+	})
+
+	items, err := provider.GetMarketNews(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected source max item cap to keep 2 items, got %d", len(items))
+	}
+	if items[0].Title != "Oil rises as traders watch OPEC output" || items[1].Title != "Gold slips as dollar steadies" {
+		t.Fatalf("unexpected capped items %+v", items)
 	}
 }
 
@@ -282,6 +337,169 @@ func TestMarketNewsSourcesReturnsConfiguredNames(t *testing.T) {
 	}
 }
 
+func TestMarketNewsSourcesDeduplicatesAliasesAndSourceNames(t *testing.T) {
+	provider := New(Config{
+		Sources: []FeedSource{
+			{Name: "Google News Wire", URL: "https://example.com/google.xml", Aliases: []string{"Reuters", "AP", "CNBC"}},
+			{Name: "Google News Breaking Wire", URL: "https://example.com/google-breaking.xml", Aliases: []string{"Reuters", "AP"}},
+			{Name: "CNBC", URL: "https://example.com/cnbc.xml"},
+			{Name: "Bloomberg", URL: "https://example.com/bloomberg.xml"},
+		},
+	})
+
+	got := provider.MarketNewsSources()
+	if len(got) != 4 {
+		t.Fatalf("expected 4 unique source names, got %d", len(got))
+	}
+	if got[0].Name != "Reuters" || got[1].Name != "AP" || got[2].Name != "CNBC" || got[3].Name != "Bloomberg" {
+		t.Fatalf("unexpected deduplicated source catalog %+v", got)
+	}
+}
+
+func TestDefaultSourcesIncludeReutersAPBreakingWire(t *testing.T) {
+	sources := DefaultSources()
+
+	var breaking FeedSource
+	for _, source := range sources {
+		if source.Name == "Google News Breaking Wire" {
+			breaking = source
+			break
+		}
+	}
+	if breaking.Name == "" {
+		t.Fatal("expected Google News Breaking Wire default source")
+	}
+	if len(breaking.Aliases) != 2 || breaking.Aliases[0] != "Reuters" || breaking.Aliases[1] != "AP" {
+		t.Fatalf("unexpected breaking aliases %+v", breaking.Aliases)
+	}
+
+	parsed, err := neturl.Parse(breaking.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := parsed.Query().Get("q")
+	for _, want := range []string{"site:reuters.com", "site:apnews.com", "hormuz", "shipping", "sanctions"} {
+		if !strings.Contains(query, want) {
+			t.Fatalf("expected breaking query %q to contain %q", query, want)
+		}
+	}
+}
+
+func TestDefaultSourcesIncludeGlobalAlertsWire(t *testing.T) {
+	sources := DefaultSources()
+
+	var global FeedSource
+	for _, source := range sources {
+		if source.Name == "Google News Global Alerts" {
+			global = source
+			break
+		}
+	}
+	if global.Name == "" {
+		t.Fatal("expected Google News Global Alerts default source")
+	}
+
+	parsed, err := neturl.Parse(global.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := parsed.Query().Get("q")
+	for _, want := range []string{"site:reuters.com", "site:apnews.com", "site:bbc.com", "war", "sanctions", "default"} {
+		if !strings.Contains(query, want) {
+			t.Fatalf("expected global alerts query %q to contain %q", query, want)
+		}
+	}
+}
+
+func TestDefaultSourcesIncludeYahooFinanceDirectWire(t *testing.T) {
+	sources := DefaultSources()
+
+	var yahoo FeedSource
+	for _, source := range sources {
+		if source.Name == "Yahoo Finance" {
+			yahoo = source
+			break
+		}
+	}
+	if yahoo.Name == "" {
+		t.Fatal("expected Yahoo Finance default source")
+	}
+	if yahoo.MaxItems != 24 {
+		t.Fatalf("expected Yahoo Finance source cap 24, got %d", yahoo.MaxItems)
+	}
+
+	parsed, err := neturl.Parse(yahoo.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := parsed.Query().Get("q")
+	for _, want := range []string{"site:finance.yahoo.com", "when:2d"} {
+		if !strings.Contains(query, want) {
+			t.Fatalf("expected Yahoo query %q to contain %q", query, want)
+		}
+	}
+}
+
+func TestDefaultSourcesIncludeAdvisorPerspectives(t *testing.T) {
+	sources := DefaultSources()
+
+	var advisor FeedSource
+	for _, source := range sources {
+		if source.Name == "Advisor Perspectives" {
+			advisor = source
+			break
+		}
+	}
+	if advisor.Name == "" {
+		t.Fatal("expected Advisor Perspectives default source")
+	}
+	if advisor.URL != "https://www.advisorperspectives.com/commentaries.rss" {
+		t.Fatalf("unexpected Advisor Perspectives URL %q", advisor.URL)
+	}
+}
+
+func TestDefaultSourcesIncludeGuardianFeeds(t *testing.T) {
+	sources := DefaultSources()
+
+	var business FeedSource
+	var world FeedSource
+	for _, source := range sources {
+		switch source.Name {
+		case "Guardian Business":
+			business = source
+		case "Guardian World":
+			world = source
+		}
+	}
+	if business.Name == "" || world.Name == "" {
+		t.Fatalf("expected Guardian default sources, got business=%q world=%q", business.Name, world.Name)
+	}
+	if business.URL != "https://www.theguardian.com/uk/business/rss" {
+		t.Fatalf("unexpected Guardian Business URL %q", business.URL)
+	}
+	if world.URL != "https://www.theguardian.com/world/rss" {
+		t.Fatalf("unexpected Guardian World URL %q", world.URL)
+	}
+}
+
+func TestDefaultSourcesIncludeBBCWorld(t *testing.T) {
+	sources := DefaultSources()
+
+	var world FeedSource
+	for _, source := range sources {
+		if source.Name == "BBC World" {
+			world = source
+			break
+		}
+	}
+	if world.Name == "" {
+		t.Fatal("expected BBC World default source")
+	}
+	if world.URL != "https://feeds.bbci.co.uk/news/world/rss.xml" {
+		t.Fatalf("unexpected BBC World URL %q", world.URL)
+	}
+}
+
 func TestDedupeAndSortNewsDropsExactTitleDuplicatesAcrossSources(t *testing.T) {
 	now := time.Now().UTC()
 	items := []domain.NewsItem{
@@ -383,5 +601,11 @@ func TestNormalizePublisherNameCollapsesAPNews(t *testing.T) {
 	}
 	if got := normalizePublisherName("Associated Press"); got != "AP" {
 		t.Fatalf("expected Associated Press to collapse to AP, got %q", got)
+	}
+	if got := normalizePublisherName("BBC News"); got != "BBC" {
+		t.Fatalf("expected BBC News to collapse to BBC, got %q", got)
+	}
+	if got := normalizePublisherName("The Guardian"); got != "Guardian" {
+		t.Fatalf("expected The Guardian to collapse to Guardian, got %q", got)
 	}
 }

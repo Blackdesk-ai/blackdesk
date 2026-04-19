@@ -1,0 +1,25 @@
+//@version=5
+indicator("Annualized ROC / HV Ratios", shorttitle="ROC_HV_Ratios", overlay=false)
+
+useLogReturns = input.bool(true, "Use log returns for HV")
+
+dailyClose = request.security(syminfo.tickerid, "D", close)
+dailyReturn = useLogReturns ? math.log(dailyClose / dailyClose[1]) : (dailyClose / dailyClose[1] - 1.0)
+
+annualizedRoc(len) =>
+    math.pow(dailyClose / dailyClose[len], 252.0 / len) - 1.0
+
+annualizedHv(len) =>
+    ta.stdev(dailyReturn, len) * math.sqrt(252.0)
+
+roc252 = annualizedRoc(252) * 100.0
+hv252 = annualizedHv(252) * 100.0
+ratio252 = hv252 != 0 ? roc252 / hv252 : na
+
+roc63 = annualizedRoc(63) * 100.0
+hv63 = annualizedHv(63) * 100.0
+ratio63 = hv63 != 0 ? roc63 / hv63 : na
+
+plot(ratio252, title="ROC252 / HV252", color=color.new(color.blue, 0), linewidth=2)
+plot(ratio63, title="ROC63 / HV63", color=color.new(color.orange, 0), linewidth=1)
+hline(0, "Level 0", color=color.new(color.white, 0), linestyle=hline.style_dashed)

@@ -35,7 +35,7 @@ func FilterRecentMarketNews(items []domain.NewsItem, now time.Time) []domain.New
 	if len(items) == 0 {
 		return nil
 	}
-	cutoff := now.Add(-24 * time.Hour)
+	cutoff := now.Add(-48 * time.Hour)
 	filtered := make([]domain.NewsItem, 0, len(items))
 	for _, item := range items {
 		if item.Time.IsZero() || item.Time.After(cutoff) {
@@ -54,8 +54,8 @@ func MarketNewsIdentity(item domain.NewsItem) string {
 
 func MergeMarketNews(input MarketNewsMergeInput) MarketNewsMergeResult {
 	nextItems := FilterRecentMarketNews(input.IncomingItems, input.Now)
-	if len(nextItems) > 50 {
-		nextItems = nextItems[:50]
+	if len(nextItems) > 80 {
+		nextItems = nextItems[:80]
 	}
 
 	result := MarketNewsMergeResult{
