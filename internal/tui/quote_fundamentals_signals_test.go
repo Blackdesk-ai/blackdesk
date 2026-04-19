@@ -24,11 +24,12 @@ func TestImpliedEPSGrowthEstimateTextRequiresTrailingAndForwardPE(t *testing.T) 
 }
 
 func TestQuoteFundamentalsProfitabilityRowsStylesGrowthValues(t *testing.T) {
-	rows := quoteFundamentalsProfitabilityRows(domain.FundamentalsSnapshot{
+	rows := quoteFundamentalsProfitabilityRows(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
 		RevenueGrowth:  0.08,
 		EarningsGrowth: -0.03,
 		TrailingPE:     30,
 		ForwardPE:      24,
+		PEGRatio:       2,
 	})
 
 	if rows[6].name != "Rev growth" || !rows[6].styled || rows[6].move <= 0 {
@@ -39,6 +40,9 @@ func TestQuoteFundamentalsProfitabilityRowsStylesGrowthValues(t *testing.T) {
 	}
 	if rows[8].name != "Fwd Growth" || !rows[8].styled || rows[8].move <= 0 {
 		t.Fatalf("expected forward growth row to be positively styled, got %+v", rows[8])
+	}
+	if rows[9].name != "5y Growth" || !rows[9].styled || rows[9].move <= 0 {
+		t.Fatalf("expected 5y growth row to be positively styled, got %+v", rows[9])
 	}
 }
 
@@ -59,6 +63,76 @@ func TestEarningsYieldValueFallsBackToEPSOverPrice(t *testing.T) {
 	}
 	if got != 0.04 {
 		t.Fatalf("expected 4%% earnings yield, got %.6f", got)
+	}
+}
+
+func TestForwardEarningsYieldValueUsesForwardPE(t *testing.T) {
+	got, ok := forwardEarningsYieldValue(domain.FundamentalsSnapshot{ForwardPE: 25})
+	if !ok {
+		t.Fatal("expected forward earnings yield from forward pe")
+	}
+	if got != 0.04 {
+		t.Fatalf("expected 4%% forward earnings yield, got %.6f", got)
+	}
+}
+
+func TestFiveYearGrowthEstimateUsesTrailingPEOverPEG(t *testing.T) {
+	got, ok := fiveYearGrowthEstimate(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		TrailingPE: 30,
+		PEGRatio:   2,
+	})
+	if !ok {
+		t.Fatal("expected 5y growth from trailing pe and peg")
+	}
+	if got != 0.15 {
+		t.Fatalf("expected 15%% 5y growth, got %.6f", got)
+	}
+}
+
+func TestFiveYearGrowthEstimateFallsBackToQuotePEG(t *testing.T) {
+	got, ok := fiveYearGrowthEstimate(domain.QuoteSnapshot{TrailingPEGRatio: 2.5}, domain.FundamentalsSnapshot{
+		TrailingPE: 25,
+	})
+	if !ok {
+		t.Fatal("expected 5y growth fallback from quote peg")
+	}
+	if got != 0.10 {
+		t.Fatalf("expected 10%% 5y growth, got %.6f", got)
+	}
+}
+
+func TestQuoteFundamentalsValuationRowsIncludeForwardEarningsYieldAfterEarningsYield(t *testing.T) {
+	rows := quoteFundamentalsValuationRows(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		TrailingPE: 20,
+		ForwardPE:  16,
+	})
+
+	if rows[4].name != "Earn. Yield" {
+		t.Fatalf("expected earnings yield row at index 4, got %+v", rows[4])
+	}
+	if rows[5].name != "FwdEarn. Yield" {
+		t.Fatalf("expected forward earnings yield row after earnings yield, got %+v", rows[5])
+	}
+	if rows[5].price != "6.25%" {
+		t.Fatalf("expected forward earnings yield to render from forward pe, got %+v", rows[5])
+	}
+}
+
+func TestQuoteFundamentalsProfitabilityRowsIncludeFiveYearGrowthAfterForwardGrowth(t *testing.T) {
+	rows := quoteFundamentalsProfitabilityRows(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		TrailingPE: 30,
+		ForwardPE:  24,
+		PEGRatio:   2,
+	})
+
+	if rows[8].name != "Fwd Growth" {
+		t.Fatalf("expected forward growth row at index 8, got %+v", rows[8])
+	}
+	if rows[9].name != "5y Growth" {
+		t.Fatalf("expected 5y growth row after forward growth, got %+v", rows[9])
+	}
+	if rows[9].price != "15.00%" {
+		t.Fatalf("expected 5y growth to render from pe over peg, got %+v", rows[9])
 	}
 }
 

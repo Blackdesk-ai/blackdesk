@@ -11,13 +11,15 @@ func quoteFundamentalsValuationRows(quote domain.QuoteSnapshot, f domain.Fundame
 		marketCap = quote.MarketCap
 	}
 	earningsYield, earningsYieldOK := earningsYieldValue(quote, f)
+	forwardEarningsYield, forwardEarningsYieldOK := forwardEarningsYieldValue(f)
 	fcfYield, fcfYieldOK := fcfYieldValue(quote, f)
 	return []marketTableRow{
 		{name: "Market cap", price: ui.FormatCompactInt(marketCap), chg: "", move: 0, styled: false},
 		{name: "Ent value", price: formatCompactIntDash(f.EnterpriseValue), chg: "", move: 0, styled: false},
 		{name: "Trailing PE", price: formatMetricFloat(f.TrailingPE), chg: "", move: 0, styled: false},
-		{name: "Forward PE", price: formatMetricFloat(f.ForwardPE), chg: "", move: 0, styled: false},
-		{name: "Earnings Yield", price: formatOptionalPercent(earningsYield, earningsYieldOK), chg: "", move: earningsYield, styled: earningsYieldOK && earningsYield != 0},
+		{name: "Fwd. PE", price: formatMetricFloat(f.ForwardPE), chg: "", move: 0, styled: false},
+		{name: "Earn. Yield", price: formatOptionalPercent(earningsYield, earningsYieldOK), chg: "", move: earningsYield, styled: earningsYieldOK && earningsYield != 0},
+		{name: "FwdEarn. Yield", price: formatOptionalPercent(forwardEarningsYield, forwardEarningsYieldOK), chg: "", move: forwardEarningsYield, styled: forwardEarningsYieldOK && forwardEarningsYield != 0},
 		{name: "FCF Yield", price: formatOptionalPercent(fcfYield, fcfYieldOK), chg: "", move: fcfYield, styled: fcfYieldOK && fcfYield != 0},
 		{name: "PEG", price: formatMetricFloat(pegRatioValue(quote, f)), chg: "", move: 0, styled: false},
 		{name: "P/B", price: formatMetricFloat(f.PriceToBook), chg: "", move: 0, styled: false},
@@ -27,8 +29,9 @@ func quoteFundamentalsValuationRows(quote domain.QuoteSnapshot, f domain.Fundame
 	}
 }
 
-func quoteFundamentalsProfitabilityRows(f domain.FundamentalsSnapshot) []marketTableRow {
+func quoteFundamentalsProfitabilityRows(quote domain.QuoteSnapshot, f domain.FundamentalsSnapshot) []marketTableRow {
 	impliedGrowth, impliedGrowthOK := impliedEPSGrowthEstimate(f)
+	fiveYearGrowth, fiveYearGrowthOK := fiveYearGrowthEstimate(quote, f)
 	return []marketTableRow{
 		{name: "Gross margin", price: percentDash(f.GrossMargins), chg: "", move: 0, styled: false},
 		{name: "Operating", price: percentDash(f.OperatingMargins), chg: "", move: 0, styled: false},
@@ -39,6 +42,7 @@ func quoteFundamentalsProfitabilityRows(f domain.FundamentalsSnapshot) []marketT
 		{name: "Rev growth", price: percentDash(f.RevenueGrowth), chg: "", move: f.RevenueGrowth, styled: f.RevenueGrowth != 0},
 		{name: "EPS growth", price: percentDash(f.EarningsGrowth), chg: "", move: f.EarningsGrowth, styled: f.EarningsGrowth != 0},
 		{name: "Fwd Growth", price: impliedEPSGrowthEstimateText(f), chg: "", move: impliedGrowth, styled: impliedGrowthOK && impliedGrowth != 0},
+		{name: "5y Growth", price: formatOptionalPercent(fiveYearGrowth, fiveYearGrowthOK), chg: "", move: fiveYearGrowth, styled: fiveYearGrowthOK && fiveYearGrowth != 0},
 	}
 }
 

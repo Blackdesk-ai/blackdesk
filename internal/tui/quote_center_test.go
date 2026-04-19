@@ -362,8 +362,8 @@ func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t 
 	if strings.Count(view, "Name") != 5 || strings.Count(view, "Value") != 5 {
 		t.Fatal("expected wide fundamentals layout to render valuation plus two split cards")
 	}
-	if !strings.Contains(view, "Earnings Yield") {
-		t.Fatal("expected valuation card to include earnings yield")
+	if !strings.Contains(view, "Earn. Yield") {
+		t.Fatal("expected valuation card to include renamed earnings yield label")
 	}
 	if !strings.Contains(view, "QARP Score") || !strings.Contains(view, "1.35") {
 		t.Fatal("expected wide fundamentals layout to render separate qarp score without percent sign")

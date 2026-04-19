@@ -14,7 +14,7 @@ const fundamentalsColumnGap = 2
 func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, width, height int) string {
 	gap := 2
 	financialLeft, financialRight := splitFinancialFundamentalsRows(quoteFundamentalsFinancialRows(fundamentals))
-	profitabilityLeft, profitabilityRight := splitFundamentalsRows(quoteFundamentalsProfitabilityRows(fundamentals))
+	profitabilityLeft, profitabilityRight := splitFundamentalsRows(quoteFundamentalsProfitabilityRows(quote, fundamentals))
 	leftDesired, rightDesired := fundamentalsGridDesiredWidths(quote, fundamentals, profitabilityLeft, profitabilityRight, financialLeft, financialRight)
 	if width < 60 {
 		return renderQuoteFundamentalsStacked(section, label, muted, quote, fundamentals, width, height)
@@ -35,7 +35,7 @@ func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote dom
 }
 
 func renderQuoteFundamentalsStacked(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, width, height int) string {
-	profitabilityRows := quoteFundamentalsProfitabilityRows(fundamentals)
+	profitabilityRows := quoteFundamentalsProfitabilityRows(quote, fundamentals)
 	financialRows := quoteFundamentalsFinancialRows(fundamentals)
 	cards := []string{
 		renderQuoteFundamentalsValuationBlock(section, label, muted, width, quote, fundamentals),

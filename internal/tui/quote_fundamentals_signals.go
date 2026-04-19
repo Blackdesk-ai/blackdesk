@@ -67,6 +67,13 @@ func earningsYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (
 	return eps / q.Price, true
 }
 
+func forwardEarningsYieldValue(f domain.FundamentalsSnapshot) (float64, bool) {
+	if f.ForwardPE == 0 {
+		return 0, false
+	}
+	return 1 / f.ForwardPE, true
+}
+
 func fcfYieldValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
 	marketCap := f.MarketCap
 	if marketCap == 0 {
@@ -102,6 +109,14 @@ func impliedEPSGrowthEstimate(f domain.FundamentalsSnapshot) (float64, bool) {
 		return 0, false
 	}
 	return f.TrailingPE/f.ForwardPE - 1, true
+}
+
+func fiveYearGrowthEstimate(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	peg := pegRatioValue(q, f)
+	if f.TrailingPE == 0 || peg == 0 {
+		return 0, false
+	}
+	return (f.TrailingPE / peg) / 100, true
 }
 
 func impliedEPSGrowthEstimateText(f domain.FundamentalsSnapshot) string {
