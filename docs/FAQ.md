@@ -134,6 +134,12 @@ It is color-coded by threshold:
 - `40% - 60%` very good
 - `> 60%` exceptional
 
+## What is N5Y Growth?
+
+`N5Y Growth` is the implied next-5-year EPS growth proxy shown in the `Quote` fundamentals view.
+Blackdesk derives it from `PE / PEG`.
+Treat it as a forward heuristic tied to valuation assumptions, not as a historical 5-year growth rate.
+
 ## Why is a feature unavailable in my current view?
 
 Some actions are workspace-specific.

@@ -190,6 +190,8 @@ Quote fundamentals note:
 - It is a fast composite signal shown under the `Valuation` block in `Fundamentals`.
 - Blackdesk calculates it as `Earnings Yield x ROIC`.
 - `Earnings Yield` is derived from trailing PE when available, with EPS over price as fallback.
+- `Fwd Growth` is the market-implied next-period EPS growth inferred from trailing PE versus forward PE.
+- `N5Y Growth` is the implied next-5-year EPS growth proxy derived from `PE / PEG`. Treat it as a forward heuristic, not a historical 5-year growth rate.
 - `ROIC` is return on invested capital.
 - If either `Earnings Yield` or `ROIC` is negative, the score is forced negative so weak fundamentals cannot display as a strong positive result.
 - The value is displayed as a plain number instead of a percent. Example: `1.35` means the multiplied result scaled for readability in the UI.

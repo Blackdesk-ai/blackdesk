@@ -42,7 +42,7 @@ func quoteFundamentalsProfitabilityRows(quote domain.QuoteSnapshot, f domain.Fun
 		{name: "Rev growth", price: percentDash(f.RevenueGrowth), chg: "", move: f.RevenueGrowth, styled: f.RevenueGrowth != 0},
 		{name: "EPS growth", price: percentDash(f.EarningsGrowth), chg: "", move: f.EarningsGrowth, styled: f.EarningsGrowth != 0},
 		{name: "Fwd Growth", price: impliedEPSGrowthEstimateText(f), chg: "", move: impliedGrowth, styled: impliedGrowthOK && impliedGrowth != 0},
-		{name: "5y Growth", price: formatOptionalPercent(fiveYearGrowth, fiveYearGrowthOK), chg: "", move: fiveYearGrowth, styled: fiveYearGrowthOK && fiveYearGrowth != 0},
+		{name: "N5Y Growth", price: formatOptionalPercent(fiveYearGrowth, fiveYearGrowthOK), chg: "", move: fiveYearGrowth, styled: fiveYearGrowthOK && fiveYearGrowth != 0},
 	}
 }
 
