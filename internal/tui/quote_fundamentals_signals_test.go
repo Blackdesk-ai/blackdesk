@@ -41,8 +41,8 @@ func TestQuoteFundamentalsProfitabilityRowsStylesGrowthValues(t *testing.T) {
 	if rows[8].name != "Fwd Growth" || !rows[8].styled || rows[8].move <= 0 {
 		t.Fatalf("expected forward growth row to be positively styled, got %+v", rows[8])
 	}
-	if rows[9].name != "5y Growth" || !rows[9].styled || rows[9].move <= 0 {
-		t.Fatalf("expected 5y growth row to be positively styled, got %+v", rows[9])
+	if rows[9].name != "N5Y Growth" || !rows[9].styled || rows[9].move <= 0 {
+		t.Fatalf("expected n5y growth row to be positively styled, got %+v", rows[9])
 	}
 }
 
@@ -128,11 +128,11 @@ func TestQuoteFundamentalsProfitabilityRowsIncludeFiveYearGrowthAfterForwardGrow
 	if rows[8].name != "Fwd Growth" {
 		t.Fatalf("expected forward growth row at index 8, got %+v", rows[8])
 	}
-	if rows[9].name != "5y Growth" {
-		t.Fatalf("expected 5y growth row after forward growth, got %+v", rows[9])
+	if rows[9].name != "N5Y Growth" {
+		t.Fatalf("expected n5y growth row after forward growth, got %+v", rows[9])
 	}
 	if rows[9].price != "15.00%" {
-		t.Fatalf("expected 5y growth to render from pe over peg, got %+v", rows[9])
+		t.Fatalf("expected n5y growth to render from pe over peg, got %+v", rows[9])
 	}
 }
 
