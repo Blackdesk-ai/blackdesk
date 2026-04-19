@@ -23,7 +23,7 @@ import (
 const (
 	defaultTimeout  = 12 * time.Second
 	defaultTTL      = 20 * time.Second
-	defaultMaxItems = 80
+	defaultMaxItems = 120
 	defaultUA       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
 	maxFeedBodySize = 2 << 20
 )
@@ -34,13 +34,17 @@ var marketNewsIncludeTerms = []string{
 	"bond",
 	"bonds",
 	"central bank",
+	"china",
 	"commodities",
 	"commodity",
+	"conflict",
 	"cpi",
 	"crude",
 	"currency",
 	"currencies",
 	"dollar",
+	"euro",
+	"energy",
 	"earnings",
 	"economy",
 	"economic",
@@ -48,38 +52,133 @@ var marketNewsIncludeTerms = []string{
 	"equity",
 	"etf",
 	"fed",
+	"fiscal",
 	"fomc",
 	"forex",
 	"futures",
 	"gdp",
+	"geopolitical",
+	"geopolitics",
 	"gold",
+	"hormuz",
 	"inflation",
 	"interest rate",
 	"ipo",
+	"jobs",
 	"jobs report",
 	"labor market",
+	"lng",
 	"macro",
 	"market",
 	"markets",
+	"middle east",
+	"missile",
+	"natural gas",
 	"nasdaq",
 	"opec",
 	"oil",
+	"output",
 	"payrolls",
 	"pce",
 	"policy rate",
+	"powell",
 	"rates",
+	"red sea",
 	"recession",
+	"shipping lanes",
 	"s&p",
+	"sanction",
+	"sanctions",
 	"shares",
+	"shipping",
+	"sterling",
 	"stocks",
+	"strait",
+	"strait of hormuz",
+	"supply chain",
 	"tariff",
+	"tankers",
+	"trade",
+	"trade war",
 	"treasury",
 	"treasuries",
 	"unemployment",
+	"yuan",
 	"vix",
 	"wall street",
+	"war",
 	"yield",
 	"yields",
+}
+
+var defaultGoogleNewsWireSites = []string{
+	"reuters.com",
+	"apnews.com",
+	"ft.com",
+	"cnbc.com",
+	"wsj.com",
+}
+
+var defaultGoogleNewsWireTopics = []string{
+	"markets",
+	"economy",
+	"stocks",
+	"bonds",
+	"yields",
+	"oil",
+	"currencies",
+	"fed",
+	"tariffs",
+}
+
+var breakingGoogleNewsWireTopics = []string{
+	"breaking",
+	"oil",
+	"energy",
+	"shipping",
+	"strait",
+	"strait of hormuz",
+	"hormuz",
+	"red sea",
+	"middle east",
+	"sanctions",
+	"war",
+	"conflict",
+	"attack",
+	"missile",
+	"military",
+	"opec",
+	"supply chain",
+	"tariffs",
+}
+
+var globalAlertGoogleNewsSites = []string{
+	"reuters.com",
+	"apnews.com",
+	"ft.com",
+	"wsj.com",
+	"cnbc.com",
+	"bbc.com",
+	"theguardian.com",
+}
+
+var globalAlertGoogleNewsTopics = []string{
+	"breaking",
+	"war",
+	"conflict",
+	"sanctions",
+	"tariffs",
+	"central bank",
+	"fed",
+	"inflation",
+	"rates",
+	"yields",
+	"oil",
+	"shipping",
+	"strait",
+	"hormuz",
+	"debt",
+	"default",
 }
 
 var marketNewsExcludeTerms = []string{
@@ -113,9 +212,10 @@ var marketNewsExcludeTerms = []string{
 }
 
 type FeedSource struct {
-	Name    string
-	URL     string
-	Aliases []string
+	Name     string
+	URL      string
+	Aliases  []string
+	MaxItems int
 }
 
 type Config struct {
@@ -178,21 +278,49 @@ func DefaultSources() []FeedSource {
 	return []FeedSource{
 		{
 			Name: "Google News Wire",
-			URL:  googleNewsSearchFeed(`(site:reuters.com OR site:apnews.com OR site:ft.com OR site:finance.yahoo.com OR site:cnbc.com OR site:wsj.com) (markets OR economy OR stocks OR bonds OR yields OR oil OR currencies OR fed OR tariffs) when:2d`),
+			URL:  googleNewsSearchFeed(googleNewsSiteQuery(defaultGoogleNewsWireSites, defaultGoogleNewsWireTopics, "2d")),
 			Aliases: []string{
 				"Reuters",
 				"AP",
 				"Financial Times",
-				"Yahoo Finance",
 				"CNBC",
 				"WSJ",
 			},
 		},
+		{
+			Name: "Google News Breaking Wire",
+			URL:  googleNewsSearchFeed(googleNewsSiteQuery([]string{"reuters.com", "apnews.com"}, breakingGoogleNewsWireTopics, "2d")),
+			Aliases: []string{
+				"Reuters",
+				"AP",
+			},
+		},
+		{
+			Name: "Google News Global Alerts",
+			URL:  googleNewsSearchFeed(googleNewsSiteQuery(globalAlertGoogleNewsSites, globalAlertGoogleNewsTopics, "2d")),
+			Aliases: []string{
+				"Reuters",
+				"AP",
+				"BBC",
+				"Financial Times",
+				"CNBC",
+				"WSJ",
+			},
+		},
+		{
+			Name:     "Yahoo Finance",
+			URL:      googleNewsSearchFeed(googleNewsSiteQuery([]string{"finance.yahoo.com"}, nil, "2d")),
+			MaxItems: 24,
+		},
+		{Name: "Advisor Perspectives", URL: "https://www.advisorperspectives.com/commentaries.rss"},
+		{Name: "Guardian Business", URL: "https://www.theguardian.com/uk/business/rss"},
+		{Name: "Guardian World", URL: "https://www.theguardian.com/world/rss"},
 		{Name: "Bloomberg", URL: "https://feeds.bloomberg.com/markets/news.rss"},
 		{Name: "CNBC", URL: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"},
 		{Name: "MarketWatch", URL: "https://feeds.content.dowjones.io/public/rss/mw_topstories"},
 		{Name: "Investing.com", URL: "https://www.investing.com/rss/news.rss"},
 		{Name: "BBC", URL: "https://feeds.bbci.co.uk/news/business/rss.xml"},
+		{Name: "BBC World", URL: "https://feeds.bbci.co.uk/news/world/rss.xml"},
 		{Name: "Federal Reserve", URL: "https://www.federalreserve.gov/feeds/press_all.xml"},
 		{Name: "European Central Bank", URL: "https://www.ecb.europa.eu/rss/press.html"},
 		{Name: "Bank of England", URL: "https://www.bankofengland.co.uk/rss/news"},
@@ -208,6 +336,41 @@ func googleNewsSearchFeed(query string) string {
 	values.Set("gl", "US")
 	values.Set("ceid", "US:en")
 	return "https://news.google.com/rss/search?" + values.Encode()
+}
+
+func googleNewsSiteQuery(sites, topics []string, window string) string {
+	parts := make([]string, 0, 3)
+	if len(sites) > 0 {
+		siteTerms := make([]string, 0, len(sites))
+		for _, site := range sites {
+			site = strings.TrimSpace(site)
+			if site == "" {
+				continue
+			}
+			siteTerms = append(siteTerms, "site:"+site)
+		}
+		if len(siteTerms) > 0 {
+			parts = append(parts, "("+strings.Join(siteTerms, " OR ")+")")
+		}
+	}
+	if len(topics) > 0 {
+		topicTerms := make([]string, 0, len(topics))
+		for _, topic := range topics {
+			topic = strings.TrimSpace(topic)
+			if topic == "" {
+				continue
+			}
+			topicTerms = append(topicTerms, topic)
+		}
+		if len(topicTerms) > 0 {
+			parts = append(parts, "("+strings.Join(topicTerms, " OR ")+")")
+		}
+	}
+	window = strings.TrimSpace(window)
+	if window != "" {
+		parts = append(parts, "when:"+window)
+	}
+	return strings.Join(parts, " ")
 }
 
 func (p *Provider) GetMarketNews(ctx context.Context) ([]domain.NewsItem, error) {
@@ -255,6 +418,7 @@ func (p *Provider) MarketNewsSources() []domain.MarketNewsSource {
 		return nil
 	}
 	out := make([]domain.MarketNewsSource, 0, len(p.sources))
+	seen := make(map[string]struct{}, len(p.sources))
 	for _, source := range p.sources {
 		if len(source.Aliases) > 0 {
 			for _, alias := range source.Aliases {
@@ -262,6 +426,10 @@ func (p *Provider) MarketNewsSources() []domain.MarketNewsSource {
 				if name == "" {
 					continue
 				}
+				if _, ok := seen[name]; ok {
+					continue
+				}
+				seen[name] = struct{}{}
 				out = append(out, domain.MarketNewsSource{Name: name})
 			}
 			continue
@@ -270,6 +438,10 @@ func (p *Provider) MarketNewsSources() []domain.MarketNewsSource {
 		if name == "" {
 			continue
 		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
 		out = append(out, domain.MarketNewsSource{Name: name})
 	}
 	return out
@@ -311,6 +483,9 @@ func (p *Provider) fetchSource(ctx context.Context, source FeedSource) ([]domain
 	items, err := parseFeed(body, source)
 	if err != nil {
 		return nil, err
+	}
+	if source.MaxItems > 0 && len(items) > source.MaxItems {
+		items = items[:source.MaxItems]
 	}
 	if p.cache != nil {
 		if raw, err := json.Marshal(items); err == nil {
@@ -676,6 +851,10 @@ func normalizePublisherName(publisher string) string {
 		return "AP"
 	case lower == "associated press":
 		return "AP"
+	case lower == "bbc news":
+		return "BBC"
+	case lower == "the guardian":
+		return "Guardian"
 	case strings.HasPrefix(lower, "yahoo finance"):
 		return "Yahoo Finance"
 	case strings.HasPrefix(lower, "yahoo! finance"):
