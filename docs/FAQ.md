@@ -136,11 +136,10 @@ It is color-coded by threshold:
 
 `Implied Sharpe` is the risk-adjusted companion shown under `Implied Return` in the `Quote` fundamentals view.
 
-Blackdesk calculates it as `(Implied Return - 10Y rate) / HV 252`.
+Blackdesk calculates it as `Implied Return / HV 252`.
 
-- `10Y rate` comes from the market `^TNX` quote.
 - `HV 252` is the active symbol's 252-day historical volatility.
-- It only appears when both inputs are available.
+- It only appears when `HV 252` is available.
 - It is displayed as a plain number, not a percent.
 - It is color-coded by threshold:
 - `< 0.0` weak

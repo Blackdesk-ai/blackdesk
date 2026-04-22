@@ -106,11 +106,11 @@ func impliedReturnValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (
 	return earningsYield + fiveYearGrowth, true
 }
 
-func impliedSharpeValue(impliedReturn, tenYearRate, hv252 float64) (float64, bool) {
+func impliedSharpeValue(impliedReturn, hv252 float64) (float64, bool) {
 	if hv252 <= 0 {
 		return 0, false
 	}
-	return (impliedReturn - tenYearRate) / hv252, true
+	return impliedReturn / hv252, true
 }
 
 func impliedEPSGrowthEstimate(f domain.FundamentalsSnapshot) (float64, bool) {

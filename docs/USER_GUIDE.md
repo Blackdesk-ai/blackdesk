@@ -206,9 +206,9 @@ Quote fundamentals note:
 - `< 0%` weak
 - `0% - 5%` neutral
 - `> 5%` positive
-- `Implied Sharpe` is shown directly under `Implied Return` when both `10Y` and `HV 252` are available.
-- Blackdesk calculates it as `(Implied Return - 10Y rate) / HV 252`.
-- `10Y rate` comes from the market `^TNX` quote and `HV 252` comes from the active symbol's 252-day historical volatility.
+- `Implied Sharpe` is shown directly under `Implied Return` when `HV 252` is available.
+- Blackdesk calculates it as `Implied Return / HV 252`.
+- `HV 252` comes from the active symbol's 252-day historical volatility.
 - It is displayed as a plain number, not a percent.
 - It is color-coded by threshold:
 - `< 0.0` weak

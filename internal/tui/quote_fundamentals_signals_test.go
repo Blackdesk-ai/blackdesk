@@ -228,18 +228,18 @@ func TestImpliedReturnValueRequiresBothInputs(t *testing.T) {
 	}
 }
 
-func TestImpliedSharpeValueUsesImpliedReturnMinusTenYearOverHV252(t *testing.T) {
-	got, ok := impliedSharpeValue(0.177845674574647, 0.042, 0.20)
+func TestImpliedSharpeValueUsesImpliedReturnOverHV252(t *testing.T) {
+	got, ok := impliedSharpeValue(0.177845674574647, 0.20)
 	if !ok {
-		t.Fatal("expected implied sharpe when implied return, ten year rate, and hv252 are available")
+		t.Fatal("expected implied sharpe when implied return and hv252 are available")
 	}
-	if math.Abs(got-0.679228372873235) > 1e-12 {
-		t.Fatalf("expected implied sharpe near 0.68, got %.6f", got)
+	if math.Abs(got-0.889228372873235) > 1e-12 {
+		t.Fatalf("expected implied sharpe near 0.89, got %.6f", got)
 	}
 }
 
 func TestImpliedSharpeValueRequiresHV252(t *testing.T) {
-	_, ok := impliedSharpeValue(0.10, 0.04, 0)
+	_, ok := impliedSharpeValue(0.10, 0)
 	if ok {
 		t.Fatal("expected missing hv252 to disable implied sharpe")
 	}

@@ -312,7 +312,7 @@ func TestRenderQuoteFundamentalsGridStacksCardsWhenWidthIsNarrow(t *testing.T) {
 		RevenuePerShare:         25.1,
 	}
 
-	view := renderQuoteFundamentalsGrid(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), quote, fundamentals, technicalSnapshot{hv252: 0.20}, 0.042, true, 56, 40)
+	view := renderQuoteFundamentalsGrid(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), quote, fundamentals, technicalSnapshot{hv252: 0.20}, 56, 40)
 	if strings.Count(view, "VALUATION") != 1 || strings.Count(view, "PROFITABILITY") != 1 || strings.Count(view, "FINANCIALS") == 0 {
 		t.Fatal("expected stacked fundamentals cards to keep all sections visible")
 	}
@@ -325,7 +325,7 @@ func TestRenderQuoteFundamentalsGridStacksCardsWhenWidthIsNarrow(t *testing.T) {
 	if !strings.Contains(view, "Implied Return") || !strings.Contains(view, "17.78%") {
 		t.Fatal("expected narrow stacked layout to render implied return below qarp score")
 	}
-	if !strings.Contains(view, "Implied Sharpe") || !strings.Contains(view, "0.68") {
+	if !strings.Contains(view, "Implied Sharpe") || !strings.Contains(view, "0.89") {
 		t.Fatal("expected narrow stacked layout to render implied sharpe below implied return")
 	}
 }
@@ -358,7 +358,7 @@ func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t 
 		RevenuePerShare:         25.1,
 	}
 
-	view := renderQuoteFundamentalsGrid(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), quote, fundamentals, technicalSnapshot{hv252: 0.20}, 0.042, true, 100, 60)
+	view := renderQuoteFundamentalsGrid(lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle(), quote, fundamentals, technicalSnapshot{hv252: 0.20}, 100, 60)
 	if strings.Count(view, "FINANCIALS") != 1 {
 		t.Fatal("expected wide fundamentals layout to render a single financials card")
 	}
@@ -374,7 +374,7 @@ func TestRenderQuoteFundamentalsGridUsesSingleSplitFinancialsCardOnWideLayout(t 
 	if !strings.Contains(view, "Implied Return") || !strings.Contains(view, "17.78%") {
 		t.Fatal("expected wide fundamentals layout to render implied return below qarp score")
 	}
-	if !strings.Contains(view, "Implied Sharpe") || !strings.Contains(view, "0.68") {
+	if !strings.Contains(view, "Implied Sharpe") || !strings.Contains(view, "0.89") {
 		t.Fatal("expected wide fundamentals layout to render implied sharpe below implied return")
 	}
 }
