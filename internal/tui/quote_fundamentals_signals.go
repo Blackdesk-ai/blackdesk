@@ -97,11 +97,20 @@ func valuationScoreValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) 
 	return score, true
 }
 
-func ruleOf40Value(f domain.FundamentalsSnapshot) (float64, bool) {
-	if f.RevenueGrowth == 0 && f.ProfitMargins == 0 {
+func impliedReturnValue(q domain.QuoteSnapshot, f domain.FundamentalsSnapshot) (float64, bool) {
+	earningsYield, earningsYieldOK := earningsYieldValue(q, f)
+	fiveYearGrowth, fiveYearGrowthOK := fiveYearGrowthEstimate(q, f)
+	if !earningsYieldOK || !fiveYearGrowthOK {
 		return 0, false
 	}
-	return f.RevenueGrowth + f.ProfitMargins, true
+	return earningsYield + fiveYearGrowth, true
+}
+
+func impliedSharpeValue(impliedReturn, tenYearRate, hv252 float64) (float64, bool) {
+	if hv252 <= 0 {
+		return 0, false
+	}
+	return (impliedReturn - tenYearRate) / hv252, true
 }
 
 func impliedEPSGrowthEstimate(f domain.FundamentalsSnapshot) (float64, bool) {

@@ -56,3 +56,11 @@ func TestPlanQuoteWorkspaceLoadEnablesOwnersLoad(t *testing.T) {
 		t.Fatalf("expected unrelated center loads to stay disabled, got %+v", plan)
 	}
 }
+
+func TestPlanQuoteWorkspaceLoadEnablesTechnicalForFundamentalsWhenNeeded(t *testing.T) {
+	plan := PlanQuoteWorkspaceLoad(QuoteCenterFundamentals, true, true, true, true)
+
+	if !plan.LoadTechnical {
+		t.Fatalf("expected technical load for fundamentals mode when hv-dependent metrics need it, got %+v", plan)
+	}
+}

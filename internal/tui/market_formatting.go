@@ -45,28 +45,44 @@ func colorizeQARPScore(text string, score float64, styled bool) string {
 	return qarpScoreStyle(score).Render(text)
 }
 
-func r40ScoreStyle(score float64) lipgloss.Style {
-	displayScore := score * 100
+func impliedReturnScoreStyle(score float64) lipgloss.Style {
 	style := lipgloss.NewStyle()
 	switch {
-	case displayScore > 60:
-		return style.Foreground(lipgloss.Color("#62D394")).Bold(true)
-	case displayScore > 40:
+	case score > 0.05:
 		return style.Foreground(lipgloss.Color("#62D394"))
-	case displayScore >= 25:
-		return style.Foreground(lipgloss.Color("#D8C9B8"))
-	case displayScore >= 15:
-		return style.Foreground(lipgloss.Color("#E7B66B"))
+	case score >= 0:
+		return style.Foreground(lipgloss.Color("#A6A29D"))
 	default:
 		return style.Foreground(lipgloss.Color("#FF7A73"))
 	}
 }
 
-func colorizeR40Score(text string, score float64, styled bool) string {
+func colorizeImpliedReturnScore(text string, score float64, styled bool) string {
 	if !styled || text == "--" {
 		return text
 	}
-	return r40ScoreStyle(score).Render(text)
+	return impliedReturnScoreStyle(score).Render(text)
+}
+
+func impliedSharpeScoreStyle(score float64) lipgloss.Style {
+	style := lipgloss.NewStyle()
+	switch {
+	case score > 1:
+		return style.Foreground(lipgloss.Color("#62D394")).Bold(true)
+	case score >= 0.5:
+		return style.Foreground(lipgloss.Color("#62D394"))
+	case score >= 0:
+		return style.Foreground(lipgloss.Color("#A6A29D"))
+	default:
+		return style.Foreground(lipgloss.Color("#FF7A73"))
+	}
+}
+
+func colorizeImpliedSharpeScore(text string, score float64, styled bool) string {
+	if !styled || text == "--" {
+		return text
+	}
+	return impliedSharpeScoreStyle(score).Render(text)
 }
 
 func colorizeMarketChange(text string, move float64, styled bool) string {

@@ -40,7 +40,7 @@ func PlanQuoteWorkspaceLoad(mode QuoteCenterMode, needsTechnical, hasStatements,
 		LoadNews:            true,
 		LoadFundamentals:    true,
 	}
-	if mode == QuoteCenterTechnicals && needsTechnical {
+	if (mode == QuoteCenterTechnicals || mode == QuoteCenterFundamentals) && needsTechnical {
 		plan.LoadTechnical = true
 	}
 	if mode == QuoteCenterStatements && hasStatements {

@@ -75,11 +75,28 @@ func (m Model) renderOverviewFundamentals(section, label, muted, neg lipgloss.St
 		b.WriteString(muted.Render("Loading " + strings.ToUpper(m.activeSymbol()) + " fundamentals…"))
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
-	b.WriteString(renderQuoteFundamentalsGrid(section, label, muted, quote, m.fundamentals, chartWidth, boardHeight))
+	technical := technicalSnapshot{}
+	if series := m.technicalSeries(m.activeSymbol()); len(series.Candles) > 0 {
+		technical = buildTechnicalSnapshot(quote, series)
+	}
+	tenYearRate, tenYearRateOK := m.tenYearTreasuryRate()
+	b.WriteString(renderQuoteFundamentalsGrid(section, label, muted, quote, m.fundamentals, technical, tenYearRate, tenYearRateOK, chartWidth, boardHeight))
 	if m.errFundamentals != nil {
 		b.WriteString("\n\n" + neg.Render("Fundamentals may be stale: "+m.errFundamentals.Error()))
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) tenYearTreasuryRate() (float64, bool) {
+	quote, ok := m.lookupQuote("^TNX")
+	if !ok {
+		return 0, false
+	}
+	price, _ := marketDisplayQuoteLine(quote)
+	if price == 0 {
+		return 0, false
+	}
+	return price / 100, true
 }
 
 func (m Model) renderOverviewTechnicals(section, label, muted, neg lipgloss.Style, quote domain.QuoteSnapshot, chartWidth, height int, b *strings.Builder) string {

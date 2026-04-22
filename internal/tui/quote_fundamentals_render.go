@@ -11,16 +11,16 @@ import (
 
 const fundamentalsColumnGap = 2
 
-func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, width, height int) string {
+func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, technical technicalSnapshot, tenYearRate float64, tenYearRateOK bool, width, height int) string {
 	gap := 2
 	financialLeft, financialRight := splitFinancialFundamentalsRows(quoteFundamentalsFinancialRows(fundamentals))
 	profitabilityLeft, profitabilityRight := splitFundamentalsRows(quoteFundamentalsProfitabilityRows(quote, fundamentals))
-	leftDesired, rightDesired := fundamentalsGridDesiredWidths(quote, fundamentals, profitabilityLeft, profitabilityRight, financialLeft, financialRight)
+	leftDesired, rightDesired := fundamentalsGridDesiredWidths(quote, fundamentals, technical, tenYearRate, tenYearRateOK, profitabilityLeft, profitabilityRight, financialLeft, financialRight)
 	if width < 60 {
-		return renderQuoteFundamentalsStacked(section, label, muted, quote, fundamentals, width, height)
+		return renderQuoteFundamentalsStacked(section, label, muted, quote, fundamentals, technical, tenYearRate, tenYearRateOK, width, height)
 	}
 	leftWidth, rightWidth, gap := fundamentalsGridLayout(width, gap, leftDesired, rightDesired)
-	leftCol := renderQuoteFundamentalsValuationBlock(section, label, muted, leftWidth, quote, fundamentals)
+	leftCol := renderQuoteFundamentalsValuationBlock(section, label, muted, leftWidth, quote, fundamentals, technical, tenYearRate, tenYearRateOK)
 	rightCol := strings.Join([]string{
 		renderQuoteFundamentalsSplitCard(section, label, muted, rightWidth, profitabilityLeft, profitabilityRight, "PROFITABILITY"),
 		renderQuoteFundamentalsSplitCard(section, label, muted, rightWidth, financialLeft, financialRight, "FINANCIALS"),
@@ -34,24 +34,24 @@ func renderQuoteFundamentalsGrid(section, label, muted lipgloss.Style, quote dom
 	return clipLines(grid, height)
 }
 
-func renderQuoteFundamentalsStacked(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, width, height int) string {
+func renderQuoteFundamentalsStacked(section, label, muted lipgloss.Style, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, technical technicalSnapshot, tenYearRate float64, tenYearRateOK bool, width, height int) string {
 	profitabilityRows := quoteFundamentalsProfitabilityRows(quote, fundamentals)
 	financialRows := quoteFundamentalsFinancialRows(fundamentals)
 	cards := []string{
-		renderQuoteFundamentalsValuationBlock(section, label, muted, width, quote, fundamentals),
+		renderQuoteFundamentalsValuationBlock(section, label, muted, width, quote, fundamentals, technical, tenYearRate, tenYearRateOK),
 		renderQuoteFundamentalsCard(section, label, muted, width, profitabilityRows, "PROFITABILITY"),
 		renderQuoteFundamentalsCard(section, label, muted, width, financialRows, "FINANCIALS"),
 	}
 	return clipLines(strings.Join(cards, "\n\n"), height)
 }
 
-func renderQuoteFundamentalsValuationBlock(section, label, muted lipgloss.Style, width int, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot) string {
+func renderQuoteFundamentalsValuationBlock(section, label, muted lipgloss.Style, width int, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, technical technicalSnapshot, tenYearRate float64, tenYearRateOK bool) string {
 	card := renderQuoteFundamentalsCard(section, label, muted, width, quoteFundamentalsValuationRows(quote, fundamentals), "VALUATION")
-	scoreLines := renderQuoteFundamentalsScoreLines(label, width, quote, fundamentals)
+	scoreLines := renderQuoteFundamentalsScoreLines(label, width, quote, fundamentals, technical, tenYearRate, tenYearRateOK)
 	if scoreLines == "" {
 		return card
 	}
-	return card + "\n\n" + scoreLines
+	return card + "\n" + scoreLines
 }
 
 func renderQuoteFundamentalsCard(section, label, muted lipgloss.Style, width int, rows []marketTableRow, title string) string {
@@ -65,14 +65,14 @@ func renderQuoteFundamentalsCard(section, label, muted lipgloss.Style, width int
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func renderQuoteFundamentalsScoreLines(label lipgloss.Style, width int, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot) string {
+func renderQuoteFundamentalsScoreLines(label lipgloss.Style, width int, quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, technical technicalSnapshot, tenYearRate float64, tenYearRateOK bool) string {
 	type scoreLine struct {
 		row      marketTableRow
 		colorize func(text string, score float64, styled bool) string
 		score    float64
 	}
 
-	lines := make([]scoreLine, 0, 2)
+	lines := make([]scoreLine, 0, 3)
 	if score, ok := valuationScoreValue(quote, fundamentals); ok {
 		lines = append(lines, scoreLine{
 			row: marketTableRow{
@@ -85,17 +85,29 @@ func renderQuoteFundamentalsScoreLines(label lipgloss.Style, width int, quote do
 			score:    score,
 		})
 	}
-	if score, ok := ruleOf40Value(fundamentals); ok {
+	if score, ok := impliedReturnValue(quote, fundamentals); ok {
 		lines = append(lines, scoreLine{
 			row: marketTableRow{
-				name:   "R40",
+				name:   "Implied Return",
 				price:  formatOptionalPercent(score, true),
 				move:   score,
 				styled: true,
 			},
-			colorize: colorizeR40Score,
+			colorize: colorizeImpliedReturnScore,
 			score:    score,
 		})
+		if sharpe, ok := impliedSharpeValue(score, tenYearRate, technical.hv252); ok && tenYearRateOK {
+			lines = append(lines, scoreLine{
+				row: marketTableRow{
+					name:   "Implied Sharpe",
+					price:  formatMetricFloat(sharpe),
+					move:   sharpe,
+					styled: true,
+				},
+				colorize: colorizeImpliedSharpeScore,
+				score:    sharpe,
+			})
+		}
 	}
 	if len(lines) == 0 {
 		return ""
@@ -147,13 +159,30 @@ func renderQuoteFundamentalsTableBlock(muted, label lipgloss.Style, width int, r
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func fundamentalsGridDesiredWidths(quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, profitabilityLeft, profitabilityRight, financialLeft, financialRight []marketTableRow) (int, int) {
+func fundamentalsGridDesiredWidths(quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, technical technicalSnapshot, tenYearRate float64, tenYearRateOK bool, profitabilityLeft, profitabilityRight, financialLeft, financialRight []marketTableRow) (int, int) {
 	leftDesired := fundamentalsTableDesiredWidth(quoteFundamentalsValuationRows(quote, fundamentals), 16)
+	if scoreLines := quoteFundamentalsScoreRows(quote, fundamentals, technical, tenYearRate, tenYearRateOK); len(scoreLines) > 0 {
+		leftDesired = max(leftDesired, fundamentalsTableDesiredWidth(scoreLines, 18))
+	}
 	rightDesired := max(
 		fundamentalsSplitDesiredWidth(profitabilityLeft, profitabilityRight, 3),
 		fundamentalsSplitDesiredWidth(financialLeft, financialRight, 3),
 	)
 	return leftDesired, rightDesired
+}
+
+func quoteFundamentalsScoreRows(quote domain.QuoteSnapshot, fundamentals domain.FundamentalsSnapshot, technical technicalSnapshot, tenYearRate float64, tenYearRateOK bool) []marketTableRow {
+	rows := make([]marketTableRow, 0, 3)
+	if score, ok := valuationScoreValue(quote, fundamentals); ok {
+		rows = append(rows, marketTableRow{name: "QARP Score", price: formatOptionalScaledFloat(score, true, 100)})
+	}
+	if score, ok := impliedReturnValue(quote, fundamentals); ok {
+		rows = append(rows, marketTableRow{name: "Implied Return", price: formatOptionalPercent(score, true)})
+		if sharpe, ok := impliedSharpeValue(score, tenYearRate, technical.hv252); ok && tenYearRateOK {
+			rows = append(rows, marketTableRow{name: "Implied Sharpe", price: formatMetricFloat(sharpe)})
+		}
+	}
+	return rows
 }
 
 func fundamentalsGridColumnWidths(width, gap, leftDesired, rightDesired int) (int, int) {

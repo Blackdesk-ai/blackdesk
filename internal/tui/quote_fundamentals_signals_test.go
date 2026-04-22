@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"math"
 	"testing"
 
 	"blackdesk/internal/domain"
@@ -207,23 +208,40 @@ func TestValuationScoreValueRequiresROIC(t *testing.T) {
 	}
 }
 
-func TestRuleOf40ValueAddsRevenueGrowthAndProfitMargin(t *testing.T) {
-	got, ok := ruleOf40Value(domain.FundamentalsSnapshot{
-		RevenueGrowth: 0.061,
-		ProfitMargins: 0.262,
+func TestImpliedReturnValueAddsEarningsYieldAndN5YGrowth(t *testing.T) {
+	got, ok := impliedReturnValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{
+		TrailingPE: 31.2,
+		PEGRatio:   2.14,
 	})
 	if !ok {
-		t.Fatal("expected rule of 40 score when growth or margin is available")
+		t.Fatal("expected implied return when earnings yield and n5y growth are available")
 	}
-	if got != 0.323 {
-		t.Fatalf("expected 32.3%% r40 score, got %.6f", got)
+	if math.Abs(got-0.177845674574647) > 1e-12 {
+		t.Fatalf("expected 17.78%% implied return, got %.6f", got)
 	}
 }
 
-func TestRuleOf40ValueRequiresAtLeastOneInput(t *testing.T) {
-	_, ok := ruleOf40Value(domain.FundamentalsSnapshot{})
+func TestImpliedReturnValueRequiresBothInputs(t *testing.T) {
+	_, ok := impliedReturnValue(domain.QuoteSnapshot{}, domain.FundamentalsSnapshot{TrailingPE: 31.2})
 	if ok {
-		t.Fatal("expected missing growth and margin to disable r40 score")
+		t.Fatal("expected missing n5y growth to disable implied return")
+	}
+}
+
+func TestImpliedSharpeValueUsesImpliedReturnMinusTenYearOverHV252(t *testing.T) {
+	got, ok := impliedSharpeValue(0.177845674574647, 0.042, 0.20)
+	if !ok {
+		t.Fatal("expected implied sharpe when implied return, ten year rate, and hv252 are available")
+	}
+	if math.Abs(got-0.679228372873235) > 1e-12 {
+		t.Fatalf("expected implied sharpe near 0.68, got %.6f", got)
+	}
+}
+
+func TestImpliedSharpeValueRequiresHV252(t *testing.T) {
+	_, ok := impliedSharpeValue(0.10, 0.04, 0)
+	if ok {
+		t.Fatal("expected missing hv252 to disable implied sharpe")
 	}
 }
 
@@ -236,7 +254,7 @@ func TestQuoteFundamentalsValuationRowsDoNotIncludeQARPScore(t *testing.T) {
 	})
 
 	for _, row := range rows {
-		if row.name == "QARP Score" || row.name == "R40" {
+		if row.name == "QARP Score" || row.name == "Implied Return" || row.name == "Implied Sharpe" {
 			t.Fatalf("expected supplemental scores to be rendered outside valuation rows, got %+v", row)
 		}
 	}

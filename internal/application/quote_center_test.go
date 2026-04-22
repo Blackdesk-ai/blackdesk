@@ -3,6 +3,13 @@ package application
 import "testing"
 
 func TestPlanQuoteCenterSelectionHonorsCapabilities(t *testing.T) {
+	fundamentals := PlanQuoteCenterSelection(QuoteCenterSelectionInput{
+		Target: QuoteCenterFundamentals,
+	})
+	if !fundamentals.Allowed || !fundamentals.LoadTechnical || fundamentals.Status != "Quote center: fundamentals" {
+		t.Fatalf("unexpected fundamentals center result: %+v", fundamentals)
+	}
+
 	statements := PlanQuoteCenterSelection(QuoteCenterSelectionInput{
 		Target:        QuoteCenterStatements,
 		HasStatements: true,
