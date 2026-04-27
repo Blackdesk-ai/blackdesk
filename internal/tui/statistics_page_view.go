@@ -136,6 +136,8 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 			b.WriteString("\n" + muted.Render("Current Regime EV") + "\n")
 			for _, regime := range regimes {
 				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)))
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win% "+regime.Label), renderSharpePercent(pos, muted, regime.Win)))
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Return/DD "+regime.Label), renderSharpeRatio(pos, neg, muted, regime.ReturnDD)))
 			}
 		}
 	}
@@ -378,9 +380,10 @@ func formatPercentile(value int) string {
 }
 
 type statisticsRegimeEV struct {
-	Label string
-	EV    float64
-	Win   int
+	Label    string
+	EV       float64
+	ReturnDD float64
+	Win      int
 }
 
 func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeEV {
@@ -405,7 +408,12 @@ func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoin
 		if !ok {
 			continue
 		}
-		out = append(out, statisticsRegimeEV{Label: label, EV: row.Mean, Win: row.Positive})
+		out = append(out, statisticsRegimeEV{
+			Label:    label,
+			EV:       row.Mean,
+			ReturnDD: row.ReturnDD,
+			Win:      row.Positive,
+		})
 	}
 	return out
 }

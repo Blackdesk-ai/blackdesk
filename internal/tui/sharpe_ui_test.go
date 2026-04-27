@@ -183,7 +183,7 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
 
 	view := model.View()
-	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "12M > 0", "12M"} {
+	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "Win% 12M", "Win% 3M", "Return/DD 12M", "Return/DD 3M", "12M > 0", "12M"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("expected statistics view to contain %q", want)
 		}
