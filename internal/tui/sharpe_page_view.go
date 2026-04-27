@@ -130,7 +130,14 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 			latest := points[len(points)-1]
 			for _, regime := range statisticsCurrentSignalEVs(sourceSeries, latest, statisticsHorizon{Label: "3M", Forward: 63}) {
 				b.WriteString("\n")
-				b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)), width))
+				evLine := fmt.Sprintf(
+					"%s %s  •  %s %s",
+					label.Render("EV "+regime.Label),
+					renderSharpeReturn(pos, neg, muted, regime.EV),
+					label.Render("P"),
+					renderSharpePercent(pos, muted, regime.Win),
+				)
+				b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), evLine, width))
 			}
 		}
 	}

@@ -380,6 +380,7 @@ func formatPercentile(value int) string {
 type statisticsRegimeEV struct {
 	Label string
 	EV    float64
+	Win   int
 }
 
 func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeEV {
@@ -404,7 +405,7 @@ func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoin
 		if !ok {
 			continue
 		}
-		out = append(out, statisticsRegimeEV{Label: label, EV: row.Mean})
+		out = append(out, statisticsRegimeEV{Label: label, EV: row.Mean, Win: row.Positive})
 	}
 	return out
 }
