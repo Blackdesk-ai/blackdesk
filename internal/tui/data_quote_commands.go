@@ -8,8 +8,9 @@ import (
 	"blackdesk/internal/domain"
 )
 
-var sharpeHistoryRanges = []string{"10y", "7y", "5y", "2y", "1y"}
+var sharpeHistoryRanges = []string{"5y"}
 var statisticsHistoryRanges = []string{"5y", "3y", "2y", "1y"}
+var statistics10YHistoryRanges = []string{"10y"}
 var statisticsMaxHistoryRanges = []string{"10y", "7y", "5y", "3y", "2y", "1y"}
 
 func (m Model) loadQuoteCmd(symbol string) tea.Cmd {
