@@ -31,3 +31,13 @@ func TestRenderHelpEntryLineAlignsUnicodeAndAsciiKeys(t *testing.T) {
 		t.Fatalf("expected aligned help descriptions, got columns %d, %d, %d", arrowCol, enterCol, ctrlCol)
 	}
 }
+
+func TestRenderHelpOverlayUsesAdditionalColumnsToAvoidClipping(t *testing.T) {
+	view := ansi.Strip(renderHelpOverlay(lipgloss.NewStyle(), lipgloss.NewStyle(), lipgloss.NewStyle(), 140, 26))
+
+	for _, want := range []string{"KEYBOARD SHORTCUTS", "Ctrl+⌫", "AI PICKER", "Confirm selection"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("expected help overlay to contain %q, got:\n%s", want, view)
+		}
+	}
+}
