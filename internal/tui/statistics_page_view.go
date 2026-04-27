@@ -138,11 +138,10 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win%"), renderSharpePercent(pos, muted, row.Positive)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg. DD"), renderSharpeReturn(pos, neg, muted, row.AvgDrawdown)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Return/DD"), renderSharpeRatio(pos, neg, muted, row.ReturnDD)))
-		edges := statisticsCurrentSignalEdges(series, latest, statisticsHorizon{Label: "3M", Forward: 63})
-		if len(edges) > 0 {
-			b.WriteString("\n" + muted.Render("Edge vs Baseline") + "\n")
-			for _, edge := range edges {
-				b.WriteString(fmt.Sprintf("%s %s\n", label.Render(edge.Label), renderSharpeReturn(pos, neg, muted, edge.Edge)))
+		if regimes := statisticsCurrentSignalEVs(series, latest, statisticsHorizon{Label: "3M", Forward: 63}); len(regimes) > 0 {
+			b.WriteString("\n" + muted.Render("Current Regime EV") + "\n")
+			for _, regime := range regimes {
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)))
 			}
 		}
 	}
@@ -349,11 +348,6 @@ func statisticsForwardDrawdown(closes []float64, start, forward int) float64 {
 	return minReturn
 }
 
-type statisticsEdge struct {
-	Label string
-	Edge  float64
-}
-
 func statisticsPercentile(points []statisticsPoint, latest float64, valueFn func(statisticsPoint) float64) int {
 	if len(points) == 0 {
 		return 0
@@ -389,7 +383,12 @@ func formatPercentile(value int) string {
 	return fmt.Sprintf("%d%s", value, suffix)
 }
 
-func statisticsCurrentSignalEdges(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsEdge {
+type statisticsRegimeEV struct {
+	Label string
+	EV    float64
+}
+
+func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeEV {
 	rows := buildStatisticsRows(series, horizon)
 	if len(rows) == 0 {
 		return nil
@@ -398,10 +397,6 @@ func statisticsCurrentSignalEdges(series domain.PriceSeries, latest statisticsPo
 	for _, row := range rows {
 		bySignal[row.Signal] = row
 	}
-	baseline, ok := bySignal["All periods"]
-	if !ok {
-		return nil
-	}
 	labels := make([]string, 0, 2)
 	if label := statisticsSignalLabelForValue(latest.Sharpe252, "12M"); label != "" {
 		labels = append(labels, label)
@@ -409,16 +404,13 @@ func statisticsCurrentSignalEdges(series domain.PriceSeries, latest statisticsPo
 	if label := statisticsSignalLabelForValue(latest.Sharpe63, "3M"); label != "" {
 		labels = append(labels, label)
 	}
-	out := make([]statisticsEdge, 0, len(labels))
+	out := make([]statisticsRegimeEV, 0, len(labels))
 	for _, label := range labels {
 		row, ok := bySignal[label]
 		if !ok {
 			continue
 		}
-		out = append(out, statisticsEdge{
-			Label: label,
-			Edge:  row.Mean - baseline.Mean,
-		})
+		out = append(out, statisticsRegimeEV{Label: label, EV: row.Mean})
 	}
 	return out
 }

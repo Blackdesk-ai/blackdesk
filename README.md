@@ -65,7 +65,7 @@ Optional installer overrides:
 
 ## Product Surfaces
 
-- `Quote`: active symbol workflow for charts, technicals, news, statements, insiders, and AI context
+- `Quote`: active symbol workflow for charts, technicals, risk-adjusted views, statistics, news, statements, insiders, and AI context
 - `Markets`: watchlists, movers, and broad tape context before drilling into a symbol
 - `News`: a dedicated normalized headline wire
 - `Screeners`: discovery flows for finding setups and movers

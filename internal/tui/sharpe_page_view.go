@@ -120,9 +120,9 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 		points := buildStatisticsPoints(sourceSeries)
 		if len(points) > 0 {
 			latest := points[len(points)-1]
-			for _, edge := range statisticsCurrentSignalEdges(sourceSeries, latest, statisticsHorizon{Label: "3M", Forward: 63}) {
+			for _, regime := range statisticsCurrentSignalEVs(sourceSeries, latest, statisticsHorizon{Label: "3M", Forward: 63}) {
 				b.WriteString("\n")
-				b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Edge "+edge.Label), renderSharpeReturn(pos, neg, muted, edge.Edge)), width))
+				b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)), width))
 			}
 		}
 	}

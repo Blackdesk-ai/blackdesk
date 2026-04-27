@@ -90,7 +90,7 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
-	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Avg. DD") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "12M > 1") || !strings.Contains(view, "3M > 1") {
+	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Avg. DD") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
@@ -147,7 +147,7 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
 
 	view := model.View()
-	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Avg. DD", "Return/DD", "12M > 0", "12M"} {
+	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "12M > 0", "12M"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("expected statistics view to contain %q", want)
 		}
