@@ -60,7 +60,7 @@ func renderQuoteSharpeBoard(section, label, muted, pos, neg lipgloss.Style, widt
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
-func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, height int, chartSeries []sharpeChartSeries) string {
+func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, height int, sourceSeries domain.PriceSeries, chartSeries []sharpeChartSeries) string {
 	var b strings.Builder
 
 	stats := sharpeSeriesPreviewStats(chartSeries)
@@ -112,6 +112,14 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Median"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
 		b.WriteString("\n")
 		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
+		points := buildStatisticsPoints(sourceSeries)
+		if len(points) > 0 {
+			latest := points[len(points)-1]
+			for _, regime := range statisticsCurrentSignalEVs(sourceSeries, latest, statisticsHorizon{Label: "3M", Forward: 63}) {
+				b.WriteString("\n")
+				b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)), width))
+			}
+		}
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }

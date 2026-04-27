@@ -52,6 +52,7 @@ var statisticsHorizons = []statisticsHorizon{
 
 var statisticsRangeSpecs = []statisticsRangeSpec{
 	{Label: "5Y", Ranges: statisticsHistoryRanges},
+	{Label: "10Y", Ranges: statistics10YHistoryRanges},
 	{Label: "Max", Ranges: statisticsMaxHistoryRanges},
 }
 
@@ -140,6 +141,12 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, row.Mean)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Median"), renderSharpeReturn(pos, neg, muted, row.Median)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win%"), renderSharpePercent(pos, muted, row.Positive)))
+		if regimes := statisticsCurrentSignalEVs(series, latest, statisticsHorizon{Label: "3M", Forward: 63}); len(regimes) > 0 {
+			b.WriteString("\n" + muted.Render("Current Regime EV") + "\n")
+			for _, regime := range regimes {
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)))
+			}
+		}
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
@@ -306,4 +313,49 @@ func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, sig
 		Positive: int(float64(positive) / float64(len(values)) * 100),
 		OK:       true,
 	}
+}
+
+type statisticsRegimeEV struct {
+	Label string
+	EV    float64
+}
+
+func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeEV {
+	rows := buildStatisticsRows(series, horizon)
+	if len(rows) == 0 {
+		return nil
+	}
+	bySignal := make(map[string]statisticsRow, len(rows))
+	for _, row := range rows {
+		bySignal[row.Signal] = row
+	}
+	labels := make([]string, 0, 2)
+	if label := statisticsSignalLabelForValue(latest.Sharpe252, "12M"); label != "" {
+		labels = append(labels, label)
+	}
+	if label := statisticsSignalLabelForValue(latest.Sharpe63, "3M"); label != "" {
+		labels = append(labels, label)
+	}
+	out := make([]statisticsRegimeEV, 0, len(labels))
+	for _, label := range labels {
+		row, ok := bySignal[label]
+		if !ok {
+			continue
+		}
+		out = append(out, statisticsRegimeEV{Label: label, EV: row.Mean})
+	}
+	return out
+}
+
+func statisticsSignalLabelForValue(value float64, prefix string) string {
+	if value > 1 {
+		return prefix + " > 1"
+	}
+	if value > 0 {
+		return prefix + " > 0"
+	}
+	if value < 0 {
+		return prefix + " < 0"
+	}
+	return ""
 }

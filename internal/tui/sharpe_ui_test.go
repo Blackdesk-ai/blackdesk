@@ -38,15 +38,15 @@ func TestCommandPaletteSharpeOpensQuoteSharpeMode(t *testing.T) {
 	if msg, ok := cmd().(sharpeHistoryLoadedMsg); !ok {
 		t.Fatalf("expected sharpeHistoryLoadedMsg, got %T", msg)
 	}
-	if len(provider.historyCalls) != 1 || provider.historyCalls[0] != "AAPL|10y|1d" {
-		t.Fatalf("expected 10y sharpe history request, got %#v", provider.historyCalls)
+	if len(provider.historyCalls) != 1 || provider.historyCalls[0] != "AAPL|5y|1d" {
+		t.Fatalf("expected 5y sharpe history request, got %#v", provider.historyCalls)
 	}
 	if ranges[m.sharpeRangeIdx].Range != "5y" {
 		t.Fatalf("expected sharpe range to switch to 5y, got %q", ranges[m.sharpeRangeIdx].Range)
 	}
 }
 
-func TestSharpeHistoryFallsBackFrom10YTo7Y(t *testing.T) {
+func TestSharpeHistoryLoadsExact5Y(t *testing.T) {
 	provider := &fallbackSharpeHistoryProvider{}
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),
@@ -57,22 +57,22 @@ func TestSharpeHistoryFallsBackFrom10YTo7Y(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected fallback history load to succeed, got %v", err)
 	}
-	if series.Range != "7y" {
-		t.Fatalf("expected fallback series range 7y, got %q", series.Range)
+	if series.Range != "5y" {
+		t.Fatalf("expected sharpe series range 5y, got %q", series.Range)
 	}
-	if got := provider.calls; len(got) != 2 || got[0] != "AAPL|10y|1d" || got[1] != "AAPL|7y|1d" {
-		t.Fatalf("expected 10y then 7y fallback calls, got %#v", got)
+	if got := provider.calls; len(got) != 1 || got[0] != "AAPL|5y|1d" {
+		t.Fatalf("expected single 5y sharpe history call, got %#v", got)
 	}
 	model.sharpeCache["AAPL"] = series
 	if model.needsSharpeHistory("AAPL") {
-		t.Fatal("expected 7y sharpe cache to be considered valid")
+		t.Fatal("expected 5y sharpe cache to be considered valid")
 	}
 }
 
 func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.width = 140
-	model.height = 44
+	model.height = 52
 	model.tabIdx = tabQuote
 	model.quoteCenterMode = quoteCenterSharpe
 	model.config.Watchlist = []string{"AAPL"}
@@ -89,7 +89,7 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
-	if !strings.Contains(view, "Fwd. Return") || !strings.Contains(view, "3M Avg") || !strings.Contains(view, "3M Median") || !strings.Contains(view, "3M Win%") {
+	if !strings.Contains(view, "Fwd. Return") || !strings.Contains(view, "3M Avg") || !strings.Contains(view, "3M Median") || !strings.Contains(view, "3M Win%") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
@@ -146,7 +146,7 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
 
 	view := model.View()
-	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "12M > 0", "12M"} {
+	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "12M > 0", "12M"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("expected statistics view to contain %q", want)
 		}
@@ -161,7 +161,7 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	}
 }
 
-func TestStatisticsRangeNavigationLoadsMaxHistory(t *testing.T) {
+func TestStatisticsRangeNavigationLoads10YHistory(t *testing.T) {
 	provider := &countingHistoryProvider{}
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),
@@ -179,16 +179,16 @@ func TestStatisticsRangeNavigationLoadsMaxHistory(t *testing.T) {
 		t.Fatal("expected statistics range navigation to handle right arrow")
 	}
 	if updated.statisticsRangeIdx != 1 {
-		t.Fatalf("expected Max range index, got %d", updated.statisticsRangeIdx)
+		t.Fatalf("expected 10Y range index, got %d", updated.statisticsRangeIdx)
 	}
 	if cmd == nil {
-		t.Fatal("expected max statistics history load command")
+		t.Fatal("expected 10Y statistics history load command")
 	}
 	if msg, ok := cmd().(sharpeHistoryLoadedMsg); !ok {
 		t.Fatalf("expected sharpeHistoryLoadedMsg, got %T", msg)
 	}
 	if len(provider.historyCalls) != 1 || provider.historyCalls[0] != "AAPL|10y|1d" {
-		t.Fatalf("expected 10y max statistics history request, got %#v", provider.historyCalls)
+		t.Fatalf("expected 10y statistics history request, got %#v", provider.historyCalls)
 	}
 }
 
