@@ -7,6 +7,7 @@ const (
 	quoteCenterFundamentals
 	quoteCenterTechnicals
 	quoteCenterSharpe
+	quoteCenterStatistics
 	quoteCenterStatements
 	quoteCenterInsiders
 	quoteCenterOwners

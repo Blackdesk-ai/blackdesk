@@ -53,7 +53,7 @@ func (m Model) View() string {
 	availableH := max(16, m.height-topSpacerH-topH-statusH-lineH)
 	mainTotalHeight := max(12, int(float64(availableH)*0.68))
 	bottomTotalHeight := max(4, availableH-mainTotalHeight)
-	fullHeightQuoteCenter := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterStatements || m.quoteCenterMode == quoteCenterInsiders)
+	fullHeightQuoteCenter := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterStatements || m.quoteCenterMode == quoteCenterInsiders || m.quoteCenterMode == quoteCenterStatistics)
 	fullscreenQuotePage := m.tabIdx == tabQuote && (m.quoteCenterMode == quoteCenterOwners || m.quoteCenterMode == quoteCenterAnalyst || m.quoteCenterMode == quoteCenterFilings || m.quoteCenterMode == quoteCenterEarnings)
 	fullHeightNews := m.tabIdx == tabNews || m.tabIdx == tabScreener
 	if m.commandPaletteOpen || m.globalPageOpen || m.tabIdx == tabAI || fullscreenQuotePage || fullHeightQuoteCenter || fullHeightNews {

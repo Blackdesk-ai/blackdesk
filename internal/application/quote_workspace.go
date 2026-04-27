@@ -6,6 +6,7 @@ const (
 	QuoteCenterChart        QuoteCenterMode = "chart"
 	QuoteCenterFundamentals QuoteCenterMode = "fundamentals"
 	QuoteCenterTechnicals   QuoteCenterMode = "technicals"
+	QuoteCenterStatistics   QuoteCenterMode = "statistics"
 	QuoteCenterStatements   QuoteCenterMode = "statements"
 	QuoteCenterInsiders     QuoteCenterMode = "insiders"
 	QuoteCenterOwners       QuoteCenterMode = "owners"

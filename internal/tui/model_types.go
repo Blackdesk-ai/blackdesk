@@ -45,24 +45,25 @@ type Model struct {
 	config             storage.Config
 	workspaceRoot      string
 
-	width           int
-	height          int
-	selectedIdx     int
-	watchlistScroll int
-	rangeIdx        int
-	sharpeRangeIdx  int
-	tabIdx          int
-	quoteCenterMode quoteCenterMode
-	status          string
-	lastUpdated     time.Time
-	clock           time.Time
-	lastAutoRefresh time.Time
-	lastMarketNews  time.Time
-	appVersion      string
-	latestVersion   string
-	updateAvailable bool
-	upgradeRunning  bool
-	restartOnQuit   bool
+	width              int
+	height             int
+	selectedIdx        int
+	watchlistScroll    int
+	rangeIdx           int
+	sharpeRangeIdx     int
+	statisticsRangeIdx int
+	tabIdx             int
+	quoteCenterMode    quoteCenterMode
+	status             string
+	lastUpdated        time.Time
+	clock              time.Time
+	lastAutoRefresh    time.Time
+	lastMarketNews     time.Time
+	appVersion         string
+	latestVersion      string
+	updateAvailable    bool
+	upgradeRunning     bool
+	restartOnQuit      bool
 
 	searchInput                  textinput.Model
 	searchMode                   bool

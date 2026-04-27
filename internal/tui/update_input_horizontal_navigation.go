@@ -33,6 +33,23 @@ func (m Model) handleTimeframeNavigation(step int) (Model, tea.Cmd, bool) {
 	return m, tea.Batch(m.persistCmd(), m.loadHistoryCmd(m.activeSymbol())), true
 }
 
+func (m Model) handleStatisticsRangeNavigation(step int) (Model, tea.Cmd, bool) {
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterStatistics {
+		return m, nil, false
+	}
+	plan := application.PlanWrappedIndexStep(application.WrappedIndexInput{
+		CurrentIndex: m.statisticsRangeIdx,
+		Count:        len(statisticsRangeSpecs),
+		Step:         step,
+	})
+	if !plan.Changed {
+		return m, nil, true
+	}
+	m.statisticsRangeIdx = plan.NextIndex
+	m.status = "Statistics range: " + m.statisticsRangeSpec().Label
+	return m, m.loadStatisticsHistoryCmd(m.activeSymbol()), true
+}
+
 func (m Model) handleFilingsFilterNavigation(step int) (Model, tea.Cmd, bool) {
 	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterFilings {
 		return m, nil, false

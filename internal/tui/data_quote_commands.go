@@ -9,6 +9,8 @@ import (
 )
 
 var sharpeHistoryRanges = []string{"10y", "7y", "5y", "2y", "1y"}
+var statisticsHistoryRanges = []string{"5y", "3y", "2y", "1y"}
+var statisticsMaxHistoryRanges = []string{"10y", "7y", "5y", "3y", "2y", "1y"}
 
 func (m Model) loadQuoteCmd(symbol string) tea.Cmd {
 	return func() tea.Msg {
@@ -39,9 +41,25 @@ func (m Model) loadSharpeHistoryCmd(symbol string) tea.Cmd {
 	}
 }
 
+func (m Model) loadStatisticsHistoryCmd(symbol string) tea.Cmd {
+	return func() tea.Msg {
+		series, err := m.loadStatisticsHistory(symbol)
+		return sharpeHistoryLoadedMsg{series: series, err: err}
+	}
+}
+
+func (m Model) loadStatisticsHistory(symbol string) (domain.PriceSeries, error) {
+	spec := m.statisticsRangeSpec()
+	return m.loadHistoryWithFallback(symbol, spec.Ranges, "statistics history unavailable")
+}
+
 func (m Model) loadSharpeHistory(symbol string) (domain.PriceSeries, error) {
+	return m.loadHistoryWithFallback(symbol, sharpeHistoryRanges, "sharpe history unavailable")
+}
+
+func (m Model) loadHistoryWithFallback(symbol string, rangeKeys []string, fallbackErr string) (domain.PriceSeries, error) {
 	var lastErr error
-	for _, rangeKey := range sharpeHistoryRanges {
+	for _, rangeKey := range rangeKeys {
 		series, err := m.services.GetHistory(m.ctx, symbol, rangeKey, "1d")
 		if err == nil {
 			return series, nil
@@ -49,7 +67,7 @@ func (m Model) loadSharpeHistory(symbol string) (domain.PriceSeries, error) {
 		lastErr = err
 	}
 	if lastErr == nil {
-		lastErr = errors.New("sharpe history unavailable")
+		lastErr = errors.New(fallbackErr)
 	}
 	return domain.PriceSeries{}, lastErr
 }

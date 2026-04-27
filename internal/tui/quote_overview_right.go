@@ -12,6 +12,9 @@ func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, 
 	if m.quoteCenterMode == quoteCenterSharpe {
 		return m.renderOverviewSharpeRight(section, label, muted, width, height)
 	}
+	if m.quoteCenterMode == quoteCenterStatistics {
+		return m.renderOverviewStatisticsRight(section, label, muted, width, height)
+	}
 	if m.quoteCenterMode == quoteCenterFilings {
 		return m.renderOverviewFilingsRight(section, label, muted, width, height)
 	}
@@ -35,6 +38,12 @@ func (m Model) renderOverviewRight(section, label, muted lipgloss.Style, width, 
 	b.WriteString("\n" + section.Render("AI INSIGHT") + " " + muted.Render("(i)") + "\n\n")
 	b.WriteString(m.renderQuoteInsightBlock(muted, width))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
+}
+
+func (m Model) renderOverviewStatisticsRight(section, label, muted lipgloss.Style, width, height int) string {
+	pos := lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394"))
+	neg := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF7A73"))
+	return renderQuoteStatisticsPreview(section, label, muted, pos, neg, m.sharpeSeries(m.activeSymbol()), width, height)
 }
 
 func (m Model) renderOverviewSharpeRight(section, label, muted lipgloss.Style, width, height int) string {
