@@ -80,12 +80,16 @@ func (m Model) handleSearchKey(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) openSearchSymbol(symbol string) (Model, tea.Cmd) {
+	prev := m.currentNavigationSnapshot()
 	m.addToWatchlist(symbol)
 	m.selectSymbol(symbol)
 	m.searchMode = false
 	m.searchInput.Blur()
 	m.searchRequestQuery = ""
 	m.status = "Selected " + symbol
+	if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+		m.pushNavigationSnapshot(prev)
+	}
 	return m, tea.Batch(m.persistCmd(), m.loadAllCmd(symbol))
 }
 

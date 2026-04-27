@@ -29,6 +29,22 @@ type aiFilingRunState struct {
 	truncation    aiRequestTruncation
 }
 
+type navigationSnapshot struct {
+	tabIdx             int
+	quoteCenterMode    quoteCenterMode
+	globalPageOpen     bool
+	globalPageKind     globalPageKind
+	rangeIdx           int
+	sharpeRangeIdx     int
+	statisticsRangeIdx int
+	statementKind      domain.StatementKind
+	statementFreq      domain.StatementFrequency
+	filingsFilter      filingsFilterMode
+	calendarFilter     calendarFilterMode
+	aiFullscreen       bool
+	activeSymbol       string
+}
+
 var aiStatementRequests = []statementRequest{
 	{kind: domain.StatementKindIncome, frequency: domain.StatementFrequencyAnnual},
 	{kind: domain.StatementKindBalanceSheet, frequency: domain.StatementFrequencyAnnual},
@@ -168,6 +184,7 @@ type Model struct {
 	calendar          domain.EconomicCalendarSnapshot
 	calendarSel       int
 	calendarFilter    calendarFilterMode
+	navigationStack   []navigationSnapshot
 
 	errQuote            error
 	errHistory          error

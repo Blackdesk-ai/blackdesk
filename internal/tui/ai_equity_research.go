@@ -143,6 +143,7 @@ func (m *Model) launchAIPrompt(prompt, status string) tea.Cmd {
 		return nil
 	}
 
+	prev := m.currentNavigationSnapshot()
 	tabCmd := m.setActiveTab(tabAI)
 	m.helpOpen = false
 	m.searchMode = false
@@ -167,6 +168,9 @@ func (m *Model) launchAIPrompt(prompt, status string) tea.Cmd {
 		m.status = "Refreshing AI context…"
 	} else {
 		m.status = status
+	}
+	if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+		m.pushNavigationSnapshot(prev)
 	}
 	return tea.Batch(tabCmd, m.prepareAIContextCmd(prompt))
 }

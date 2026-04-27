@@ -14,29 +14,41 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 	}
 	switch key {
 	case "c":
+		prev := m.currentNavigationSnapshot()
 		plan := application.PlanQuoteCenterSelection(application.QuoteCenterSelectionInput{
 			Target: application.QuoteCenterChart,
 		})
 		if plan.Allowed {
 			m.setQuoteCenterMode(quoteCenterChart)
 		}
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		m.status = plan.Status
 		return m, nil, true
 	case "f":
+		prev := m.currentNavigationSnapshot()
 		plan := application.PlanQuoteCenterSelection(application.QuoteCenterSelectionInput{
 			Target: application.QuoteCenterFundamentals,
 		})
 		if plan.Allowed {
 			m.setQuoteCenterMode(quoteCenterFundamentals)
 		}
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		m.status = plan.Status
 		return m, nil, true
 	case "t":
+		prev := m.currentNavigationSnapshot()
 		plan := application.PlanQuoteCenterSelection(application.QuoteCenterSelectionInput{
 			Target: application.QuoteCenterTechnicals,
 		})
 		if plan.Allowed {
 			m.setQuoteCenterMode(quoteCenterTechnicals)
+		}
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
 		}
 		m.status = plan.Status
 		if plan.LoadTechnical && m.needsTechnicalHistory(m.activeSymbol()) {
@@ -44,6 +56,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 		}
 		return m, nil, true
 	case "s":
+		prev := m.currentNavigationSnapshot()
 		plan := application.PlanQuoteCenterSelection(application.QuoteCenterSelectionInput{
 			Target:        application.QuoteCenterStatements,
 			HasStatements: m.services.HasStatements(),
@@ -53,12 +66,16 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			return m, nil, true
 		}
 		m.setQuoteCenterMode(quoteCenterStatements)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		m.status = plan.Status
 		if plan.LoadStatement {
 			return m, m.loadStatementCmd(m.activeSymbol()), true
 		}
 		return m, nil, true
 	case "h":
+		prev := m.currentNavigationSnapshot()
 		plan := application.PlanQuoteCenterSelection(application.QuoteCenterSelectionInput{
 			Target:      application.QuoteCenterInsiders,
 			HasInsiders: m.services.HasInsiders(),
@@ -68,6 +85,9 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			return m, nil, true
 		}
 		m.setQuoteCenterMode(quoteCenterInsiders)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		m.status = plan.Status
 		if plan.LoadInsiders {
 			return m, m.loadInsidersCmd(m.activeSymbol()), true
@@ -83,6 +103,7 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 				return m, nil, true
 			}
 			prompt := filingAnalysisPrompt(m.activeSymbol(), item)
+			prev := m.currentNavigationSnapshot()
 			_ = m.setActiveTab(tabAI)
 			m.helpOpen = false
 			m.searchMode = false
@@ -93,6 +114,9 @@ func (m Model) handleQuoteWorkspaceActionKey(key string) (Model, tea.Cmd, bool) 
 			m.pushAIUserMessage(prompt)
 			m.aiRunning = true
 			m.aiErr = nil
+			if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+				m.pushNavigationSnapshot(prev)
+			}
 			m.status = "Loading selected filing for AI analysis…"
 			return m, m.prepareFilingAnalysisCmd(m.activeSymbol(), item), true
 		}

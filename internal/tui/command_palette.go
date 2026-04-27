@@ -372,12 +372,16 @@ func (m Model) executeCommandPaletteSelection() (Model, tea.Cmd) {
 }
 
 func (m Model) openCommandPaletteSymbol(symbol string) (Model, tea.Cmd) {
+	prev := m.currentNavigationSnapshot()
 	m.addToWatchlist(symbol)
 	m.selectSymbol(symbol)
 	m.globalPageOpen = false
 	m.closeCommandPalette("Selected " + strings.ToUpper(strings.TrimSpace(symbol)))
 	tabCmd := m.setActiveTab(tabQuote)
 	m.setQuoteCenterMode(quoteCenterChart)
+	if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+		m.pushNavigationSnapshot(prev)
+	}
 	return m, tea.Batch(tabCmd, m.persistCmd(), m.loadAllCmd(symbol))
 }
 
@@ -389,13 +393,22 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 	}
 	switch normalizedID {
 	case "markets":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened Markets workspace")
-		return m, m.setActiveTab(tabMarkets)
+		cmd := m.setActiveTab(tabMarkets)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
+		return m, cmd
 	case "calendar":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened economic calendar")
 		m.globalPageOpen = true
 		m.globalPageKind = globalPageCalendar
 		m.calendarFilter = calendarFilterToday
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		if data, ok := m.cachedCalendar(m.calendarFilter); ok {
 			m.calendar = data
 			if len(m.calendar.Events) == 0 || m.calendarSel >= len(m.calendar.Events) {
@@ -408,41 +421,73 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		m.calendarSel = 0
 		return m, m.loadCalendarCmd(m.calendarFilter)
 	case "quote":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened Quote workspace")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterChart)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tabCmd
 	case "news":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened News workspace")
-		return m, m.setActiveTab(tabNews)
+		cmd := m.setActiveTab(tabNews)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
+		return m, cmd
 	case "screeners":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened Screeners workspace")
-		return m, m.setActiveTab(tabScreener)
+		cmd := m.setActiveTab(tabScreener)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
+		return m, cmd
 	case "ai":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened AI workspace")
-		return m, m.setActiveTab(tabAI)
+		cmd := m.setActiveTab(tabAI)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
+		return m, cmd
 	case "equity-research":
 		m.closeCommandPalette("Running equity research…")
 		return m, m.launchAIPrompt(aiEquityResearchPrompt, "Refreshing AI context for equity research…")
 	case "chart":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened chart view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterChart)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tabCmd
 	case "fundamentals":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened fundamentals view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterFundamentals)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tabCmd
 	case "technicals":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened technicals view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterTechnicals)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		if m.needsTechnicalHistory(activeSymbol) {
 			return m, tea.Batch(tabCmd, m.loadTechnicalHistoryCmd(activeSymbol))
 		}
 		return m, tabCmd
 	case "sharpe":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened Risk Adjusted view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterSharpe)
@@ -452,48 +497,79 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 				break
 			}
 		}
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		if m.needsSharpeHistory(activeSymbol) {
 			return m, tea.Batch(tabCmd, m.loadSharpeHistoryCmd(activeSymbol))
 		}
 		return m, tabCmd
 	case "statistics":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened Statistics view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterStatistics)
 		m.statisticsRangeIdx = 0
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		if m.needsStatisticsHistory(activeSymbol) {
 			return m, tea.Batch(tabCmd, m.loadStatisticsHistoryCmd(activeSymbol))
 		}
 		return m, tabCmd
 	case "statements":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened statements view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterStatements)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tea.Batch(tabCmd, m.loadStatementCmd(activeSymbol))
 	case "insiders":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened insiders view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterInsiders)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tea.Batch(tabCmd, m.loadInsidersCmd(activeSymbol))
 	case "owners":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened owners view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterOwners)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tea.Batch(tabCmd, m.loadOwnersCmd(activeSymbol))
 	case "analyst":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened analyst recommendations view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterAnalyst)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tea.Batch(tabCmd, m.loadAnalystRecommendationsCmd(activeSymbol))
 	case "filings":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened filings view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterFilings)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tea.Batch(tabCmd, m.loadFilingsCmd(activeSymbol))
 	case "earnings":
+		prev := m.currentNavigationSnapshot()
 		m.closeCommandPalette("Opened earnings view")
 		tabCmd := m.setActiveTab(tabQuote)
 		m.setQuoteCenterMode(quoteCenterEarnings)
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
 		return m, tea.Batch(tabCmd, m.loadEarningsCmd(activeSymbol))
 	default:
 		return m, nil

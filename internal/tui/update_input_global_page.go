@@ -14,6 +14,11 @@ func (m Model) handleGlobalPageKey(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 	switch msg.String() {
 	case "ctrl+c", "q":
 		return m, tea.Quit, true
+	case "ctrl+backspace", "ctrl+h":
+		if next, cmd, handled := m.restorePreviousNavigation(); handled {
+			return next, cmd, true
+		}
+		return m, nil, true
 	case "ctrl+k":
 		return m, m.openCommandPalette(), true
 	case "?":

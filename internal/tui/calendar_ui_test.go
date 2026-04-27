@@ -37,6 +37,35 @@ func TestCommandPaletteCalendarOpensGlobalCalendarPage(t *testing.T) {
 	}
 }
 
+func TestCtrlBackspaceReturnsFromCalendarToPreviousWorkspace(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(testProvider{}),
+	})
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterStatistics
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{
+		{Kind: commandPaletteItemFunction, FunctionID: "calendar", Title: "Calendar"},
+	}
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if !m.globalPageOpen || m.globalPageKind != globalPageCalendar {
+		t.Fatalf("expected calendar open, got open=%v kind=%d", m.globalPageOpen, m.globalPageKind)
+	}
+
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyCtrlH})
+	m = updated.(Model)
+	if m.globalPageOpen {
+		t.Fatal("expected calendar page to close after navigation back")
+	}
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterStatistics {
+		t.Fatalf("expected restore to statistics view, got tab=%d mode=%d", m.tabIdx, m.quoteCenterMode)
+	}
+}
+
 func TestGlobalCalendarViewRendersLoadedEvents(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{
 		Config:   storage.DefaultConfig(),

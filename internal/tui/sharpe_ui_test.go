@@ -139,6 +139,36 @@ func TestCommandPaletteStatisticsOpensStatisticsMode(t *testing.T) {
 	}
 }
 
+func TestCtrlBackspaceReturnsFromStatisticsToPreviousQuoteMode(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterChart
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{{Kind: commandPaletteItemFunction, FunctionID: "statistics", Title: "Statistics"}}
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.quoteCenterMode != quoteCenterStatistics {
+		t.Fatalf("expected statistics mode, got %d", m.quoteCenterMode)
+	}
+	if len(m.navigationStack) != 1 {
+		t.Fatalf("expected one navigation snapshot, got %d", len(m.navigationStack))
+	}
+
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyCtrlH})
+	m = updated.(Model)
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterChart {
+		t.Fatalf("expected return to quote chart, got tab=%d mode=%d", m.tabIdx, m.quoteCenterMode)
+	}
+	if len(m.navigationStack) != 0 {
+		t.Fatalf("expected empty navigation stack after restore, got %d", len(m.navigationStack))
+	}
+}
+
 func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.width = 140

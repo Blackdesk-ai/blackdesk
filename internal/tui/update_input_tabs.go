@@ -39,9 +39,19 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 		m.status = "Select AI connector"
 		return m, nil, true
 	case "tab":
-		return m, m.setActiveTab((m.tabIdx + 1) % len(headerTabs)), true
+		prev := m.currentNavigationSnapshot()
+		cmd := m.setActiveTab((m.tabIdx + 1) % len(headerTabs))
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
+		return m, cmd, true
 	case "1", "2", "3", "4", "5":
-		return m, m.setActiveTab(int(key[0] - '1')), true
+		prev := m.currentNavigationSnapshot()
+		cmd := m.setActiveTab(int(key[0] - '1'))
+		if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+			m.pushNavigationSnapshot(prev)
+		}
+		return m, cmd, true
 	case "enter":
 		if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterFilings {
 			if item, ok := m.currentFiling(); ok && item.URL != "" {
@@ -70,7 +80,11 @@ func (m Model) handleGlobalTopLevelKey(key string) (Model, tea.Cmd, bool) {
 		}
 		var tabCmd tea.Cmd
 		if plan.OpenQuote {
+			prev := m.currentNavigationSnapshot()
 			tabCmd = m.setActiveTab(tabQuote)
+			if !navigationSnapshotEqual(prev, m.currentNavigationSnapshot()) {
+				m.pushNavigationSnapshot(prev)
+			}
 		}
 		m.status = plan.Status
 		return m, tea.Batch(tabCmd, m.persistCmd(), m.loadAllCmd(item.Symbol)), true
