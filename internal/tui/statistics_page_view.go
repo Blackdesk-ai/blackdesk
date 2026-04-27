@@ -34,13 +34,15 @@ type statisticsPoint struct {
 }
 
 type statisticsRow struct {
-	Horizon  string
-	Signal   string
-	Samples  int
-	Mean     float64
-	Median   float64
-	Positive int
-	OK       bool
+	Horizon     string
+	Signal      string
+	Samples     int
+	Mean        float64
+	Median      float64
+	AvgDrawdown float64
+	ReturnDD    float64
+	Positive    int
+	OK          bool
 }
 
 var statisticsHorizons = []statisticsHorizon{
@@ -52,6 +54,7 @@ var statisticsHorizons = []statisticsHorizon{
 
 var statisticsRangeSpecs = []statisticsRangeSpec{
 	{Label: "5Y", Ranges: statisticsHistoryRanges},
+	{Label: "10Y", Ranges: statistics10YHistoryRanges},
 	{Label: "Max", Ranges: statisticsMaxHistoryRanges},
 }
 
@@ -122,16 +125,9 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 	b.WriteString(muted.Render("Current Signal") + "\n")
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("252d"), renderSharpeValue(pos, neg, muted, latest.Sharpe252)))
 	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("63d"), renderSharpeValue(pos, neg, muted, latest.Sharpe63)))
-
-	b.WriteString("\n" + muted.Render("Sample Depth") + "\n")
-	for _, horizon := range statisticsHorizons {
-		rows := buildStatisticsRows(series, horizon)
-		samples := 0
-		if len(rows) > 0 {
-			samples = rows[0].Samples
-		}
-		b.WriteString(fmt.Sprintf("%s %s\n", label.Render(horizon.Label), muted.Render(fmt.Sprintf("%d periods", samples))))
-	}
+	b.WriteString("\n" + muted.Render("Signal Percentile") + "\n")
+	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("252d"), muted.Render(formatPercentile(statisticsPercentile(points, latest.Sharpe252, func(p statisticsPoint) float64 { return p.Sharpe252 })))))
+	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("63d"), muted.Render(formatPercentile(statisticsPercentile(points, latest.Sharpe63, func(p statisticsPoint) float64 { return p.Sharpe63 })))))
 
 	rows := buildStatisticsRows(series, statisticsHorizon{Label: "3M", Forward: 63})
 	if len(rows) > 0 {
@@ -140,6 +136,15 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, row.Mean)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Median"), renderSharpeReturn(pos, neg, muted, row.Median)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win%"), renderSharpePercent(pos, muted, row.Positive)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg. DD"), renderSharpeReturn(pos, neg, muted, row.AvgDrawdown)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Return/DD"), renderSharpeRatio(pos, neg, muted, row.ReturnDD)))
+		edges := statisticsCurrentSignalEdges(series, latest, statisticsHorizon{Label: "3M", Forward: 63})
+		if len(edges) > 0 {
+			b.WriteString("\n" + muted.Render("Edge vs Baseline") + "\n")
+			for _, edge := range edges {
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render(edge.Label), renderSharpeReturn(pos, neg, muted, edge.Edge)))
+			}
+		}
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
@@ -149,7 +154,7 @@ func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, wid
 		return muted.Render("No matching samples")
 	}
 	columns := statisticsColumns(width, label)
-	headerValues := []string{"Date", "Signal", "N", "Avg", "Median", "Win%"}
+	headerValues := []string{"Date", "Signal", "N", "Avg", "Median", "Win%", "Avg. DD", "Return/DD"}
 	var b strings.Builder
 	b.WriteString(renderStatisticsTableLine(columns, headerValues, muted, true) + "\n")
 	prevHorizon := ""
@@ -165,6 +170,8 @@ func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, wid
 			formatSignedPercentRatio(row.Mean),
 			formatSignedPercentRatio(row.Median),
 			fmt.Sprintf("%d%%", row.Positive),
+			formatSignedPercentRatio(row.AvgDrawdown),
+			formatMetricSigned(row.ReturnDD),
 		}
 		b.WriteString(renderStatisticsTableLine(columns, values, lipgloss.NewStyle(), false) + "\n")
 	}
@@ -176,8 +183,10 @@ func statisticsColumns(width int, label lipgloss.Style) []insiderTableColumn {
 	nWidth := 4
 	metricWidth := 8
 	posWidth := 5
-	gaps := 2 * 5
-	fixed := horizonWidth + nWidth + metricWidth*2 + posWidth + gaps
+	drawdownWidth := len("Avg. DD")
+	ratioWidth := len("Return/DD")
+	gaps := 2 * 7
+	fixed := horizonWidth + nWidth + metricWidth*2 + posWidth + drawdownWidth + ratioWidth + gaps
 	signalWidth := max(10, width-fixed)
 	return []insiderTableColumn{
 		{title: "Date", width: horizonWidth, align: lipgloss.Left, style: label},
@@ -186,6 +195,8 @@ func statisticsColumns(width int, label lipgloss.Style) []insiderTableColumn {
 		{title: "Avg", width: metricWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
 		{title: "Median", width: metricWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
 		{title: "Pos", width: posWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Avg. DD", width: drawdownWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Return/DD", width: ratioWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
 	}
 }
 
@@ -269,6 +280,7 @@ func buildStatisticsPoints(series domain.PriceSeries) []statisticsPoint {
 func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, signal statisticsSignal, horizon statisticsHorizon) statisticsRow {
 	closes := extractCloses(series.Candles)
 	values := make([]float64, 0, len(points))
+	drawdowns := make([]float64, 0, len(points))
 	positive := 0
 	for _, point := range points {
 		if point.Index+horizon.Forward >= len(closes) || !signal.Match(point) {
@@ -281,6 +293,7 @@ func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, sig
 		}
 		value := future/base - 1
 		values = append(values, value)
+		drawdowns = append(drawdowns, statisticsForwardDrawdown(closes, point.Index, horizon.Forward))
 		if value > 0 {
 			positive++
 		}
@@ -293,17 +306,132 @@ func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, sig
 	for _, value := range values {
 		sum += value
 	}
+	drawdownSum := 0.0
+	for _, drawdown := range drawdowns {
+		drawdownSum += drawdown
+	}
 	median := values[len(values)/2]
 	if len(values)%2 == 0 {
 		median = (values[len(values)/2-1] + values[len(values)/2]) / 2
 	}
-	return statisticsRow{
-		Horizon:  horizon.Label,
-		Signal:   signal.Label,
-		Samples:  len(values),
-		Mean:     sum / float64(len(values)),
-		Median:   median,
-		Positive: int(float64(positive) / float64(len(values)) * 100),
-		OK:       true,
+	returnDD := 0.0
+	if drawdownSum != 0 {
+		avgDrawdown := drawdownSum / float64(len(drawdowns))
+		if avgDrawdown != 0 {
+			returnDD = (sum / float64(len(values))) / -avgDrawdown
+		}
 	}
+	return statisticsRow{
+		Horizon:     horizon.Label,
+		Signal:      signal.Label,
+		Samples:     len(values),
+		Mean:        sum / float64(len(values)),
+		Median:      median,
+		AvgDrawdown: drawdownSum / float64(len(drawdowns)),
+		ReturnDD:    returnDD,
+		Positive:    int(float64(positive) / float64(len(values)) * 100),
+		OK:          true,
+	}
+}
+
+func statisticsForwardDrawdown(closes []float64, start, forward int) float64 {
+	base := closes[start]
+	minReturn := 0.0
+	for i := start + 1; i <= start+forward; i++ {
+		if closes[i] <= 0 {
+			continue
+		}
+		move := closes[i]/base - 1
+		if move < minReturn {
+			minReturn = move
+		}
+	}
+	return minReturn
+}
+
+type statisticsEdge struct {
+	Label string
+	Edge  float64
+}
+
+func statisticsPercentile(points []statisticsPoint, latest float64, valueFn func(statisticsPoint) float64) int {
+	if len(points) == 0 {
+		return 0
+	}
+	count := 0
+	for _, point := range points {
+		if valueFn(point) <= latest {
+			count++
+		}
+	}
+	return int(float64(count) / float64(len(points)) * 100)
+}
+
+func formatPercentile(value int) string {
+	if value <= 0 {
+		return "0th"
+	}
+	if value >= 100 {
+		return "100th"
+	}
+	lastTwo := value % 100
+	suffix := "th"
+	if lastTwo < 11 || lastTwo > 13 {
+		switch value % 10 {
+		case 1:
+			suffix = "st"
+		case 2:
+			suffix = "nd"
+		case 3:
+			suffix = "rd"
+		}
+	}
+	return fmt.Sprintf("%d%s", value, suffix)
+}
+
+func statisticsCurrentSignalEdges(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsEdge {
+	rows := buildStatisticsRows(series, horizon)
+	if len(rows) == 0 {
+		return nil
+	}
+	bySignal := make(map[string]statisticsRow, len(rows))
+	for _, row := range rows {
+		bySignal[row.Signal] = row
+	}
+	baseline, ok := bySignal["All periods"]
+	if !ok {
+		return nil
+	}
+	labels := make([]string, 0, 2)
+	if label := statisticsSignalLabelForValue(latest.Sharpe252, "12M"); label != "" {
+		labels = append(labels, label)
+	}
+	if label := statisticsSignalLabelForValue(latest.Sharpe63, "3M"); label != "" {
+		labels = append(labels, label)
+	}
+	out := make([]statisticsEdge, 0, len(labels))
+	for _, label := range labels {
+		row, ok := bySignal[label]
+		if !ok {
+			continue
+		}
+		out = append(out, statisticsEdge{
+			Label: label,
+			Edge:  row.Mean - baseline.Mean,
+		})
+	}
+	return out
+}
+
+func statisticsSignalLabelForValue(value float64, prefix string) string {
+	if value > 1 {
+		return prefix + " > 1"
+	}
+	if value > 0 {
+		return prefix + " > 0"
+	}
+	if value < 0 {
+		return prefix + " < 0"
+	}
+	return ""
 }
