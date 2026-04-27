@@ -65,6 +65,7 @@ func (m *Model) setQuoteCenterMode(mode quoteCenterMode) {
 func (m Model) quoteBottomPanelsVisible() bool {
 	return m.tabIdx == tabQuote &&
 		m.quoteCenterMode != quoteCenterSharpe &&
+		m.quoteCenterMode != quoteCenterStatistics &&
 		m.quoteCenterMode != quoteCenterStatements &&
 		m.quoteCenterMode != quoteCenterInsiders &&
 		m.quoteCenterMode != quoteCenterOwners &&
@@ -94,6 +95,8 @@ func (m Model) applicationQuoteCenterMode() application.QuoteCenterMode {
 		return application.QuoteCenterTechnicals
 	case quoteCenterStatements:
 		return application.QuoteCenterStatements
+	case quoteCenterStatistics:
+		return application.QuoteCenterStatistics
 	case quoteCenterInsiders:
 		return application.QuoteCenterInsiders
 	case quoteCenterOwners:

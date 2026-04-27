@@ -9,6 +9,9 @@ func (m Model) handleGlobalNavigationKey(key string) (Model, tea.Cmd, bool) {
 	case "up":
 		return m.handleWorkspaceVerticalNavigation(-1)
 	case "right":
+		if next, cmd, handled := m.handleStatisticsRangeNavigation(1); handled {
+			return next, cmd, true
+		}
 		if next, cmd, handled := m.handleFilingsFilterNavigation(1); handled {
 			return next, cmd, true
 		}
@@ -20,6 +23,9 @@ func (m Model) handleGlobalNavigationKey(key string) (Model, tea.Cmd, bool) {
 		}
 		return m.handleTimeframeNavigation(1)
 	case "left":
+		if next, cmd, handled := m.handleStatisticsRangeNavigation(-1); handled {
+			return next, cmd, true
+		}
 		if next, cmd, handled := m.handleFilingsFilterNavigation(-1); handled {
 			return next, cmd, true
 		}

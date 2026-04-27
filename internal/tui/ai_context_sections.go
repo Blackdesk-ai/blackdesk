@@ -37,7 +37,7 @@ func (m Model) statementForBundle(symbol string, kind domain.StatementKind, freq
 }
 
 func (m Model) aiQuoteStats() map[string]string {
-	stats := make(map[string]string, 9)
+	stats := make(map[string]string, 12)
 	for _, line := range overviewStatsGrid(lipgloss.NewStyle(), 96, m.quote, m.fundamentals) {
 		parts := strings.Fields(strings.TrimSpace(line))
 		if len(parts) < 2 {
@@ -50,6 +50,22 @@ func (m Model) aiQuoteStats() map[string]string {
 	}
 	if growthEst := impliedEPSGrowthEstimateText(m.fundamentals); growthEst != "-" {
 		stats["Fwd Growth"] = growthEst
+	}
+	if n5yGrowth, ok := fiveYearGrowthEstimate(m.quote, m.fundamentals); ok {
+		stats["N5Y Growth"] = formatOptionalPercent(n5yGrowth, true)
+	}
+	if impliedReturn, ok := impliedReturnValue(m.quote, m.fundamentals); ok {
+		stats["Implied Return"] = formatOptionalPercent(impliedReturn, true)
+		series := m.technicalSeries(m.activeSymbol())
+		if len(series.Candles) == 0 {
+			series = m.series
+		}
+		if len(series.Candles) > 0 {
+			technical := buildTechnicalSnapshot(m.quote, series)
+			if impliedSharpe, ok := impliedSharpeValue(impliedReturn, technical.hv252); ok {
+				stats["Implied Sharpe"] = formatMetricFloat(impliedSharpe)
+			}
+		}
 	}
 	return stats
 }

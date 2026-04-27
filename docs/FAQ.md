@@ -122,17 +122,30 @@ It is color-coded by threshold:
 
 It is meant as a quick quality-plus-valuation shortcut, not a full ranking model or a standalone recommendation.
 
-## What is R40?
+## What is Implied Return?
 
-`R40` is the `Revenue Growth + Profit Margin` score shown under `QARP Score` in the `Quote` fundamentals view.
+`Implied Return` is the `Earnings Yield + N5Y Growth` score shown under `QARP Score` in the `Quote` fundamentals view.
 
 It is color-coded by threshold:
 
-- `< 15%` weak
-- `15% - 25%` mediocre
-- `25% - 40%` good
-- `40% - 60%` very good
-- `> 60%` exceptional
+- `< 0%` weak
+- `0% - 5%` neutral
+- `> 5%` positive
+
+## What is Implied Sharpe?
+
+`Implied Sharpe` is the risk-adjusted companion shown under `Implied Return` in the `Quote` fundamentals view.
+
+Blackdesk calculates it as `Implied Return / HV 252`.
+
+- `HV 252` is the active symbol's 252-day historical volatility.
+- It only appears when `HV 252` is available.
+- It is displayed as a plain number, not a percent.
+- It is color-coded by threshold:
+- `< 0.0` weak
+- `0.0 - 0.5` neutral
+- `0.5 - 1.0` good
+- `> 1.0` strong
 
 ## What is N5Y Growth?
 

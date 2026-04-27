@@ -72,7 +72,7 @@ func TestSharpeHistoryFallsBackFrom10YTo7Y(t *testing.T) {
 func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.width = 140
-	model.height = 40
+	model.height = 44
 	model.tabIdx = tabQuote
 	model.quoteCenterMode = quoteCenterSharpe
 	model.config.Watchlist = []string{"AAPL"}
@@ -89,6 +89,9 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
+	if !strings.Contains(view, "Fwd. Return") || !strings.Contains(view, "3M Avg") || !strings.Contains(view, "3M Median") || !strings.Contains(view, "3M Win%") {
+		t.Fatal("expected sharpe preview to show forward 3M return stats")
+	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
 		t.Fatal("expected sharpe board to render chart-style timeframe controls")
 	}
@@ -97,6 +100,95 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	}
 	if strings.Contains(view, "MARKET HEAT") || strings.Contains(view, "ANALYSTS") || strings.Contains(view, "AI INSIGHT") {
 		t.Fatal("expected sharpe mode to replace default right sidebar content")
+	}
+}
+
+func TestCommandPaletteStatisticsOpensStatisticsMode(t *testing.T) {
+	provider := &countingHistoryProvider{}
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(provider),
+	})
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{{Kind: commandPaletteItemFunction, FunctionID: "statistics", Title: "Statistics"}}
+
+	updated, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterStatistics {
+		t.Fatalf("expected Quote statistics mode, got tab=%d mode=%d", m.tabIdx, m.quoteCenterMode)
+	}
+	if cmd == nil {
+		t.Fatal("expected statistics history load command")
+	}
+	if msg, ok := cmd().(sharpeHistoryLoadedMsg); !ok {
+		t.Fatalf("expected sharpeHistoryLoadedMsg, got %T", msg)
+	}
+	if len(provider.historyCalls) != 1 || provider.historyCalls[0] != "AAPL|5y|1d" {
+		t.Fatalf("expected 5y statistics history request, got %#v", provider.historyCalls)
+	}
+}
+
+func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterStatistics
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.quote.Symbol = "AAPL"
+	model.quote.ShortName = "Apple Inc."
+	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
+
+	view := model.View()
+	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "12M > 0", "12M"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("expected statistics view to contain %q", want)
+		}
+	}
+	for _, unwanted := range []string{"Higher", "Best", "Worst"} {
+		if strings.Contains(view, unwanted) {
+			t.Fatalf("expected statistics view to omit %q", unwanted)
+		}
+	}
+	if strings.Contains(view, "MARKET HEAT") || strings.Contains(view, "ANALYSTS") {
+		t.Fatal("expected statistics mode to replace default right sidebar content")
+	}
+}
+
+func TestStatisticsRangeNavigationLoadsMaxHistory(t *testing.T) {
+	provider := &countingHistoryProvider{}
+	model := NewModel(context.Background(), Dependencies{
+		Config:   storage.DefaultConfig(),
+		Registry: providers.NewRegistry(provider),
+	})
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterStatistics
+	model.statisticsRangeIdx = 0
+
+	updated, cmd, handled := model.handleGlobalNavigationKey("right")
+	if !handled {
+		t.Fatal("expected statistics range navigation to handle right arrow")
+	}
+	if updated.statisticsRangeIdx != 1 {
+		t.Fatalf("expected Max range index, got %d", updated.statisticsRangeIdx)
+	}
+	if cmd == nil {
+		t.Fatal("expected max statistics history load command")
+	}
+	if msg, ok := cmd().(sharpeHistoryLoadedMsg); !ok {
+		t.Fatalf("expected sharpeHistoryLoadedMsg, got %T", msg)
+	}
+	if len(provider.historyCalls) != 1 || provider.historyCalls[0] != "AAPL|10y|1d" {
+		t.Fatalf("expected 10y max statistics history request, got %#v", provider.historyCalls)
 	}
 }
 

@@ -229,6 +229,18 @@ func TestBuildAIQuoteInsightRequestUsesFullCompanyContext(t *testing.T) {
 	if !strings.Contains(req.ContextPayload, "\"Earnings Yield\": \"3.21%\"") {
 		t.Fatal("expected quote insight payload to include derived earnings yield in quote_stats")
 	}
+	if !strings.Contains(req.ContextPayload, "\"N5Y Growth\":") {
+		t.Fatal("expected quote insight payload to include n5y growth in quote_stats")
+	}
+	if !strings.Contains(req.ContextPayload, "\"Implied Return\":") {
+		t.Fatal("expected quote insight payload to include implied return in quote_stats")
+	}
+	if !strings.Contains(req.ContextPayload, "\"Implied Sharpe\":") {
+		t.Fatal("expected quote insight payload to include implied sharpe in quote_stats")
+	}
+	if !strings.Contains(req.SystemPrompt, "Implied Return") || !strings.Contains(req.SystemPrompt, "Implied Sharpe") {
+		t.Fatal("expected quote insight prompt to explain implied return and implied sharpe")
+	}
 }
 
 func TestAIContextSnapshotIncludesTechnicalLookupAliases(t *testing.T) {

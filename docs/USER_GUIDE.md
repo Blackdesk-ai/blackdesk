@@ -201,13 +201,20 @@ Quote fundamentals note:
 - `0.8 - 1.2` good
 - `1.2 - 1.5` very good
 - `> 1.5` rare / opportunity
-- `R40` is Blackdesk's `Revenue Growth + Profit Margin` readout shown directly under `QARP Score`.
+- `Implied Return` is Blackdesk's `Earnings Yield + N5Y Growth` readout shown directly under `QARP Score`.
 - It is displayed as a percent and color-coded by threshold:
-- `< 15%` weak
-- `15% - 25%` mediocre
-- `25% - 40%` good
-- `40% - 60%` very good
-- `> 60%` exceptional
+- `< 0%` weak
+- `0% - 5%` neutral
+- `> 5%` positive
+- `Implied Sharpe` is shown directly under `Implied Return` when `HV 252` is available.
+- Blackdesk calculates it as `Implied Return / HV 252`.
+- `HV 252` comes from the active symbol's 252-day historical volatility.
+- It is displayed as a plain number, not a percent.
+- It is color-coded by threshold:
+- `< 0.0` weak
+- `0.0 - 0.5` neutral
+- `0.5 - 1.0` good
+- `> 1.0` strong
 - Use it as a shortcut for balancing quality and price, not as a standalone investment verdict.
 
 Global pages from the command palette:

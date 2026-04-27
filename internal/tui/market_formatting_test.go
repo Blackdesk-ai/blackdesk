@@ -27,20 +27,32 @@ func TestColorizeQARPScoreUsesThresholdBands(t *testing.T) {
 	}
 }
 
-func TestColorizeR40ScoreUsesThresholdBands(t *testing.T) {
-	if got := colorizeR40Score("65.00%", 0.65, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394")).Bold(true).Render("65.00%") {
-		t.Fatal("expected r40 scores above 60% to use the exceptional band style")
+func TestColorizeImpliedReturnScoreUsesThresholdBands(t *testing.T) {
+	if got := colorizeImpliedReturnScore("6.00%", 0.06, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394")).Render("6.00%") {
+		t.Fatal("expected implied return above 5% to use the positive band style")
 	}
-	if got := colorizeR40Score("45.00%", 0.45, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394")).Render("45.00%") {
-		t.Fatal("expected r40 scores above 40% to use the very good band style")
+	if got := colorizeImpliedReturnScore("5.00%", 0.05, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#A6A29D")).Render("5.00%") {
+		t.Fatal("expected implied return at 5% to use the neutral band style")
 	}
-	if got := colorizeR40Score("30.00%", 0.30, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#D8C9B8")).Render("30.00%") {
-		t.Fatal("expected r40 scores from 25% to 40% to use the good band style")
+	if got := colorizeImpliedReturnScore("0.00%", 0, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#A6A29D")).Render("0.00%") {
+		t.Fatal("expected implied return at 0% to use the neutral band style")
 	}
-	if got := colorizeR40Score("20.00%", 0.20, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#E7B66B")).Render("20.00%") {
-		t.Fatal("expected r40 scores from 15% to 25% to use the mediocre band style")
+	if got := colorizeImpliedReturnScore("-1.00%", -0.01, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#FF7A73")).Render("-1.00%") {
+		t.Fatal("expected implied return below 0% to use the negative band style")
 	}
-	if got := colorizeR40Score("10.00%", 0.10, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#FF7A73")).Render("10.00%") {
-		t.Fatal("expected r40 scores below 15% to use the weak band style")
+}
+
+func TestColorizeImpliedSharpeScoreUsesThresholdBands(t *testing.T) {
+	if got := colorizeImpliedSharpeScore("1.20", 1.2, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394")).Bold(true).Render("1.20") {
+		t.Fatal("expected implied sharpe above 1.0 to use the strong band style")
+	}
+	if got := colorizeImpliedSharpeScore("0.68", 0.68, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#62D394")).Render("0.68") {
+		t.Fatal("expected implied sharpe from 0.5 to 1.0 to use the good band style")
+	}
+	if got := colorizeImpliedSharpeScore("0.20", 0.2, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#A6A29D")).Render("0.20") {
+		t.Fatal("expected implied sharpe from 0.0 to 0.5 to use the neutral band style")
+	}
+	if got := colorizeImpliedSharpeScore("-0.10", -0.1, true); got != lipgloss.NewStyle().Foreground(lipgloss.Color("#FF7A73")).Render("-0.10") {
+		t.Fatal("expected implied sharpe below 0.0 to use the weak band style")
 	}
 }

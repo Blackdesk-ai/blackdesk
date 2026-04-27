@@ -73,8 +73,9 @@ func PlanQuoteCenterSelection(input QuoteCenterSelectionInput) QuoteCenterSelect
 		}
 	case QuoteCenterFundamentals:
 		return QuoteCenterSelectionResult{
-			Allowed: true,
-			Status:  "Quote center: fundamentals",
+			Allowed:       true,
+			Status:        "Quote center: fundamentals",
+			LoadTechnical: true,
 		}
 	default:
 		return QuoteCenterSelectionResult{

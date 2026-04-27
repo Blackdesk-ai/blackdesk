@@ -232,6 +232,7 @@ func (m Model) commandPaletteFunctions() []commandPaletteFunction {
 		{ID: "fundamentals", Title: "Fundamentals", Aliases: []string{"fundamental", "valuation", "fa"}, Category: "Quote", Description: fmt.Sprintf("Open the fundamentals view for %s.", activeSymbol)},
 		{ID: "technicals", Title: "Technicals", Aliases: []string{"technical", "ta"}, Category: "Quote", Description: fmt.Sprintf("Open the technicals view for %s.", activeSymbol)},
 		{ID: "sharpe", Title: "Risk Adjusted", Aliases: []string{"roc/hv", "risk adjusted", "technical sharpe", "sharpe"}, Category: "Chart", Description: fmt.Sprintf("Open the 5Y risk-adjusted chart for %s.", activeSymbol)},
+		{ID: "statistics", Title: "Statistics", Aliases: []string{"stats", "signal stats", "forward returns", "forward stats", "3m stats"}, Category: "Quote", Description: fmt.Sprintf("Open historical signal statistics for %s.", activeSymbol)},
 	}
 	if m.services.HasEconomicCalendar() {
 		items = append(items, commandPaletteFunction{
@@ -453,6 +454,15 @@ func (m Model) executeCommandPaletteFunction(id string) (Model, tea.Cmd) {
 		}
 		if m.needsSharpeHistory(activeSymbol) {
 			return m, tea.Batch(tabCmd, m.loadSharpeHistoryCmd(activeSymbol))
+		}
+		return m, tabCmd
+	case "statistics":
+		m.closeCommandPalette("Opened Statistics view")
+		tabCmd := m.setActiveTab(tabQuote)
+		m.setQuoteCenterMode(quoteCenterStatistics)
+		m.statisticsRangeIdx = 0
+		if m.needsStatisticsHistory(activeSymbol) {
+			return m, tea.Batch(tabCmd, m.loadStatisticsHistoryCmd(activeSymbol))
 		}
 		return m, tabCmd
 	case "statements":

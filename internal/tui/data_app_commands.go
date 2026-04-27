@@ -60,6 +60,9 @@ func (m Model) loadAllCmd(symbol string) tea.Cmd {
 	if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterSharpe && m.needsSharpeHistory(symbol) {
 		cmds = append(cmds, m.loadSharpeHistoryCmd(symbol))
 	}
+	if m.tabIdx == tabQuote && m.quoteCenterMode == quoteCenterStatistics && m.needsStatisticsHistory(symbol) {
+		cmds = append(cmds, m.loadStatisticsHistoryCmd(symbol))
+	}
 	cmds = append(cmds, m.loadMarketRiskCmd())
 	return tea.Batch(cmds...)
 }

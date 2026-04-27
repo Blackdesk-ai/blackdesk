@@ -6,6 +6,7 @@ const (
 	QuoteCenterChart        QuoteCenterMode = "chart"
 	QuoteCenterFundamentals QuoteCenterMode = "fundamentals"
 	QuoteCenterTechnicals   QuoteCenterMode = "technicals"
+	QuoteCenterStatistics   QuoteCenterMode = "statistics"
 	QuoteCenterStatements   QuoteCenterMode = "statements"
 	QuoteCenterInsiders     QuoteCenterMode = "insiders"
 	QuoteCenterOwners       QuoteCenterMode = "owners"
@@ -40,7 +41,7 @@ func PlanQuoteWorkspaceLoad(mode QuoteCenterMode, needsTechnical, hasStatements,
 		LoadNews:            true,
 		LoadFundamentals:    true,
 	}
-	if mode == QuoteCenterTechnicals && needsTechnical {
+	if (mode == QuoteCenterTechnicals || mode == QuoteCenterFundamentals) && needsTechnical {
 		plan.LoadTechnical = true
 	}
 	if mode == QuoteCenterStatements && hasStatements {

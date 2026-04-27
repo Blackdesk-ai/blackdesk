@@ -68,7 +68,7 @@ func (m Model) buildAIQuoteInsightRequest(symbol string) (RequestEnvelope, error
 			"fundamentals":       "Full normalized fundamentals snapshot for the active symbol, including fields that may not currently be visible in the Quote sidebar UI, such as ROIC and invested capital when available.",
 			"statements":         "Normalized financial statement bundle for the active symbol. Use annual and quarterly income, balance-sheet, and cash-flow sections for revenue, margins, leverage, liquidity, and cash generation confirmation.",
 			"statement_insights": "Derived high-signal statement metrics computed from the statement bundle. Use these first for quick read-through of growth, cash generation, leverage, and liquidity.",
-			"quote_stats":        "Compact quote stat labels rendered in the quote view for the active symbol. This may include derived fields such as `Earnings Yield` and `Fwd Growth`. `Earnings Yield` is the inverse of trailing PE when available, with a fallback to EPS divided by price. `Fwd Growth` is the market-implied next-period EPS growth inferred from trailing PE versus forward PE. Treat both as market-implied context rather than a Blackdesk forecast.",
+			"quote_stats":        "Compact quote stat labels rendered in the quote view for the active symbol. This may include derived fields such as `Earnings Yield`, `Fwd Growth`, `N5Y Growth`, `Implied Return`, and `Implied Sharpe`. `Earnings Yield` is the inverse of trailing PE when available, with a fallback to EPS divided by price. `Fwd Growth` is the market-implied next-period EPS growth inferred from trailing PE versus forward PE. `N5Y Growth` is the implied next-5-year EPS growth proxy derived from PE and PEG. `Implied Return` is `Earnings Yield + N5Y Growth`, so treat it as a rough market-implied return proxy rather than a forecast. `Implied Sharpe` is `Implied Return / HV 252`, so treat it as a simple return-to-risk heuristic, not a realized Sharpe ratio.",
 			"technicals":         "Technical indicator sections for the active symbol. Use these for trend, momentum, volatility, and volume confirmation.",
 			"technical_lookup":   fullGuide["technical_lookup"],
 			"technical_values":   fullGuide["technical_values"],
@@ -104,6 +104,9 @@ func buildAIQuoteInsightSystemPrompt(payload string) string {
 	b.WriteString("Use `statement_insights` first for the fast read, then verify with the full fundamentals object and statement bundle when needed.\n")
 	b.WriteString("When `quote_stats` includes `Earnings Yield`, treat it as a derived valuation shortcut built from trailing PE or EPS divided by price.\n")
 	b.WriteString("When `quote_stats` includes `Fwd Growth`, treat it as the market-implied EPS growth estimate extracted from trailing PE versus forward PE, which reflects expectations already priced into the stock rather than Blackdesk's own forecast.\n")
+	b.WriteString("When `quote_stats` includes `N5Y Growth`, treat it as an implied next-5-year EPS growth proxy derived from PE and PEG, not a historical growth series.\n")
+	b.WriteString("When `quote_stats` includes `Implied Return`, treat it as `Earnings Yield + N5Y Growth`, which is a rough market-implied return proxy rather than a promise of future returns.\n")
+	b.WriteString("When `quote_stats` includes `Implied Sharpe`, treat it as `Implied Return / HV 252`, which is a simple return-to-risk heuristic rather than a formal realized Sharpe ratio.\n")
 	b.WriteString("If the signals conflict, state the main conflict briefly after the stance.\n")
 	b.WriteString("Return exactly one very short paragraph of one or two tight sentences and about 140 to 170 characters.\n")
 	b.WriteString("Prefer fewer words over completeness.\n")

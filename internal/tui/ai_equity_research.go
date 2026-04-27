@@ -69,9 +69,9 @@ Distinguish clearly between:
 - Focus on value creation per share, not just aggregate growth.
 - Is revenue, earnings, and free cash flow growth translating into higher per-share value?
 
-9. Expected Return
-- Estimate long-term expected return:
-  Expected Return ≈ Earnings Yield + Sustainable Growth
+9. Implied Return
+- Estimate long-term implied return:
+  Implied Return ≈ Earnings Yield + N5Y Growth
 - For growth companies: base this on normalized future margins.
 - For financials: base this on sustainable returns on capital and valuation re-rating potential.
 - Adjust for potential multiple expansion or compression where relevant.
@@ -84,7 +84,7 @@ Distinguish clearly between:
 - Identify the 2–3 key risks that could break the thesis.
 
 11. Alpha / Edge
-- Compare expected return to a 10% baseline (index).
+- Compare implied return to a 10% baseline (index).
 - Is this clearly better, similar, or worse?
 - What is the market likely mispricing?
 

@@ -18,8 +18,9 @@ type sharpeSeriesSpec struct {
 }
 
 type sharpeChartSeries struct {
-	Spec   sharpeSeriesSpec
-	Series domain.PriceSeries
+	Spec      sharpeSeriesSpec
+	Series    domain.PriceSeries
+	Forward3M domain.PriceSeries
 }
 
 var sharpeSeriesSpecs = []sharpeSeriesSpec{
@@ -102,6 +103,16 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 			b.WriteString("\n")
 		}
 	}
+
+	if forwardStat, ok := sharpeForwardStat(stats); ok {
+		b.WriteString("\n\n")
+		b.WriteString(muted.Render("Fwd. Return") + "\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Avg"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
+		b.WriteString("\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Median"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
+		b.WriteString("\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
+	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -120,6 +131,17 @@ func renderSharpePercent(pos, muted lipgloss.Style, value int) string {
 	text := fmt.Sprintf("%d%%", value)
 	if value > 50 {
 		return pos.Render(text)
+	}
+	return muted.Render(text)
+}
+
+func renderSharpeReturn(pos, neg, muted lipgloss.Style, value float64) string {
+	text := formatSignedPercentRatio(value)
+	if value > 0 {
+		return pos.Render(text)
+	}
+	if value < 0 {
+		return neg.Render(text)
 	}
 	return muted.Render(text)
 }
@@ -182,19 +204,52 @@ func buildSharpePreviewSeriesSet(series domain.PriceSeries) []sharpeChartSeries 
 	out := make([]sharpeChartSeries, 0, len(sharpeSeriesSpecs))
 	for _, spec := range sharpeSeriesSpecs {
 		out = append(out, sharpeChartSeries{
-			Spec:   spec,
-			Series: buildSharpePreviewSeries(series, spec.Lookback),
+			Spec:      spec,
+			Series:    buildSharpePreviewSeries(series, spec.Lookback),
+			Forward3M: buildSharpeForwardReturnSeries(series, spec.Lookback, 63),
 		})
 	}
 	return out
+}
+
+func buildSharpeForwardReturnSeries(series domain.PriceSeries, lookback, forward int) domain.PriceSeries {
+	closes := extractCloses(series.Candles)
+	if lookback <= 0 || forward <= 0 || len(closes) <= lookback+forward {
+		return domain.PriceSeries{Symbol: series.Symbol, Range: series.Range, Interval: series.Interval}
+	}
+	candles := make([]domain.Candle, 0, len(series.Candles)-lookback-forward)
+	for i := lookback; i+forward < len(series.Candles); i++ {
+		base := closes[i]
+		future := closes[i+forward]
+		if base <= 0 || future <= 0 {
+			continue
+		}
+		value := future/base - 1
+		candles = append(candles, domain.Candle{
+			Time:  series.Candles[i].Time,
+			Open:  value,
+			High:  value,
+			Low:   value,
+			Close: value,
+		})
+	}
+	return domain.PriceSeries{
+		Symbol:      series.Symbol,
+		Range:       series.Range,
+		Interval:    series.Interval,
+		Candles:     candles,
+		Freshness:   series.Freshness,
+		LastUpdated: series.LastUpdated,
+	}
 }
 
 func displaySharpeChartSeriesForRange(series []sharpeChartSeries, rangeKey string) []sharpeChartSeries {
 	out := make([]sharpeChartSeries, 0, len(series))
 	for _, item := range series {
 		out = append(out, sharpeChartSeries{
-			Spec:   item.Spec,
-			Series: displaySharpeSeriesForRange(item.Series, rangeKey),
+			Spec:      item.Spec,
+			Series:    displaySharpeSeriesForRange(item.Series, rangeKey),
+			Forward3M: displaySharpeSeriesForRange(item.Forward3M, rangeKey),
 		})
 	}
 	return out
@@ -252,14 +307,18 @@ func renderSharpeSeriesSummary(series domain.PriceSeries) string {
 }
 
 type sharpePreviewStat struct {
-	Label       string
-	Latest      float64
-	Mean        float64
-	Median      float64
-	Min         float64
-	Max         float64
-	PositivePct int
-	AboveOnePct int
+	Label                string
+	Latest               float64
+	Mean                 float64
+	Median               float64
+	Min                  float64
+	Max                  float64
+	PositivePct          int
+	AboveOnePct          int
+	Forward3MMean        float64
+	Forward3MMedian      float64
+	Forward3MPositivePct int
+	Forward3MOK          bool
 }
 
 type sharpeStats struct {
@@ -322,7 +381,7 @@ func sharpeSeriesPreviewStats(series []sharpeChartSeries) []sharpePreviewStat {
 		if !ok {
 			continue
 		}
-		out = append(out, sharpePreviewStat{
+		preview := sharpePreviewStat{
 			Label:       item.Spec.ShortLabel,
 			Latest:      stats.Latest,
 			Mean:        stats.Mean,
@@ -331,9 +390,30 @@ func sharpeSeriesPreviewStats(series []sharpeChartSeries) []sharpePreviewStat {
 			Max:         stats.Max,
 			PositivePct: stats.PositivePct,
 			AboveOnePct: stats.AboveOnePct,
-		})
+		}
+		if forwardStats, ok := sharpeSeriesStats(item.Forward3M); ok {
+			preview.Forward3MMean = forwardStats.Mean
+			preview.Forward3MMedian = forwardStats.Median
+			preview.Forward3MPositivePct = forwardStats.PositivePct
+			preview.Forward3MOK = true
+		}
+		out = append(out, preview)
 	}
 	return out
+}
+
+func sharpeForwardStat(stats []sharpePreviewStat) (sharpePreviewStat, bool) {
+	for _, stat := range stats {
+		if stat.Forward3MOK && stat.Label == "252d" {
+			return stat, true
+		}
+	}
+	for _, stat := range stats {
+		if stat.Forward3MOK {
+			return stat, true
+		}
+	}
+	return sharpePreviewStat{}, false
 }
 
 func sharpeLatestDelta(stats []sharpePreviewStat) (float64, bool) {
