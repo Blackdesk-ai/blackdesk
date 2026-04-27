@@ -18,9 +18,10 @@ type sharpeSeriesSpec struct {
 }
 
 type sharpeChartSeries struct {
-	Spec      sharpeSeriesSpec
-	Series    domain.PriceSeries
-	Forward3M domain.PriceSeries
+	Spec              sharpeSeriesSpec
+	Series            domain.PriceSeries
+	Forward3M         domain.PriceSeries
+	Forward3MDrawdown domain.PriceSeries
 }
 
 var sharpeSeriesSpecs = []sharpeSeriesSpec{
@@ -106,12 +107,16 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 
 	if forwardStat, ok := sharpeForwardStat(stats); ok {
 		b.WriteString("\n\n")
-		b.WriteString(muted.Render("Fwd. Return") + "\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Avg"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
+		b.WriteString(muted.Render("3M Fwd. Return") + "\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
 		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Median"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Median"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
 		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
+		b.WriteString("\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Avg. DD"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MAvgDrawdown)), width))
+		b.WriteString("\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Return/DD"), renderSharpeRatio(pos, neg, muted, forwardStat.Forward3MReturnDD)), width))
 		points := buildStatisticsPoints(sourceSeries)
 		if len(points) > 0 {
 			latest := points[len(points)-1]
@@ -145,6 +150,17 @@ func renderSharpePercent(pos, muted lipgloss.Style, value int) string {
 
 func renderSharpeReturn(pos, neg, muted lipgloss.Style, value float64) string {
 	text := formatSignedPercentRatio(value)
+	if value > 0 {
+		return pos.Render(text)
+	}
+	if value < 0 {
+		return neg.Render(text)
+	}
+	return muted.Render(text)
+}
+
+func renderSharpeRatio(pos, neg, muted lipgloss.Style, value float64) string {
+	text := formatMetricSigned(value)
 	if value > 0 {
 		return pos.Render(text)
 	}
@@ -212,9 +228,10 @@ func buildSharpePreviewSeriesSet(series domain.PriceSeries) []sharpeChartSeries 
 	out := make([]sharpeChartSeries, 0, len(sharpeSeriesSpecs))
 	for _, spec := range sharpeSeriesSpecs {
 		out = append(out, sharpeChartSeries{
-			Spec:      spec,
-			Series:    buildSharpePreviewSeries(series, spec.Lookback),
-			Forward3M: buildSharpeForwardReturnSeries(series, spec.Lookback, 63),
+			Spec:              spec,
+			Series:            buildSharpePreviewSeries(series, spec.Lookback),
+			Forward3M:         buildSharpeForwardReturnSeries(series, spec.Lookback, 63),
+			Forward3MDrawdown: buildSharpeForwardDrawdownSeries(series, spec.Lookback, 63),
 		})
 	}
 	return out
@@ -251,13 +268,44 @@ func buildSharpeForwardReturnSeries(series domain.PriceSeries, lookback, forward
 	}
 }
 
+func buildSharpeForwardDrawdownSeries(series domain.PriceSeries, lookback, forward int) domain.PriceSeries {
+	closes := extractCloses(series.Candles)
+	if lookback <= 0 || forward <= 0 || len(closes) <= lookback+forward {
+		return domain.PriceSeries{Symbol: series.Symbol, Range: series.Range, Interval: series.Interval}
+	}
+	candles := make([]domain.Candle, 0, len(series.Candles)-lookback-forward)
+	for i := lookback; i+forward < len(series.Candles); i++ {
+		base := closes[i]
+		if base <= 0 {
+			continue
+		}
+		value := statisticsForwardDrawdown(closes, i, forward)
+		candles = append(candles, domain.Candle{
+			Time:  series.Candles[i].Time,
+			Open:  value,
+			High:  value,
+			Low:   value,
+			Close: value,
+		})
+	}
+	return domain.PriceSeries{
+		Symbol:      series.Symbol,
+		Range:       series.Range,
+		Interval:    series.Interval,
+		Candles:     candles,
+		Freshness:   series.Freshness,
+		LastUpdated: series.LastUpdated,
+	}
+}
+
 func displaySharpeChartSeriesForRange(series []sharpeChartSeries, rangeKey string) []sharpeChartSeries {
 	out := make([]sharpeChartSeries, 0, len(series))
 	for _, item := range series {
 		out = append(out, sharpeChartSeries{
-			Spec:      item.Spec,
-			Series:    displaySharpeSeriesForRange(item.Series, rangeKey),
-			Forward3M: displaySharpeSeriesForRange(item.Forward3M, rangeKey),
+			Spec:              item.Spec,
+			Series:            displaySharpeSeriesForRange(item.Series, rangeKey),
+			Forward3M:         displaySharpeSeriesForRange(item.Forward3M, rangeKey),
+			Forward3MDrawdown: displaySharpeSeriesForRange(item.Forward3MDrawdown, rangeKey),
 		})
 	}
 	return out
@@ -325,6 +373,8 @@ type sharpePreviewStat struct {
 	AboveOnePct          int
 	Forward3MMean        float64
 	Forward3MMedian      float64
+	Forward3MAvgDrawdown float64
+	Forward3MReturnDD    float64
 	Forward3MPositivePct int
 	Forward3MOK          bool
 }
@@ -404,6 +454,12 @@ func sharpeSeriesPreviewStats(series []sharpeChartSeries) []sharpePreviewStat {
 			preview.Forward3MMedian = forwardStats.Median
 			preview.Forward3MPositivePct = forwardStats.PositivePct
 			preview.Forward3MOK = true
+			if drawdownStats, ok := sharpeSeriesStats(item.Forward3MDrawdown); ok {
+				preview.Forward3MAvgDrawdown = drawdownStats.Mean
+				if drawdownStats.Mean != 0 {
+					preview.Forward3MReturnDD = forwardStats.Mean / -drawdownStats.Mean
+				}
+			}
 		}
 		out = append(out, preview)
 	}

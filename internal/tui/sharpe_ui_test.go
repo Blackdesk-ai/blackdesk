@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"errors"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -89,7 +90,7 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
-	if !strings.Contains(view, "Fwd. Return") || !strings.Contains(view, "3M Avg") || !strings.Contains(view, "3M Median") || !strings.Contains(view, "3M Win%") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") {
+	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Avg. DD") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
@@ -189,6 +190,35 @@ func TestStatisticsRangeNavigationLoads10YHistory(t *testing.T) {
 	}
 	if len(provider.historyCalls) != 1 || provider.historyCalls[0] != "AAPL|10y|1d" {
 		t.Fatalf("expected 10y statistics history request, got %#v", provider.historyCalls)
+	}
+}
+
+func TestBuildStatisticsRowCalculatesAverageDrawdown(t *testing.T) {
+	series := domain.PriceSeries{
+		Symbol: "AAPL",
+		Candles: []domain.Candle{
+			{Close: 100},
+			{Close: 90},
+			{Close: 110},
+			{Close: 95},
+		},
+	}
+	points := []statisticsPoint{{Index: 0}}
+	row := buildStatisticsRow(
+		series,
+		points,
+		statisticsSignal{Label: "All periods", Match: func(statisticsPoint) bool { return true }},
+		statisticsHorizon{Label: "Test", Forward: 3},
+	)
+
+	if !row.OK {
+		t.Fatal("expected statistics row to be valid")
+	}
+	if math.Abs(row.AvgDrawdown-(-0.10)) > 1e-9 {
+		t.Fatalf("expected avg drawdown -0.10, got %.4f", row.AvgDrawdown)
+	}
+	if math.Abs(row.ReturnDD-(-0.5)) > 1e-9 {
+		t.Fatalf("expected return/dd -0.5, got %.4f", row.ReturnDD)
 	}
 }
 
