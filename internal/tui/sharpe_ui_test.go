@@ -9,6 +9,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"blackdesk/internal/domain"
 	"blackdesk/internal/providers"
@@ -200,6 +202,32 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	}
 	if strings.Contains(view, "MARKET HEAT") || strings.Contains(view, "ANALYSTS") {
 		t.Fatal("expected statistics mode to replace default right sidebar content")
+	}
+}
+
+func TestStatisticsTableHighlightsActiveSignals(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterStatistics
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
+
+	view := model.View()
+	if !strings.Contains(ansi.Strip(view), "12M > 1") {
+		t.Fatal("expected active 12M signal label in statistics table")
+	}
+	rawHighlighted := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#E7B66B")).
+		Bold(true).
+		Width(len("12M > 1")).
+		Align(lipgloss.Left).
+		Render("12M > 1")
+	if !strings.Contains(view, rawHighlighted) {
+		t.Fatal("expected active statistics signal to be highlighted")
 	}
 }
 

@@ -82,8 +82,10 @@ func renderQuoteStatisticsBoard(section, label, muted lipgloss.Style, series dom
 		b.WriteString(muted.Render("Statistics need at least one year of daily history."))
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
+	points := buildStatisticsPoints(series)
+	activeSignals := activeStatisticsSignals(points)
 	b.WriteString(renderStatusLine(width, section.Render("FORWARD RETURNS (vs ROC/HV)"), renderStatisticsRangeTabs(rangeIdx)) + "\n\n")
-	b.WriteString(renderStatisticsRows(buildStatisticsTableRows(series), label, muted, width))
+	b.WriteString(renderStatisticsRows(buildStatisticsTableRows(series), label, muted, width, activeSignals))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -144,14 +146,14 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
-func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, width int) string {
+func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, width int, activeSignals map[string]struct{}) string {
 	if len(rows) == 0 {
 		return muted.Render("No matching samples")
 	}
 	columns := statisticsColumns(width, label)
 	headerValues := []string{"Date", "Signal", "N", "Avg", "Median", "Win%", "Avg. DD", "Return/DD"}
 	var b strings.Builder
-	b.WriteString(renderStatisticsTableLine(columns, headerValues, muted, true) + "\n")
+	b.WriteString(renderStatisticsTableLine(columns, headerValues, muted, true, false) + "\n")
 	prevHorizon := ""
 	for _, row := range rows {
 		if prevHorizon != "" && row.Horizon != prevHorizon {
@@ -168,7 +170,8 @@ func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, wid
 			formatSignedPercentRatio(row.AvgDrawdown),
 			formatMetricSigned(row.ReturnDD),
 		}
-		b.WriteString(renderStatisticsTableLine(columns, values, lipgloss.NewStyle(), false) + "\n")
+		_, active := activeSignals[row.Signal]
+		b.WriteString(renderStatisticsTableLine(columns, values, lipgloss.NewStyle(), false, active) + "\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
 }
@@ -195,8 +198,10 @@ func statisticsColumns(width int, label lipgloss.Style) []insiderTableColumn {
 	}
 }
 
-func renderStatisticsTableLine(columns []insiderTableColumn, values []string, fallback lipgloss.Style, header bool) string {
+func renderStatisticsTableLine(columns []insiderTableColumn, values []string, fallback lipgloss.Style, header bool, active bool) string {
 	parts := make([]string, 0, len(columns))
+	activeDateStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#E7B66B")).Bold(true)
+	activeSignalStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#E7B66B")).Bold(true)
 	for i, col := range columns {
 		value := ""
 		if i < len(values) {
@@ -208,6 +213,14 @@ func renderStatisticsTableLine(columns []insiderTableColumn, values []string, fa
 		}
 		if !header && i >= 3 && value != "-" {
 			style = marketMoveStyle(statisticsMoveValue(i, value))
+		}
+		if !header && active {
+			switch i {
+			case 0:
+				style = activeDateStyle
+			case 1:
+				style = activeSignalStyle
+			}
 		}
 		parts = append(parts, style.Width(col.width).Align(col.align).Render(ansi.Truncate(value, col.width, "")))
 	}
@@ -429,4 +442,19 @@ func statisticsSignalLabelForValue(value float64, prefix string) string {
 		return prefix + " < 0"
 	}
 	return ""
+}
+
+func activeStatisticsSignals(points []statisticsPoint) map[string]struct{} {
+	if len(points) == 0 {
+		return nil
+	}
+	latest := points[len(points)-1]
+	active := make(map[string]struct{}, 2)
+	if label := statisticsSignalLabelForValue(latest.Sharpe252, "12M"); label != "" {
+		active[label] = struct{}{}
+	}
+	if label := statisticsSignalLabelForValue(latest.Sharpe63, "3M"); label != "" {
+		active[label] = struct{}{}
+	}
+	return active
 }
