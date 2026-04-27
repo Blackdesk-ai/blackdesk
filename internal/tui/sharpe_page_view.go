@@ -106,11 +106,12 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 
 	if forwardStat, ok := sharpeForwardStat(stats); ok {
 		b.WriteString("\n\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Avg Return"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
+		b.WriteString(muted.Render("Fwd. Return") + "\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Avg"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
 		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Median Return"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Median"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
 		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Price Higher"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("3M Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }

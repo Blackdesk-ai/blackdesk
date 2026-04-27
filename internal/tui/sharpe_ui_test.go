@@ -72,7 +72,7 @@ func TestSharpeHistoryFallsBackFrom10YTo7Y(t *testing.T) {
 func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.width = 140
-	model.height = 42
+	model.height = 44
 	model.tabIdx = tabQuote
 	model.quoteCenterMode = quoteCenterSharpe
 	model.config.Watchlist = []string{"AAPL"}
@@ -89,7 +89,7 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
-	if !strings.Contains(view, "3M Avg Return") || !strings.Contains(view, "3M Median Return") || !strings.Contains(view, "3M Price Higher") {
+	if !strings.Contains(view, "Fwd. Return") || !strings.Contains(view, "3M Avg") || !strings.Contains(view, "3M Median") || !strings.Contains(view, "3M Win%") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
