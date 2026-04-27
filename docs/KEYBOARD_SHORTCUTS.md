@@ -23,6 +23,7 @@ Common palette functions:
 - `Fundamentals`
 - `Technicals`
 - `Risk Adjusted`
+- `Statistics`
 - `Statements`
 - `Insiders`
 - `Equity Research` or `er`
@@ -58,7 +59,7 @@ Common palette functions:
 - `t`: technicals
 - `s`: statements
 - `h`: insiders
-- `← / →`: change timeframe or statement kind
+- `← / →`: change chart timeframe, `Risk Adjusted` timeframe, `Statistics` range, or statement kind
 - `[ / ]`: change statement frequency
 - `n`: next quote news story
 - `p`: scroll company description

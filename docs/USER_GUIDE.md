@@ -168,7 +168,7 @@ Main controls:
 - `t` opens technicals
 - `s` opens statements
 - `h` opens insiders
-- `← / →` changes chart timeframe or statement kind
+- `← / →` changes chart timeframe, risk-adjusted timeframe, or statistics range, and changes statement kind in `Statements`
 - `[ / ]` changes statement frequency
 - `n` moves to the next quote news story
 - `p` scrolls the company description
@@ -180,6 +180,15 @@ Main controls:
 Additional Quote pages:
 
 - `Risk Adjusted` is opened from the command palette and shows the long-horizon `ROC252/HV252` chart together with sidebar readouts for both `252d` and `63d` risk-adjusted ratios.
+  It defaults to `5Y` and loads exactly `5Y` daily history on entry.
+  The right sidebar summarizes:
+  `Latest`, `Range`, `Central Tendency`, `Hit Rate`, and `3M Fwd. Return`.
+  The `3M Fwd. Return` block shows `Avg`, `Median`, `Win%`, `Avg. DD`, `Return/DD`, and current-regime `EV` lines such as `EV 12M > 1`.
+- `Statistics` is opened from the command palette and uses a fullscreen forward-returns table built from the active symbol's daily history.
+  It defaults to the `5Y` statistics range and loads only `5Y` on entry.
+  Additional ranges are `10Y` and `Max`, and they load only when selected with `← / →`.
+  The center table shows forward-return rows for `1M`, `3M`, `6M`, and `12M` horizons across signal regimes, with columns for `Avg`, `Median`, `Win%`, `Avg. DD`, and `Return/DD`.
+  The right sidebar summarizes the current `252d` and `63d` signal, their historical percentile rank inside the active range, the `3M Baseline`, and `Current Regime EV` lines such as `EV 12M < 0` or `EV 3M > 1`.
 - `Analyst Recommendations` is opened from the command palette or by typing `anr` and uses a fullscreen research layout for broker rating changes, recommendation trend, and current consensus targets.
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
