@@ -90,8 +90,14 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
-	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Avg. DD") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") {
+	if !strings.Contains(view, "th") {
+		t.Fatal("expected sharpe latest block to show percentile ranks")
+	}
+	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") || !strings.Contains(view, "DD") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
+	}
+	if strings.Contains(view, "3M Median") {
+		t.Fatal("expected sharpe preview to omit 3M Median")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
 		t.Fatal("expected sharpe board to render chart-style timeframe controls")
@@ -153,6 +159,11 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 		}
 	}
 	for _, unwanted := range []string{"Higher", "Best", "Worst"} {
+		if strings.Contains(view, unwanted) {
+			t.Fatalf("expected statistics view to omit %q", unwanted)
+		}
+	}
+	for _, unwanted := range []string{"Current Signal", "Signal Percentile", "99th", "48th"} {
 		if strings.Contains(view, unwanted) {
 			t.Fatalf("expected statistics view to omit %q", unwanted)
 		}

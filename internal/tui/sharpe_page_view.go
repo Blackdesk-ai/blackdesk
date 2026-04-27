@@ -70,9 +70,14 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
 
+	percentiles := latestSharpePercentiles(sourceSeries)
 	b.WriteString(muted.Render("Latest") + "\n")
 	for _, stat := range stats {
-		b.WriteString(fmt.Sprintf("%s %s\n", label.Render(stat.Label), renderSharpeValue(pos, neg, muted, stat.Latest)))
+		line := fmt.Sprintf("%s %s", label.Render(stat.Label), renderSharpeValue(pos, neg, muted, stat.Latest))
+		if percentile, ok := percentiles[stat.Label]; ok {
+			line += "  " + muted.Render(formatPercentile(percentile))
+		}
+		b.WriteString(line + "\n")
 	}
 	if delta, ok := sharpeLatestDelta(stats); ok {
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Δ"), renderSharpeValue(pos, neg, muted, delta)))
@@ -108,13 +113,16 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 	if forwardStat, ok := sharpeForwardStat(stats); ok {
 		b.WriteString("\n\n")
 		b.WriteString(muted.Render("3M Fwd. Return") + "\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
-		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Median"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMedian)), width))
+		avgDDLine := fmt.Sprintf(
+			"%s %s  •  %s %s",
+			label.Render("Avg"),
+			renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean),
+			label.Render("DD"),
+			renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MAvgDrawdown),
+		)
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), avgDDLine, width))
 		b.WriteString("\n")
 		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
-		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Avg. DD"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MAvgDrawdown)), width))
 		b.WriteString("\n")
 		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Return/DD"), renderSharpeRatio(pos, neg, muted, forwardStat.Forward3MReturnDD)), width))
 		points := buildStatisticsPoints(sourceSeries)
@@ -511,4 +519,16 @@ func annualizedLookbackReturn(values []float64, periods int) float64 {
 		return 0
 	}
 	return math.Pow(last/base, 252.0/float64(periods)) - 1
+}
+
+func latestSharpePercentiles(series domain.PriceSeries) map[string]int {
+	points := buildStatisticsPoints(series)
+	if len(points) == 0 {
+		return nil
+	}
+	latest := points[len(points)-1]
+	return map[string]int{
+		"252d": statisticsPercentile(points, latest.Sharpe252, func(p statisticsPoint) float64 { return p.Sharpe252 }),
+		"63d":  statisticsPercentile(points, latest.Sharpe63, func(p statisticsPoint) float64 { return p.Sharpe63 }),
+	}
 }

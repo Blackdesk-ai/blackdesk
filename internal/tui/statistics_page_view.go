@@ -122,16 +122,10 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
 	latest := points[len(points)-1]
-	b.WriteString(muted.Render("Current Signal") + "\n")
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("252d"), renderSharpeValue(pos, neg, muted, latest.Sharpe252)))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("63d"), renderSharpeValue(pos, neg, muted, latest.Sharpe63)))
-	b.WriteString("\n" + muted.Render("Signal Percentile") + "\n")
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("252d"), muted.Render(formatPercentile(statisticsPercentile(points, latest.Sharpe252, func(p statisticsPoint) float64 { return p.Sharpe252 })))))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("63d"), muted.Render(formatPercentile(statisticsPercentile(points, latest.Sharpe63, func(p statisticsPoint) float64 { return p.Sharpe63 })))))
 
 	rows := buildStatisticsRows(series, statisticsHorizon{Label: "3M", Forward: 63})
 	if len(rows) > 0 {
-		b.WriteString("\n" + muted.Render("3M Baseline") + "\n")
+		b.WriteString(muted.Render("3M Baseline") + "\n")
 		row := rows[0]
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, row.Mean)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Median"), renderSharpeReturn(pos, neg, muted, row.Median)))
