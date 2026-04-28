@@ -30,6 +30,11 @@ func (m Model) handleKeyMsg(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleGlobalKey(msg tea.KeyMsg) (Model, tea.Cmd) {
+	if isNavigationBackKey(msg) {
+		if next, cmd, handled := m.restorePreviousNavigation(); handled {
+			return next, cmd
+		}
+	}
 	key := msg.String()
 	if next, cmd, handled := m.handleGlobalTopLevelKey(key); handled {
 		return next, cmd

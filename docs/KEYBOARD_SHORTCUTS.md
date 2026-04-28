@@ -4,6 +4,7 @@
 
 - `?`: toggle help
 - `Ctrl+K`: open command palette
+- `Ctrl+Backspace`: go back to the previous page or view
 - `/`: open symbol search
 - `Tab`: cycle workspaces
 - `1-5`: jump to workspace
@@ -59,7 +60,7 @@ Common palette functions:
 - `t`: technicals
 - `s`: statements
 - `h`: insiders
-- `← / →`: change chart timeframe, `Risk Adjusted` timeframe, `Statistics` range, or statement kind
+- `← / →`: change chart timeframe, `Risk Adjusted` timeframe, `Statistics` range, statement kind, or filings filter
 - `[ / ]`: change statement frequency
 - `n`: next quote news story
 - `p`: scroll company description

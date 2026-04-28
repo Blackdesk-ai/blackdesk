@@ -82,8 +82,10 @@ func renderQuoteStatisticsBoard(section, label, muted lipgloss.Style, series dom
 		b.WriteString(muted.Render("Statistics need at least one year of daily history."))
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
+	points := buildStatisticsPoints(series)
+	activeSignals := activeStatisticsSignals(points)
 	b.WriteString(renderStatusLine(width, section.Render("FORWARD RETURNS (vs ROC/HV)"), renderStatisticsRangeTabs(rangeIdx)) + "\n\n")
-	b.WriteString(renderStatisticsRows(buildStatisticsTableRows(series), label, muted, width))
+	b.WriteString(renderStatisticsRows(buildStatisticsTableRows(series), label, muted, width, activeSignals))
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -122,16 +124,10 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 		return clipLines(strings.TrimRight(b.String(), "\n"), height)
 	}
 	latest := points[len(points)-1]
-	b.WriteString(muted.Render("Current Signal") + "\n")
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("252d"), renderSharpeValue(pos, neg, muted, latest.Sharpe252)))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("63d"), renderSharpeValue(pos, neg, muted, latest.Sharpe63)))
-	b.WriteString("\n" + muted.Render("Signal Percentile") + "\n")
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("252d"), muted.Render(formatPercentile(statisticsPercentile(points, latest.Sharpe252, func(p statisticsPoint) float64 { return p.Sharpe252 })))))
-	b.WriteString(fmt.Sprintf("%s %s\n", label.Render("63d"), muted.Render(formatPercentile(statisticsPercentile(points, latest.Sharpe63, func(p statisticsPoint) float64 { return p.Sharpe63 })))))
 
 	rows := buildStatisticsRows(series, statisticsHorizon{Label: "3M", Forward: 63})
 	if len(rows) > 0 {
-		b.WriteString("\n" + muted.Render("3M Baseline") + "\n")
+		b.WriteString(muted.Render("3M Baseline") + "\n")
 		row := rows[0]
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, row.Mean)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Median"), renderSharpeReturn(pos, neg, muted, row.Median)))
@@ -142,20 +138,22 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 			b.WriteString("\n" + muted.Render("Current Regime EV") + "\n")
 			for _, regime := range regimes {
 				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)))
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win% "+regime.Label), renderSharpePercent(pos, muted, regime.Win)))
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Return/DD "+regime.Label), renderSharpeRatio(pos, neg, muted, regime.ReturnDD)))
 			}
 		}
 	}
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
-func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, width int) string {
+func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, width int, activeSignals map[string]struct{}) string {
 	if len(rows) == 0 {
 		return muted.Render("No matching samples")
 	}
 	columns := statisticsColumns(width, label)
 	headerValues := []string{"Date", "Signal", "N", "Avg", "Median", "Win%", "Avg. DD", "Return/DD"}
 	var b strings.Builder
-	b.WriteString(renderStatisticsTableLine(columns, headerValues, muted, true) + "\n")
+	b.WriteString(renderStatisticsTableLine(columns, headerValues, muted, true, false) + "\n")
 	prevHorizon := ""
 	for _, row := range rows {
 		if prevHorizon != "" && row.Horizon != prevHorizon {
@@ -172,7 +170,8 @@ func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, wid
 			formatSignedPercentRatio(row.AvgDrawdown),
 			formatMetricSigned(row.ReturnDD),
 		}
-		b.WriteString(renderStatisticsTableLine(columns, values, lipgloss.NewStyle(), false) + "\n")
+		_, active := activeSignals[row.Signal]
+		b.WriteString(renderStatisticsTableLine(columns, values, lipgloss.NewStyle(), false, active) + "\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
 }
@@ -199,8 +198,10 @@ func statisticsColumns(width int, label lipgloss.Style) []insiderTableColumn {
 	}
 }
 
-func renderStatisticsTableLine(columns []insiderTableColumn, values []string, fallback lipgloss.Style, header bool) string {
+func renderStatisticsTableLine(columns []insiderTableColumn, values []string, fallback lipgloss.Style, header bool, active bool) string {
 	parts := make([]string, 0, len(columns))
+	activeDateStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#E7B66B")).Bold(true)
+	activeSignalStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#E7B66B")).Bold(true)
 	for i, col := range columns {
 		value := ""
 		if i < len(values) {
@@ -212,6 +213,14 @@ func renderStatisticsTableLine(columns []insiderTableColumn, values []string, fa
 		}
 		if !header && i >= 3 && value != "-" {
 			style = marketMoveStyle(statisticsMoveValue(i, value))
+		}
+		if !header && active {
+			switch i {
+			case 0:
+				style = activeDateStyle
+			case 1:
+				style = activeSignalStyle
+			}
 		}
 		parts = append(parts, style.Width(col.width).Align(col.align).Render(ansi.Truncate(value, col.width, "")))
 	}
@@ -384,8 +393,10 @@ func formatPercentile(value int) string {
 }
 
 type statisticsRegimeEV struct {
-	Label string
-	EV    float64
+	Label    string
+	EV       float64
+	ReturnDD float64
+	Win      int
 }
 
 func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeEV {
@@ -410,7 +421,12 @@ func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoin
 		if !ok {
 			continue
 		}
-		out = append(out, statisticsRegimeEV{Label: label, EV: row.Mean})
+		out = append(out, statisticsRegimeEV{
+			Label:    label,
+			EV:       row.Mean,
+			ReturnDD: row.ReturnDD,
+			Win:      row.Positive,
+		})
 	}
 	return out
 }
@@ -426,4 +442,19 @@ func statisticsSignalLabelForValue(value float64, prefix string) string {
 		return prefix + " < 0"
 	}
 	return ""
+}
+
+func activeStatisticsSignals(points []statisticsPoint) map[string]struct{} {
+	if len(points) == 0 {
+		return nil
+	}
+	latest := points[len(points)-1]
+	active := make(map[string]struct{}, 2)
+	if label := statisticsSignalLabelForValue(latest.Sharpe252, "12M"); label != "" {
+		active[label] = struct{}{}
+	}
+	if label := statisticsSignalLabelForValue(latest.Sharpe63, "3M"); label != "" {
+		active[label] = struct{}{}
+	}
+	return active
 }

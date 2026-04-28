@@ -9,6 +9,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"blackdesk/internal/domain"
 	"blackdesk/internal/providers"
@@ -90,8 +92,14 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "252d") || !strings.Contains(view, "63d") {
 		t.Fatal("expected sharpe mode to show both 252d and 63d sharpe series")
 	}
-	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Avg. DD") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") {
+	if !strings.Contains(view, "th") {
+		t.Fatal("expected sharpe latest block to show percentile ranks")
+	}
+	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") || !strings.Contains(view, "DD") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
+	}
+	if strings.Contains(view, "3M Median") {
+		t.Fatal("expected sharpe preview to omit 3M Median")
 	}
 	if !strings.Contains(view, "TIMEFRAMES") || !strings.Contains(view, "←/→") {
 		t.Fatal("expected sharpe board to render chart-style timeframe controls")
@@ -133,6 +141,36 @@ func TestCommandPaletteStatisticsOpensStatisticsMode(t *testing.T) {
 	}
 }
 
+func TestCtrlBackspaceReturnsFromStatisticsToPreviousQuoteMode(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterChart
+	model.commandPaletteOpen = true
+	model.commandInput.Focus()
+	model.commandPaletteItems = []commandPaletteItem{{Kind: commandPaletteItemFunction, FunctionID: "statistics", Title: "Statistics"}}
+
+	updated, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m := updated.(Model)
+	if m.quoteCenterMode != quoteCenterStatistics {
+		t.Fatalf("expected statistics mode, got %d", m.quoteCenterMode)
+	}
+	if len(m.navigationStack) != 1 {
+		t.Fatalf("expected one navigation snapshot, got %d", len(m.navigationStack))
+	}
+
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyCtrlH})
+	m = updated.(Model)
+	if m.tabIdx != tabQuote || m.quoteCenterMode != quoteCenterChart {
+		t.Fatalf("expected return to quote chart, got tab=%d mode=%d", m.tabIdx, m.quoteCenterMode)
+	}
+	if len(m.navigationStack) != 0 {
+		t.Fatalf("expected empty navigation stack after restore, got %d", len(m.navigationStack))
+	}
+}
+
 func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
 	model.width = 140
@@ -147,7 +185,7 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
 
 	view := model.View()
-	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "12M > 0", "12M"} {
+	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "Win% 12M", "Win% 3M", "Return/DD 12M", "Return/DD 3M", "12M > 0", "12M"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("expected statistics view to contain %q", want)
 		}
@@ -157,8 +195,39 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 			t.Fatalf("expected statistics view to omit %q", unwanted)
 		}
 	}
+	for _, unwanted := range []string{"Current Signal", "Signal Percentile", "99th", "48th"} {
+		if strings.Contains(view, unwanted) {
+			t.Fatalf("expected statistics view to omit %q", unwanted)
+		}
+	}
 	if strings.Contains(view, "MARKET HEAT") || strings.Contains(view, "ANALYSTS") {
 		t.Fatal("expected statistics mode to replace default right sidebar content")
+	}
+}
+
+func TestStatisticsTableHighlightsActiveSignals(t *testing.T) {
+	model := NewModel(context.Background(), Dependencies{Config: storage.DefaultConfig()})
+	model.width = 140
+	model.height = 42
+	model.tabIdx = tabQuote
+	model.quoteCenterMode = quoteCenterStatistics
+	model.config.Watchlist = []string{"AAPL"}
+	model.config.ActiveSymbol = "AAPL"
+	model.selectedIdx = 0
+	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
+
+	view := model.View()
+	if !strings.Contains(ansi.Strip(view), "12M > 1") {
+		t.Fatal("expected active 12M signal label in statistics table")
+	}
+	rawHighlighted := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#E7B66B")).
+		Bold(true).
+		Width(len("12M > 1")).
+		Align(lipgloss.Left).
+		Render("12M > 1")
+	if !strings.Contains(view, rawHighlighted) {
+		t.Fatal("expected active statistics signal to be highlighted")
 	}
 }
 
