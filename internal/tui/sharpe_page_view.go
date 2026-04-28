@@ -113,34 +113,15 @@ func renderQuoteSharpePreview(label, muted, pos, neg lipgloss.Style, width, heig
 	if forwardStat, ok := sharpeForwardStat(stats); ok {
 		b.WriteString("\n\n")
 		b.WriteString(muted.Render("3M Fwd. Return") + "\n")
-		avgDDLine := fmt.Sprintf(
-			"%s %s  •  %s %s",
-			label.Render("Avg"),
-			renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean),
-			label.Render("DD"),
-			renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MAvgDrawdown),
-		)
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), avgDDLine, width))
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Avg Final"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MMean)), width))
+		b.WriteString("\n")
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Avg MaxDD"), renderSharpeReturn(pos, neg, muted, forwardStat.Forward3MAvgDrawdown)), width))
 		b.WriteString("\n")
 		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Win%"), renderSharpePercent(pos, muted, forwardStat.Forward3MPositivePct)), width))
 		b.WriteString("\n")
-		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Return/DD"), renderSharpeRatio(pos, neg, muted, forwardStat.Forward3MReturnDD)), width))
-		points := buildStatisticsPoints(sourceSeries)
-		if len(points) > 0 {
-			latest := points[len(points)-1]
-			for _, regime := range statisticsCurrentSignalEVs(sourceSeries, latest, statisticsHorizon{Label: "3M", Forward: 63}) {
-				b.WriteString("\n")
-				evLine := fmt.Sprintf(
-					"%s %s  •  %s %s",
-					label.Render("EV "+regime.Label),
-					renderSharpeReturn(pos, neg, muted, regime.EV),
-					label.Render("P"),
-					renderSharpePercent(pos, muted, regime.Win),
-				)
-				b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), evLine, width))
-			}
-		}
+		b.WriteString(renderWrappedTextBlock(lipgloss.NewStyle(), fmt.Sprintf("%s %s", label.Render("Fwd R/Vol"), renderSharpeRatio(pos, neg, muted, forwardStat.Forward3MRetVol)), width))
 	}
+
 	return clipLines(strings.TrimRight(b.String(), "\n"), height)
 }
 
@@ -389,7 +370,7 @@ type sharpePreviewStat struct {
 	Forward3MMean        float64
 	Forward3MMedian      float64
 	Forward3MAvgDrawdown float64
-	Forward3MReturnDD    float64
+	Forward3MRetVol      float64
 	Forward3MPositivePct int
 	Forward3MOK          bool
 }
@@ -469,11 +450,11 @@ func sharpeSeriesPreviewStats(series []sharpeChartSeries) []sharpePreviewStat {
 			preview.Forward3MMedian = forwardStats.Median
 			preview.Forward3MPositivePct = forwardStats.PositivePct
 			preview.Forward3MOK = true
+			if retVol, ok := forwardReturnVolRatio(extractCloses(item.Forward3M.Candles), 63); ok {
+				preview.Forward3MRetVol = retVol
+			}
 			if drawdownStats, ok := sharpeSeriesStats(item.Forward3MDrawdown); ok {
 				preview.Forward3MAvgDrawdown = drawdownStats.Mean
-				if drawdownStats.Mean != 0 {
-					preview.Forward3MReturnDD = forwardStats.Mean / -drawdownStats.Mean
-				}
 			}
 		}
 		out = append(out, preview)

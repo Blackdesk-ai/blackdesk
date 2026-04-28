@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,10 +41,14 @@ type statisticsRow struct {
 	Mean        float64
 	Median      float64
 	AvgDrawdown float64
-	ReturnDD    float64
+	AvgLoss     float64
+	FwdRetVol   float64
+	FwdRetVolOK bool
 	Positive    int
 	OK          bool
 }
+
+const statisticsMinForwardRetVolSamples = 10
 
 var statisticsHorizons = []statisticsHorizon{
 	{Label: "1M", Forward: 21},
@@ -127,19 +132,24 @@ func renderQuoteStatisticsPreview(section, label, muted, pos, neg lipgloss.Style
 
 	rows := buildStatisticsRows(series, statisticsHorizon{Label: "3M", Forward: 63})
 	if len(rows) > 0 {
-		b.WriteString(muted.Render("3M Baseline") + "\n")
+		b.WriteString(muted.Render("3M Baseline") + "\n\n")
 		row := rows[0]
-		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg"), renderSharpeReturn(pos, neg, muted, row.Mean)))
-		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Median"), renderSharpeReturn(pos, neg, muted, row.Median)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg Fwd"), renderSharpeReturn(pos, neg, muted, row.Mean)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Med Fwd"), renderSharpeReturn(pos, neg, muted, row.Median)))
 		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win%"), renderSharpePercent(pos, muted, row.Positive)))
-		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg. DD"), renderSharpeReturn(pos, neg, muted, row.AvgDrawdown)))
-		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Return/DD"), renderSharpeRatio(pos, neg, muted, row.ReturnDD)))
-		if regimes := statisticsCurrentSignalEVs(series, latest, statisticsHorizon{Label: "3M", Forward: 63}); len(regimes) > 0 {
-			b.WriteString("\n" + muted.Render("Current Regime EV") + "\n")
-			for _, regime := range regimes {
-				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("EV "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.EV)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg MaxDD"), renderSharpeReturn(pos, neg, muted, row.AvgDrawdown)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg Loss"), renderSharpeReturn(pos, neg, muted, row.AvgLoss)))
+		b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Fwd R/Vol"), renderStatisticsRatioValue(pos, neg, muted, row.FwdRetVol, row.FwdRetVolOK)))
+		if regimes := statisticsCurrentRegimeStats(series, latest, statisticsHorizon{Label: "3M", Forward: 63}); len(regimes) > 0 {
+			b.WriteString("\n" + muted.Render("Current Regime") + "\n\n")
+			for idx, regime := range regimes {
+				if idx > 0 {
+					b.WriteString("\n")
+				}
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg Fwd "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.Avg)))
 				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Win% "+regime.Label), renderSharpePercent(pos, muted, regime.Win)))
-				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Return/DD "+regime.Label), renderSharpeRatio(pos, neg, muted, regime.ReturnDD)))
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Avg MaxDD "+regime.Label), renderSharpeReturn(pos, neg, muted, regime.AvgDrawdown)))
+				b.WriteString(fmt.Sprintf("%s %s\n", label.Render("Fwd R/Vol "+regime.Label), renderStatisticsRatioValue(pos, neg, muted, regime.FwdRetVol, regime.FwdRetVolOK)))
 			}
 		}
 	}
@@ -151,7 +161,7 @@ func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, wid
 		return muted.Render("No matching samples")
 	}
 	columns := statisticsColumns(width, label)
-	headerValues := []string{"Date", "Signal", "N", "Avg", "Median", "Win%", "Avg. DD", "Return/DD"}
+	headerValues := []string{"Date", "Signal", "N", "Avg Fwd", "Med Fwd", "Win%", "Avg MaxDD", "Avg Loss", "Fwd R/Vol"}
 	var b strings.Builder
 	b.WriteString(renderStatisticsTableLine(columns, headerValues, muted, true, false) + "\n")
 	prevHorizon := ""
@@ -168,7 +178,8 @@ func renderStatisticsRows(rows []statisticsRow, label, muted lipgloss.Style, wid
 			formatSignedPercentRatio(row.Median),
 			fmt.Sprintf("%d%%", row.Positive),
 			formatSignedPercentRatio(row.AvgDrawdown),
-			formatMetricSigned(row.ReturnDD),
+			formatSignedPercentRatio(row.AvgLoss),
+			formatStatisticsRatio(row.FwdRetVol, row.FwdRetVolOK),
 		}
 		_, active := activeSignals[row.Signal]
 		b.WriteString(renderStatisticsTableLine(columns, values, lipgloss.NewStyle(), false, active) + "\n")
@@ -181,20 +192,22 @@ func statisticsColumns(width int, label lipgloss.Style) []insiderTableColumn {
 	nWidth := 4
 	metricWidth := 8
 	posWidth := 5
-	drawdownWidth := len("Avg. DD")
-	ratioWidth := len("Return/DD")
-	gaps := 2 * 7
-	fixed := horizonWidth + nWidth + metricWidth*2 + posWidth + drawdownWidth + ratioWidth + gaps
+	drawdownWidth := len("Avg MaxDD")
+	lossWidth := len("Avg Loss")
+	retVolWidth := len("Fwd R/Vol")
+	gaps := 2 * 8
+	fixed := horizonWidth + nWidth + metricWidth*2 + posWidth + drawdownWidth + lossWidth + retVolWidth + gaps
 	signalWidth := max(10, width-fixed)
 	return []insiderTableColumn{
 		{title: "Date", width: horizonWidth, align: lipgloss.Left, style: label},
 		{title: "Signal", width: signalWidth, align: lipgloss.Left, style: label},
 		{title: "N", width: nWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
-		{title: "Avg", width: metricWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
-		{title: "Median", width: metricWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Avg Fwd", width: metricWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Med Fwd", width: metricWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
 		{title: "Pos", width: posWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
-		{title: "Avg. DD", width: drawdownWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
-		{title: "Return/DD", width: ratioWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Avg MaxDD", width: drawdownWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Avg Loss", width: lossWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
+		{title: "Fwd R/Vol", width: retVolWidth, align: lipgloss.Right, style: lipgloss.NewStyle()},
 	}
 }
 
@@ -247,6 +260,20 @@ func statisticsMoveValue(column int, value string) float64 {
 	return 0
 }
 
+func formatStatisticsRatio(value float64, ok bool) string {
+	if !ok {
+		return "-"
+	}
+	return formatMetricSigned(value)
+}
+
+func renderStatisticsRatioValue(pos, neg, muted lipgloss.Style, value float64, ok bool) string {
+	if !ok {
+		return muted.Render("-")
+	}
+	return renderSharpeRatio(pos, neg, muted, value)
+}
+
 func buildStatisticsTableRows(series domain.PriceSeries) []statisticsRow {
 	out := make([]statisticsRow, 0, len(statisticsHorizons)*len(statisticsSignals))
 	for _, horizon := range statisticsHorizons {
@@ -290,6 +317,8 @@ func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, sig
 	values := make([]float64, 0, len(points))
 	drawdowns := make([]float64, 0, len(points))
 	positive := 0
+	lossSum := 0.0
+	lossCount := 0
 	for _, point := range points {
 		if point.Index+horizon.Forward >= len(closes) || !signal.Match(point) {
 			continue
@@ -304,6 +333,9 @@ func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, sig
 		drawdowns = append(drawdowns, statisticsForwardDrawdown(closes, point.Index, horizon.Forward))
 		if value > 0 {
 			positive++
+		} else if value < 0 {
+			lossSum += value
+			lossCount++
 		}
 	}
 	if len(values) == 0 {
@@ -322,24 +354,71 @@ func buildStatisticsRow(series domain.PriceSeries, points []statisticsPoint, sig
 	if len(values)%2 == 0 {
 		median = (values[len(values)/2-1] + values[len(values)/2]) / 2
 	}
-	returnDD := 0.0
-	if drawdownSum != 0 {
-		avgDrawdown := drawdownSum / float64(len(drawdowns))
-		if avgDrawdown != 0 {
-			returnDD = (sum / float64(len(values))) / -avgDrawdown
-		}
+	mean := sum / float64(len(values))
+	avgDrawdown := drawdownSum / float64(len(drawdowns))
+	avgLoss := 0.0
+	if lossCount > 0 {
+		avgLoss = lossSum / float64(lossCount)
 	}
+	fwdRetVol, fwdRetVolOK := forwardReturnVolRatio(values, horizon.Forward)
 	return statisticsRow{
 		Horizon:     horizon.Label,
 		Signal:      signal.Label,
 		Samples:     len(values),
-		Mean:        sum / float64(len(values)),
+		Mean:        mean,
 		Median:      median,
-		AvgDrawdown: drawdownSum / float64(len(drawdowns)),
-		ReturnDD:    returnDD,
+		AvgDrawdown: avgDrawdown,
+		AvgLoss:     avgLoss,
+		FwdRetVol:   fwdRetVol,
+		FwdRetVolOK: fwdRetVolOK,
 		Positive:    int(float64(positive) / float64(len(values)) * 100),
 		OK:          true,
 	}
+}
+
+func annualizedForwardReturn(totalReturn float64, forward int) float64 {
+	if forward <= 0 {
+		return 0
+	}
+	gross := 1 + totalReturn
+	if gross <= 0 {
+		return -1
+	}
+	return math.Pow(gross, 252.0/float64(forward)) - 1
+}
+
+func annualizedForwardReturnVol(forwardReturns []float64, forward int) float64 {
+	if forward <= 0 || len(forwardReturns) < 2 {
+		return 0
+	}
+	mean := 0.0
+	for _, value := range forwardReturns {
+		mean += value
+	}
+	mean /= float64(len(forwardReturns))
+	variance := 0.0
+	for _, value := range forwardReturns {
+		diff := value - mean
+		variance += diff * diff
+	}
+	variance /= float64(len(forwardReturns) - 1)
+	return math.Sqrt(variance) * math.Sqrt(252.0/float64(forward))
+}
+
+func forwardReturnVolRatio(forwardReturns []float64, forward int) (float64, bool) {
+	if len(forwardReturns) < statisticsMinForwardRetVolSamples {
+		return 0, false
+	}
+	mean := 0.0
+	for _, value := range forwardReturns {
+		mean += value
+	}
+	mean /= float64(len(forwardReturns))
+	vol := annualizedForwardReturnVol(forwardReturns, forward)
+	if vol == 0 {
+		return 0, false
+	}
+	return annualizedForwardReturn(mean, forward) / vol, true
 }
 
 func statisticsForwardDrawdown(closes []float64, start, forward int) float64 {
@@ -392,14 +471,16 @@ func formatPercentile(value int) string {
 	return fmt.Sprintf("%d%s", value, suffix)
 }
 
-type statisticsRegimeEV struct {
-	Label    string
-	EV       float64
-	ReturnDD float64
-	Win      int
+type statisticsRegimeStats struct {
+	Label       string
+	Avg         float64
+	AvgDrawdown float64
+	FwdRetVol   float64
+	FwdRetVolOK bool
+	Win         int
 }
 
-func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeEV {
+func statisticsCurrentRegimeStats(series domain.PriceSeries, latest statisticsPoint, horizon statisticsHorizon) []statisticsRegimeStats {
 	rows := buildStatisticsRows(series, horizon)
 	if len(rows) == 0 {
 		return nil
@@ -415,17 +496,19 @@ func statisticsCurrentSignalEVs(series domain.PriceSeries, latest statisticsPoin
 	if label := statisticsSignalLabelForValue(latest.Sharpe63, "3M"); label != "" {
 		labels = append(labels, label)
 	}
-	out := make([]statisticsRegimeEV, 0, len(labels))
+	out := make([]statisticsRegimeStats, 0, len(labels))
 	for _, label := range labels {
 		row, ok := bySignal[label]
 		if !ok {
 			continue
 		}
-		out = append(out, statisticsRegimeEV{
-			Label:    label,
-			EV:       row.Mean,
-			ReturnDD: row.ReturnDD,
-			Win:      row.Positive,
+		out = append(out, statisticsRegimeStats{
+			Label:       label,
+			Avg:         row.Mean,
+			AvgDrawdown: row.AvgDrawdown,
+			FwdRetVol:   row.FwdRetVol,
+			FwdRetVolOK: row.FwdRetVolOK,
+			Win:         row.Positive,
 		})
 	}
 	return out

@@ -95,8 +95,11 @@ func TestQuoteSharpeViewRendersFullscreenChartAndPreview(t *testing.T) {
 	if !strings.Contains(view, "th") {
 		t.Fatal("expected sharpe latest block to show percentile ranks")
 	}
-	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Return/DD") || !strings.Contains(view, "EV 12M") || !strings.Contains(view, "EV 3M") || !strings.Contains(view, "DD") {
+	if !strings.Contains(view, "3M Fwd. Return") || !strings.Contains(view, "Avg Final") || !strings.Contains(view, "Avg MaxDD") || !strings.Contains(view, "Win%") || !strings.Contains(view, "Fwd R/Vol") {
 		t.Fatal("expected sharpe preview to show forward 3M return stats")
+	}
+	if strings.Contains(view, "MAR") || strings.Contains(view, "Ret/Vol") || strings.Contains(view, "EV ") || strings.Contains(view, "Avg 12M") {
+		t.Fatal("expected sharpe preview to omit old derived labels")
 	}
 	if strings.Contains(view, "3M Median") {
 		t.Fatal("expected sharpe preview to omit 3M Median")
@@ -185,7 +188,7 @@ func TestQuoteStatisticsViewRendersForwardReturnStats(t *testing.T) {
 	model.sharpeCache["AAPL"] = sampleSharpeHistorySeries("AAPL")
 
 	view := model.View()
-	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg", "Median", "Win%", "Current Regime EV", "EV 12M", "EV 3M", "Win% 12M", "Win% 3M", "Return/DD 12M", "Return/DD 3M", "12M > 0", "12M"} {
+	for _, want := range []string{"STATISTICS", "FORWARD RETURNS (vs ROC/HV)", "5Y", "10Y", "Max", "Date", "Signal", "Avg Fwd", "Med Fwd", "Win%", "Avg Loss", "Fwd R/Vol", "Current Regime", "Avg Fwd 12M", "Avg Fwd 3M", "Win% 12M", "Win% 3M", "Avg MaxDD 12M", "Avg MaxDD 3M", "Fwd R/Vol 12M", "Fwd R/Vol 3M", "12M > 0", "12M"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("expected statistics view to contain %q", want)
 		}
@@ -286,8 +289,34 @@ func TestBuildStatisticsRowCalculatesAverageDrawdown(t *testing.T) {
 	if math.Abs(row.AvgDrawdown-(-0.10)) > 1e-9 {
 		t.Fatalf("expected avg drawdown -0.10, got %.4f", row.AvgDrawdown)
 	}
-	if math.Abs(row.ReturnDD-(-0.5)) > 1e-9 {
-		t.Fatalf("expected return/dd -0.5, got %.4f", row.ReturnDD)
+	if math.Abs(row.AvgLoss-(-0.05)) > 1e-9 {
+		t.Fatalf("expected avg loss -0.05, got %.4f", row.AvgLoss)
+	}
+	if row.FwdRetVolOK {
+		t.Fatal("expected Fwd R/Vol to be hidden with one sample")
+	}
+}
+
+func TestForwardReturnVolRatioRequiresMinimumSamples(t *testing.T) {
+	if _, ok := forwardReturnVolRatio([]float64{0.10, -0.05, 0.02}, 63); ok {
+		t.Fatal("expected Fwd R/Vol to be unavailable below minimum sample threshold")
+	}
+}
+
+func TestForwardReturnVolRatioCalculatesValue(t *testing.T) {
+	forwardReturns := []float64{0.12, 0.08, 0.05, -0.02, 0.09, 0.03, 0.06, -0.01, 0.04, 0.07}
+	got, ok := forwardReturnVolRatio(forwardReturns, 63)
+	if !ok {
+		t.Fatal("expected Fwd R/Vol to be available at minimum sample threshold")
+	}
+	mean := 0.0
+	for _, value := range forwardReturns {
+		mean += value
+	}
+	mean /= float64(len(forwardReturns))
+	want := annualizedForwardReturn(mean, 63) / annualizedForwardReturnVol(forwardReturns, 63)
+	if math.Abs(got-want) > 1e-9 {
+		t.Fatalf("expected Fwd R/Vol %.6f, got %.6f", want, got)
 	}
 }
 

@@ -183,12 +183,13 @@ Additional Quote pages:
   It defaults to `5Y` and loads exactly `5Y` daily history on entry.
   The right sidebar summarizes:
   `Latest`, `Range`, `Central Tendency`, `Hit Rate`, and `3M Fwd. Return`.
-  The `3M Fwd. Return` block shows `Avg`, `Median`, `Win%`, `Avg. DD`, `Return/DD`, and current-regime `EV` lines such as `EV 12M > 1`.
+  The `3M Fwd. Return` block shows `Avg Final`, `Avg MaxDD`, `Win%`, and `Fwd R/Vol`.
 - `Statistics` is opened from the command palette and uses a fullscreen forward-returns table built from the active symbol's daily history.
   It defaults to the `5Y` statistics range and loads only `5Y` on entry.
   Additional ranges are `10Y` and `Max`, and they load only when selected with `← / →`.
-  The center table shows forward-return rows for `1M`, `3M`, `6M`, and `12M` horizons across signal regimes, with columns for `Avg`, `Median`, `Win%`, `Avg. DD`, and `Return/DD`.
-  The right sidebar summarizes the current `252d` and `63d` signal, their historical percentile rank inside the active range, the `3M Baseline`, and `Current Regime EV` lines such as `EV 12M < 0` or `EV 3M > 1`.
+  The center table shows forward-return rows for `1M`, `3M`, `6M`, and `12M` horizons across signal regimes, with columns for `Avg Fwd`, `Med Fwd`, `Win%`, `Avg MaxDD`, `Avg Loss`, and `Fwd R/Vol`.
+  `Fwd R/Vol` is an annualized forward return over annualized forward-return volatility ranking metric and is hidden when the sample size is too small.
+  The right sidebar summarizes the current `252d` and `63d` signal, their historical percentile rank inside the active range, the `3M Baseline`, and `Current Regime` lines such as `Avg Fwd 12M < 0`, `Win% 12M < 0`, `Avg MaxDD 3M > 1`, and `Fwd R/Vol 3M > 1`.
 - `Analyst Recommendations` is opened from the command palette or by typing `anr` and uses a fullscreen research layout for broker rating changes, recommendation trend, and current consensus targets.
 - `Filings` is opened from the command palette and uses a fullscreen research layout for recent SEC filings.
 - `Earnings` is opened from the command palette and uses the same fullscreen layout for reported quarters, upcoming estimates, and EPS trend context.
